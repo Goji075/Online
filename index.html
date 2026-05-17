@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Koyocasino | Premium Realtime Casino</title>
+    <title>Koyocasino | Premium Stake-Style Casino</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.5/dist/umd/supabase.umd.js"></script>
     <style>
+        /* Stake & Shuffleカジノを徹底リスペクトしたUI */
         :root {
             --bg-dark: #0f212e;
             --bg-panel: #1a2c38;
@@ -16,29 +17,80 @@
             --text-muted: #b1b6c6;
             --accent-blue: #2f4553;
             --danger: #ff4b4b;
+            --gold: #f39c12;
         }
-        * { box-sizing: border-box; }
-        body { margin: 0; font-family: sans-serif; background-color: var(--bg-dark); color: var(--text-main); }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background-color: var(--bg-panel); border-bottom: 2px solid var(--accent-blue); }
-        .logo { font-size: 22px; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; }
-        .balance-box { background-color: var(--bg-dark); padding: 8px 15px; border-radius: 6px; font-weight: bold; border: 1px solid var(--accent-blue); }
+
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { margin: 0; background-color: var(--bg-dark); color: var(--text-main); overflow-x: hidden; }
+        
+        /* ヘッダー */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background-color: var(--bg-panel); border-bottom: 2px solid var(--accent-blue); position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 24px; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; }
+        .header-right { display: flex; gap: 15px; align-items: center; }
+        .balance-box { background-color: var(--bg-dark); padding: 8px 16px; border-radius: 6px; font-weight: bold; border: 1px solid var(--accent-blue); font-size: 15px; color: var(--primary); }
+
+        /* メインレイアウト */
         .container { display: flex; flex-direction: column; max-width: 1400px; margin: 15px auto; gap: 15px; padding: 0 15px; }
-        .sidebar { width: 100%; background-color: var(--bg-panel); padding: 15px; border-radius: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
-        .menu-btn { flex: 1 1 calc(50% - 8px); padding: 12px; background: var(--bg-dark); border: 1px solid var(--accent-blue); color: var(--text-muted); text-align: center; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 6px; }
-        .menu-btn.active { background-color: var(--bg-card); color: var(--text-main); border-color: var(--primary); }
-        .game-window { flex-grow: 1; background-color: var(--bg-panel); border-radius: 12px; padding: 20px; min-height: 450px; }
-        .btn-primary { background-color: var(--primary); color: #0f212e; border: none; padding: 12px 20px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; }
-        input { background-color: var(--bg-dark); border: 2px solid var(--accent-blue); color: white; padding: 12px; border-radius: 6px; margin-bottom: 15px; width: 100%; }
-        .login-container { max-width: 400px; margin: 20px auto; background: var(--bg-card); padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .error-notice { background: rgba(255,75,75,0.1); border: 1px solid var(--danger); color: var(--danger); padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 12px; word-break: break-all; }
+        @media (min-width: 768px) { .container { flex-direction: row; margin: 30px auto; gap: 25px; padding: 0 20px; } }
+
+        /* サイドバー */
+        .sidebar { width: 100%; background-color: var(--bg-panel); padding: 15px; border-radius: 12px; height: fit-content; display: flex; flex-wrap: wrap; gap: 8px; }
+        @media (min-width: 768px) { .sidebar { width: 240px; display: block; } }
+        .menu-btn { flex: 1 1 calc(50% - 8px); padding: 12px; background: var(--bg-dark); border: 1px solid var(--accent-blue); color: var(--text-muted); text-align: center; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 6px; transition: all 0.2s; }
+        @media (min-width: 768px) { .menu-btn { display: block; width: 100%; margin-bottom: 12px; text-align: left; font-size: 16px; } }
+        .menu-btn:hover, .menu-btn.active { background-color: var(--bg-card); color: var(--text-main); border-color: var(--primary); border-left: 4px solid var(--primary); }
+
+        /* メインウィンドウ */
+        .game-window { flex-grow: 1; background-color: var(--bg-panel); border-radius: 12px; padding: 20px; min-height: 550px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+
+        /* ロビーのゲームグリッド */
+        .grid-games { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-top: 20px; }
+        @media (min-width: 768px) { .grid-games { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; } }
+        .game-card { background-color: var(--bg-card); padding: 25px 15px; border-radius: 8px; text-align: center; border: 1px solid var(--accent-blue); cursor: pointer; transition: transform 0.2s, border-color: 0.2s; }
+        .game-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+        .game-card h3 { margin: 0 0 5px 0; font-size: 18px; }
+        .game-card span { font-size: 12px; font-weight: bold; }
+
+        /* 3Dトランプめくりエフェクト */
+        .card-container { perspective: 1000px; display: inline-block; width: 70px; height: 105px; margin: 5px; vertical-align: top; }
+        @media (min-width: 768px) { .card-container { width: 85px; height: 125px; margin: 8px; } }
+        .card-flip { width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform: rotateY(180deg); position: relative; }
+        .card-flip.reveal { transform: rotateY(0deg); }
+        .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 20px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .card-front { background-color: #ffffff; color: #000000; border: 1px solid #ddd; }
+        .card-back { background-color: #1e3746; color: var(--primary); transform: rotateY(180deg); border: 2px solid var(--primary); font-size: 24px; }
+        .suit-red { color: #ff3838; }
+        .suit-black { color: #000000; }
+
+        /* フォーム要素・共通ボタン */
+        input { background-color: var(--bg-dark); border: 2px solid var(--accent-blue); color: white; padding: 12px; border-radius: 6px; font-size: 16px; margin-bottom: 15px; width: 100%; }
+        input:focus { outline: none; border-color: var(--primary); }
+        .btn-primary { background-color: var(--primary); color: #0f212e; border: none; padding: 12px 24px; font-weight: bold; font-size: 16px; border-radius: 6px; cursor: pointer; transition: background 0.2s; width: 100%; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-danger { background-color: var(--danger); color: white; border: none; padding: 12px 20px; font-weight: bold; border-radius: 6px; cursor: pointer; }
+        
+        /* 認証・管理画面 */
+        .login-container { max-width: 400px; margin: 40px auto; background: var(--bg-card); padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .error-notice { background: rgba(255,75,75,0.1); border: 1px solid var(--danger); color: var(--danger); padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 13px; }
+
+        /* ゲーム盤面用レイアウト */
+        .hand-display-area { background: var(--bg-dark); padding: 15px; border-radius: 8px; margin-top: 10px; min-height: 120px; overflow-x: auto; white-space: nowrap; border: 1px solid var(--accent-blue); }
+        .player-box { background: var(--bg-card); padding: 15px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid var(--primary); }
+
+        /* マインズ専用UI */
+        .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 350px; margin: 20px auto; }
+        .mines-tile { aspect-ratio: 1; background: var(--bg-card); border: 2px solid var(--accent-blue); border-radius: 6px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 20px; font-weight: bold; transition: background 0.1s; }
+        .mines-tile.flipped { background: var(--bg-dark); border-color: var(--accent-blue); }
+        .mines-tile.gem { color: var(--primary); }
+        .mines-tile.bomb { color: var(--danger); }
     </style>
 </head>
 <body>
 
     <header>
         <div class="logo">Koyocasino</div>
-        <div style="display: flex; gap: 15px; align-items: center;">
-            <div id="userInfo" style="color: var(--text-muted); font-weight: 600; font-size: 14px;"></div>
+        <div class="header-right">
+            <div id="userInfo" style="color: var(--text-muted); font-weight: 600;"></div>
             <div class="balance-box">残高: $<span id="balanceDisplay">0.00</span></div>
         </div>
     </header>
@@ -46,117 +98,377 @@
     <div class="container">
         <div class="sidebar" id="sidebarArea" style="display: none;">
             <button class="menu-btn active" id="btn-games" onclick="switchTab('games')">🎮 ロビー</button>
+            <button class="menu-btn" id="btn-deposit" onclick="switchTab('deposit')">💰 コード入金</button>
+            <button class="menu-btn" id="btn-admin" onclick="switchTab('admin')">👑 管理者パネル</button>
             <button class="menu-btn" onclick="logout()">🚪 ログアウト</button>
         </div>
+
         <div class="game-window" id="mainContent">
             <p style="text-align:center; color:var(--text-muted);">システム起動中...</p>
         </div>
     </div>
 
     <script>
-        // 設定値
+        // ==========================================
+        // 1. Supabaseの初期設定
+        // ==========================================
         const SUPABASE_URL = "https://canlzehspgwnpxirlbhq.supabase.co"; 
         const SUPABASE_ANON_KEY = "sb_publishable_xnQVo-rDESnpxmiIrDPsSA_W24zrIGq";
         
         let supabaseClient = null;
         let currentUser = null;
         let currentProfile = null;
+        let activeRealtimeChannel = null;
         let initErrorMsg = null;
 
         // 起動処理
         window.onload = async () => {
-            // 1. まずクライアントを作ってみる
             try {
-                if (!window.supabase) {
-                    throw new Error("Supabaseの外部ライブラリの読み込みに失敗しています。ネット回線かURLを確認してください。");
-                }
+                if (!window.supabase) throw new Error("SDK読み込み失敗");
                 supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            } catch (e) {
-                initErrorMsg = e.message;
-            }
-
-            // 2. ログイン状態のチェック（失敗しても止まらないようにする）
-            if (supabaseClient) {
-                try {
-                    const { data: { user }, error } = await supabaseClient.auth.getUser();
-                    if (error) throw error;
-                    
-                    if (user) {
-                        currentUser = user;
-                        document.getElementById('sidebarArea').style.display = 'flex';
-                        await fetchProfile();
-                        switchTab('games');
-                        return; // ログイン成功ならここで終了
-                    }
-                } catch (e) {
-                    initErrorMsg = "認証エラー: " + e.message;
+                
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('sidebarArea').style.display = window.innerWidth >= 768 ? 'block' : 'flex';
+                    await fetchProfile();
+                    switchTab('games');
+                } else {
+                    renderLoginScreen();
                 }
+            } catch (e) {
+                initErrorMsg = "接続設定エラー。キーとURLを確認してください。";
+                renderLoginScreen();
             }
-
-            // 3. ログインしていない、またはエラーがあった場合は「強制的に」ログイン画面を出す
-            renderLoginScreen();
         };
 
         async function fetchProfile() {
-            try {
-                let { data } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
-                if (data) {
-                    currentProfile = data;
-                    document.getElementById('balanceDisplay').innerText = data.balance.toFixed(2);
-                    document.getElementById('userInfo').innerText = `@${data.username}`;
-                }
-            } catch(e) {}
-        }
-
-        function switchTab(tab) {
-            const content = document.getElementById('mainContent');
-            if (tab === 'games') {
-                content.innerHTML = `
-                    <h2>🎮 ゲーム一覧</h2>
-                    <p style="color:var(--primary)">パブリッシュキーでの接続に成功しました！</p>
-                `;
+            let { data } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
+            if (data) {
+                currentProfile = data;
+                document.getElementById('balanceDisplay').innerText = data.balance.toFixed(2);
+                document.getElementById('userInfo').innerText = `@${data.username}`;
             }
         }
 
+        // ==========================================
+        // 2. 画面切り替えルーティング
+        // ==========================================
+        function switchTab(tab) {
+            if (activeRealtimeChannel) { supabaseClient.removeChannel(activeRealtimeChannel); activeRealtimeChannel = null; }
+            document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+            const activeBtn = document.getElementById(`btn-${tab}`);
+            if(activeBtn) activeBtn.classList.add('active');
+
+            const content = document.getElementById('mainContent');
+
+            if (tab === 'games') {
+                content.innerHTML = `
+                    <h2>🎮 ゲームロビー</h2>
+                    <div class="grid-games">
+                        <div class="game-card" onclick="joinMultiGame('blackjack')"><h3>🃏 BJ</h3><span style="color:var(--primary)">マルチ対戦(同期)</span></div>
+                        <div class="game-card" onclick="joinMultiGame('poker')"><h3>🃏 ポーカー</h3><span style="color:var(--primary)">マルチ対戦(同期)</span></div>
+                        <div class="game-card" onclick="joinMultiGame('baccarat')"><h3>🃏 バカラ</h3><span style="color:var(--primary)">マルチ対戦(同期)</span></div>
+                        <div class="game-card" onclick="startMinesGame()"><h3>💣 マインズ</h3><span style="color:var(--gold)">ソロプレイ</span></div>
+                        <div class="game-card" onclick="startHiLoGame()"><h3>📈 ハイロー</h3><span style="color:var(--gold)">ソロプレイ</span></div>
+                    </div>
+                `;
+            } else if (tab === 'deposit') {
+                content.innerHTML = `
+                    <h2>💰 コード残高チャージ</h2>
+                    <p style="color:var(--text-muted); font-size:14px;">管理者が生成したチャージコードを入力してください。</p>
+                    <input type="text" id="depositCodeInput" placeholder="例: KOYO-X8F2HJ9A">
+                    <button class="btn-primary" onclick="claimCode()">コードを適用</button>
+                `;
+            } else if (tab === 'admin') {
+                renderAdminLogin();
+            }
+        }
+
+        // ==========================================
+        // 3. トランプ 3DめくりアニメーションDOM生成
+        // ==========================================
+        function createVisualCard(suit, value) {
+            const container = document.createElement('div');
+            container.className = 'card-container';
+            const isRed = (suit === '♥' || suit === '♦') ? 'suit-red' : 'suit-black';
+            container.innerHTML = `
+                <div class="card-flip">
+                    <div class="card-front ${isRed}">
+                        <div style="align-self: flex-start; margin-left: 5px; font-size:12px;">${value}</div>
+                        <div>${suit}</div>
+                        <div style="align-self: flex-end; margin-right: 5px; font-size:12px; transform: rotate(180deg);">${value}</div>
+                    </div>
+                    <div class="card-back">♠</div>
+                </div>
+            `;
+            setTimeout(() => { const flip = container.querySelector('.card-flip'); if(flip) flip.classList.add('reveal'); }, 150);
+            return container;
+        }
+
+        // ==========================================
+        // 4. マルチプレイヤーゲーム (BJ, ポーカー, バカラ共通)
+        // ==========================================
+        async function joinMultiGame(gameType) {
+            const roomId = prompt("共有する『ルームID』を入力 (例: room777):");
+            if (!roomId) return;
+
+            const content = document.getElementById('mainContent');
+            content.innerHTML = `
+                <div style="display:flex; justify-content:between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
+                    <h2>🎰 ${gameType.toUpperCase()} (ルーム: ${roomId})</h2>
+                    <button class="btn-danger" onclick="switchTab('games')">ロビーに戻る</button>
+                </div>
+                <h3>🕴️ ディーラーの場 (共通同期)</h3>
+                <div id="dealerCards" class="hand-display-area"></div>
+                <br>
+                <h3>👥 参加プレイヤーの手札 (全員にリアルタイム表示)</h3>
+                <div id="playersArea"></div>
+                <br>
+                <div style="background:var(--bg-card); padding:15px; border-radius:8px; display:flex; gap:10px;">
+                    <button class="btn-primary" onclick="multiGameAction('draw', '${roomId}')">🃏 カードを引く</button>
+                    <button class="btn-primary" style="background:var(--accent-blue); color:white;" onclick="multiGameAction('clear', '${roomId}')">🔄 盤面リセット</button>
+                </div>
+            `;
+
+            // ルームの作成または取得
+            let { data: room } = await supabaseClient.from('game_rooms').select('*').eq('room_id', roomId).single();
+            if (!room) {
+                await supabaseClient.from('game_rooms').insert([{ room_id: roomId, game_type: gameType, dealer_hand: [], player_hands: {} }]);
+                let { data: nRoom } = await supabaseClient.from('game_rooms').select('*').eq('room_id', roomId).single();
+                room = nRoom;
+            }
+
+            renderMultiGameUI(room);
+
+            // リアルタイム同期購読
+            activeRealtimeChannel = supabaseClient.channel(`room:${roomId}`)
+            .on('postgres_changes', { event: 'UPDATE', filter: `room_id=eq.${roomId}`, schema: 'public', table: 'game_rooms' }, payload => {
+                renderMultiGameUI(payload.new);
+            }).subscribe();
+        }
+
+        async function multiGameAction(action, roomId) {
+            let { data: room } = await supabaseClient.from('game_rooms').select('*').eq('room_id', roomId).single();
+            if (!room) return;
+
+            if (action === 'clear') {
+                await supabaseClient.from('game_rooms').update({ dealer_hand: [], player_hands: {} }).eq('room_id', roomId);
+                return;
+            }
+
+            const suits = ['♠', '♥', '♦', '♣'];
+            const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            const nextCard = { suit: suits[Math.floor(Math.random()*4)], value: values[Math.floor(Math.random()*13)] };
+
+            let dHand = [...room.dealer_hand];
+            if (dHand.length === 0) dHand.push({ suit: suits[Math.floor(Math.random()*4)], value: values[Math.floor(Math.random()*13)] });
+
+            let pHands = { ...room.player_hands };
+            if (!pHands[currentProfile.username]) pHands[currentProfile.username] = [];
+            pHands[currentProfile.username].push(nextCard);
+
+            await supabaseClient.from('game_rooms').update({ dealer_hand: dHand, player_hands: pHands }).eq('room_id', roomId);
+        }
+
+        function renderMultiGameUI(room) {
+            const dDiv = document.getElementById('dealerCards'); dDiv.innerHTML = '';
+            if(room.dealer_hand.length === 0) dDiv.innerHTML = '待機中...';
+            room.dealer_hand.forEach(c => dDiv.appendChild(createVisualCard(c.suit, c.value)));
+
+            const pDiv = document.getElementById('playersArea'); pDiv.innerHTML = '';
+            const keys = Object.keys(room.player_hands);
+            if(keys.length === 0) pDiv.innerHTML = '<p style="color:var(--text-muted)">プレイヤーがカードを引くとここに同期されます</p>';
+            keys.forEach(u => {
+                const box = document.createElement('div'); box.className = 'player-box';
+                box.innerHTML = `<strong>@${u} ${u === currentProfile.username ? '(あなた)' : ''}</strong><div class="cards-line" style="margin-top:10px;"></div>`;
+                room.player_hands[u].forEach(c => box.querySelector('.cards-line').appendChild(createVisualCard(c.suit, c.value)));
+                pDiv.appendChild(box);
+            });
+        }
+
+        // ==========================================
+        // 5. ソロプレイ：マインズ (Mines)
+        // ==========================================
+        let minesActive = false;
+        let minePositions = [];
+        function startMinesGame() {
+            minesActive = true; minePositions = [];
+            while(minePositions.length < 5) { // 5個の爆弾をランダム配置
+                let r = Math.floor(Math.random() * 25);
+                if(!minePositions.includes(r)) minePositions.push(r);
+            }
+
+            const content = document.getElementById('mainContent');
+            content.innerHTML = `
+                <h2>💣 MINES (25マストレジャー)</h2>
+                <p style="color:var(--text-muted)">25個のパネルの中に5個の爆弾が隠されています。爆弾を踏まずに宝石を当ててください！</p>
+                <div class="mines-grid" id="minesGrid"></div>
+                <button class="btn-primary" style="margin-top:15px; background:var(--accent-blue); color:white;" onclick="startMinesGame()">ゲームをリセット</button>
+            `;
+
+            const grid = document.getElementById('minesGrid');
+            for(let i=0; i<25; i++) {
+                const tile = document.createElement('div');
+                tile.className = 'mines-tile';
+                tile.innerHTML = '★';
+                tile.onclick = () => flipMinesTile(tile, i);
+                grid.appendChild(tile);
+            }
+        }
+
+        function flipMinesTile(tile, index) {
+            if (!minesActive || tile.classList.contains('flipped')) return;
+            tile.classList.add('flipped');
+            if (minePositions.includes(index)) {
+                tile.innerHTML = '💣'; tile.classList.add('bomb'); alert('💥 爆弾炸裂！ゲームオーバー！'); minesActive = false;
+            } else {
+                tile.innerHTML = '💎'; tile.classList.add('gem');
+            }
+        }
+
+        // ==========================================
+        // 6. ソロプレイ：ハイロー (Hi-Lo)
+        // ==========================================
+        let currentHiLoValue = 7;
+        function startHiLoGame() {
+            const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            const content = document.getElementById('mainContent');
+            content.innerHTML = `
+                <h2>📈 HI-LO (ハイロー)</h2>
+                <p style="color:var(--text-muted)">次のカードが、今のカードより【高い(Hi)】か【低い(Lo)】かを予想してください。</p>
+                <div style="text-align:center; margin:30px 0;">
+                    <span style="font-size:14px; color:var(--text-muted); display:block; margin-bottom:10px;">現在のカード</span>
+                    <div id="hiloCardPos"></div>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-primary" onclick="guessHiLo(true)">📈 HIGHER (高い)</button>
+                    <button class="btn-primary" style="background:#e74c3c; color:white;" onclick="guessHiLo(false)">📉 LOWER (低い)</button>
+                </div>
+            `;
+            document.getElementById('hiloCardPos').appendChild(createVisualCard('♦', values[currentHiLoValue - 1]));
+        }
+
+        function guessHiLo(isHi) {
+            const nextVal = Math.floor(Math.random() * 13) + 1;
+            const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            const suits = ['♠', '♥', '♦', '♣'];
+
+            alert(`次のカードは [ ${values[nextVal-1]} ] でした！`);
+            
+            if ((isHi && nextVal >= currentHiLoValue) || (!isHi && nextVal <= currentHiLoValue)) {
+                alert('🎉 見事的中！おめでとうございます！');
+            } else {
+                alert('💀 残念！ハズレです。');
+            }
+            currentHiLoValue = nextVal;
+            startHiLoGame();
+        }
+
+        // ==========================================
+        // 7. コード入金システム
+        // ==========================================
+        async function claimCode() {
+            const code = document.getElementById('depositCodeInput').value.trim();
+            if (!code) return alert("コードを入力してください");
+
+            const { data, error } = await supabaseClient.from('deposit_codes').select('*').eq('code', code).eq('is_used', false).single();
+            if (error || !data) return alert("無効なコードか、使用済みです。");
+
+            await supabaseClient.from('deposit_codes').update({ is_used: true, used_by: currentUser.id }).eq('code', code);
+            const newBal = currentProfile.balance + parseFloat(data.amount);
+            await supabaseClient.from('profiles').update({ balance: newBal }).eq('id', currentUser.id);
+
+            alert(`🎉 チャージ成功！ $${data.amount} が残高に追加されました。`);
+            await fetchProfile();
+            switchTab('games');
+        }
+
+        // ==========================================
+        // 8. 管理者パネル (認証 & 生成)
+        // ==========================================
+        function renderAdminLogin() {
+            document.getElementById('mainContent').innerHTML = `
+                <h2>👑 管理者パネル認証</h2>
+                <input type="password" id="adminPassword" placeholder="シークレットパスワードを入力">
+                <button class="btn-primary" onclick="checkAdminPassword()">認証する</button>
+            `;
+        }
+
+        function checkAdminPassword() {
+            const pass = document.getElementById('adminPassword').value;
+            if (pass === "megu@0705gorira") {
+                renderAdminDashboard();
+            } else {
+                alert("パスワードが正しくありません。");
+            }
+        }
+
+        function renderAdminDashboard() {
+            document.getElementById('mainContent').innerHTML = `
+                <h2>👑 管理者ダッシュボード</h2>
+                <div style="background:var(--bg-card); padding:20px; border-radius:8px; border:1px solid var(--primary);">
+                    <h3>🎟️ 新規チャージコード生成</h3>
+                    <input type="number" id="codeAmount" value="1000" placeholder="付与する金額">
+                    <button class="btn-primary" onclick="createPromoCode()">コードを即時発行</button>
+                    <div id="codeResult" style="display:none; margin-top:15px; background:var(--bg-dark); padding:10px; border-radius:4px; font-weight:bold; color:var(--primary); text-align:center; user-select:all;"></div>
+                </div>
+            `;
+        }
+
+        async function createPromoCode() {
+            const amt = document.getElementById('codeAmount').value;
+            if(!amt || amt <= 0) return alert("金額が不正です");
+
+            const rand = Math.random().toString(36).substring(2, 10).toUpperCase();
+            const generatedCode = `KOYO-${rand}`;
+
+            const { error } = await supabaseClient.from('deposit_codes').insert([{ code: generatedCode, amount: parseFloat(amt), is_used: false }]);
+            if (!error) {
+                document.getElementById('codeResult').style.display = 'block';
+                document.getElementById('codeResult').innerText = generatedCode;
+                alert("コードを生成しました！コピーして使用してください。");
+            } else {
+                alert("生成失敗");
+            }
+        }
+
+        // ==========================================
+        // 9. ユーザー認証 UI 処理
+        // ==========================================
         function renderLoginScreen() {
             document.getElementById('sidebarArea').style.display = 'none';
-            
-            // エラーがある場合は上部に警告を出す
-            let errorHtml = initErrorMsg ? `<div class="error-notice">⚠️ エラー発生: ${initErrorMsg}</div>` : '';
-
+            let err = initErrorMsg ? `<div class="error-notice">${initErrorMsg}</div>` : '';
             document.getElementById('mainContent').innerHTML = `
                 <div class="login-container">
-                    <h2 style="text-align:center; color: var(--primary); font-weight:900; margin-bottom:25px;">KOYOCASINO LOGIN</h2>
-                    
-                    ${errorHtml}
-                    
+                    <h2 style="text-align:center; color: var(--primary); font-weight:900; margin-bottom:20px;">KOYOCASINO</h2>
+                    ${err}
                     <input type="email" id="authEmail" placeholder="メールアドレス">
                     <input type="password" id="authPassword" placeholder="パスワード">
                     <input type="text" id="authUsername" placeholder="ユーザーネーム (※新規登録時)">
-                    
-                    <button class="btn-primary" style="margin-top:10px; padding:14px;" onclick="handleAuth('login')">ログイン</button>
-                    <div style="text-align:center; margin-top: 20px;">
-                        <a href="#" style="color: var(--text-muted); font-size:13px;" onclick="handleAuth('signup')">新規アカウントを作成する</a>
+                    <button class="btn-primary" style="margin-top:10px;" onclick="authAction('login')">ログイン</button>
+                    <div style="text-align:center; margin-top:20px;">
+                        <a href="#" style="color:var(--text-muted); font-size:13px;" onclick="authAction('signup')">新規アカウントを作成</a>
                     </div>
                 </div>
             `;
         }
 
-        async function handleAuth(type) {
-            if (!supabaseClient) return alert("Supabaseが初期化されていないため通信できません。");
+        async function authAction(type) {
             const email = document.getElementById('authEmail').value.trim();
             const password = document.getElementById('authPassword').value;
             const username = document.getElementById('authUsername').value.trim();
 
             if (type === 'signup') {
+                if(!username) return alert("ユーザーネームが必要です");
                 const { data, error } = await supabaseClient.auth.signUp({ email, password });
                 if (error) return alert(error.message);
                 if (data.user) {
                     await supabaseClient.from('profiles').insert([{ id: data.user.id, username: username, balance: 1000.00 }]);
-                    alert("アカウント作成成功！ログインしてください。");
+                    alert("作成完了！ログインしてください。");
                 }
             } else {
-                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (error) return alert(error.message);
                 location.reload();
             }
