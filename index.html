@@ -16,6 +16,7 @@
             --primary: #00e701;
             --accent: #fe2247;
             --gold: #f39c12;
+            --vip-silver: #a6b1b9;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--bg-main); color: var(--text-main); padding: 15px; padding-bottom: 90px; overflow-x: hidden; }
@@ -37,22 +38,35 @@
         .balance-box { background-color: var(--bg-input); padding: 6px 12px; border-radius: 4px; font-weight: bold; color: var(--primary); margin-left: auto; margin-right: 10px; }
         .menu-trigger { font-size: 24px; cursor: pointer; color: var(--text-muted); user-select: none; padding: 0 5px; }
 
-        /* サイドバーメニュー */
-        .sidebar { position: fixed; top: 0; right: -280px; width: 280px; height: 100%; background-color: var(--bg-card); z-index: 200; box-shadow: -4px 0 15px rgba(0,0,0,0.5); transition: right 0.3s ease; padding: 20px; }
+        /* 👑 3本線ドロワーメニューの刷新 */
+        .sidebar { position: fixed; top: 0; right: -300px; width: 300px; height: 100%; background-color: var(--bg-card); z-index: 200; box-shadow: -4px 0 15px rgba(0,0,0,0.5); transition: right 0.3s ease; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
         .sidebar.open { right: 0; }
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 150; display: none; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 150; display: none; }
         .sidebar-overlay.show { display: block; }
-        .sidebar h3 { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #2f4553; }
         
+        /* 👑 ユーザー指定画像準拠：超綺麗なVIPランク進捗UI */
+        .vip-rank-card { background: linear-gradient(135deg, #1e2d3b 0%, #111c24 100%); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); box-shadow: inset 0 1px 3px rgba(255,255,255,0.1); }
+        .vip-rank-header { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: bold; color: #fff; margin-bottom: 8px; }
+        .vip-diamond-icon { width: 14px; height: 14px; background: var(--vip-silver); transform: rotate(45deg); display: inline-block; box-shadow: 0 0 8px rgba(255,255,255,0.6); }
+        .vip-progress-container { width: 100%; background-color: #131f27; height: 10px; border-radius: 20px; overflow: hidden; margin-bottom: 8px; position: relative; border: 1px solid #233541; }
+        .vip-progress-bar { height: 100%; background: linear-gradient(90deg, #00b000 0%, #00e701 100%); width: 0%; transition: width 0.4s ease; box-shadow: 0 0 10px rgba(0,231,1,0.5); }
+        .vip-progress-footer { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; color: #fff; }
+        .vip-next-label { display: flex; align-items: center; gap: 4px; color: var(--text-muted); }
+
+        /* サブモーダルポップアップ（金庫・VIP・チップ送金用） */
+        .sub-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9); background: var(--bg-card); width: 90%; max-width: 400px; border-radius: 12px; border: 2px solid #2f4553; padding: 20px; z-index: 300; box-shadow: 0 10px 30px rgba(0,0,0,0.7); opacity: 0; pointer-events: none; transition: all 0.2s ease; }
+        .sub-modal.open { transform: translate(-50%, -50%) scale(1); opacity: 1; pointer-events: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #2f4553; padding-bottom: 8px; }
+
         .tab-content { display: none; }
         .tab-content.active-tab { display: block; }
 
         /* ゲームメニューグリッド拡張 */
-        .game-menu { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 15px; }
+        .game-menu { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 15px; }
         .game-btn { background-color: var(--bg-input); color: #fff; padding: 10px 2px; text-align: center; border-radius: 6px; border: 1px solid #2f4553; font-size: 11px; font-weight: bold; cursor: pointer; }
         .game-btn.active { border-color: var(--primary); color: var(--primary); }
         
-        /* 👑 すっきりスマート化したコンパクトルーム管理UI */
+        /* コンパクトルーム管理UI */
         .room-compact-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; background: var(--bg-card); padding: 10px 14px; border-radius: 8px; border: 1px solid #2f4553; margin-bottom: 15px; }
         .room-info-label { font-size: 13px; font-weight: bold; color: var(--text-muted); }
         .room-info-label span { color: var(--primary); }
@@ -80,41 +94,106 @@
         .mines-tile { aspect-ratio: 1; background-color: var(--bg-input); border-radius: 4px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: bold; border: 2px solid #2f4553; }
         .mines-tile.revealed { background-color: #103147; border-color: var(--primary); }
         
-        /* 👑 ルーレット用UI追加 */
+        /* ルーレット用UI */
         .roulette-container { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 10px 0; }
         #roulette-canvas { background: #0a1118; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: 4px solid #2f4553; }
         .roulette-bet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; width: 100%; margin-top: 10px; }
         .roulette-spot-btn { background: var(--bg-input); border: 2px solid #2f4553; color: white; padding: 8px 4px; font-size: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; text-align: center; }
         .roulette-spot-btn.selected { border-color: var(--gold); background: #2c4a5e; }
 
+        /* 👑 画面の横からぴょいっとスライド追従する固定BJ招待ポップアップ通知 */
+        .p2p-toast-banner { position: fixed; right: -320px; top: 80px; width: 290px; background: linear-gradient(135deg, var(--gold) 0%, #d35400 100%); color: #000; padding: 15px; border-radius: 8px 0 0 8px; font-weight: bold; display: flex; flex-direction: column; gap: 10px; box-shadow: -4px 4px 20px rgba(0,0,0,0.6); z-index: 500; transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .p2p-toast-banner.show { right: 0; }
+        .p2p-btn-row { display: flex; gap: 6px; }
+        .p2p-btn-row button { padding: 8px; font-size: 13px; font-weight: bold; border-radius: 4px; }
+
+        /* ボーナスアイテムデザイン */
+        .bonus-card { background: var(--bg-input); border: 1px solid #2f4553; border-radius: 6px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .bonus-info { display: flex; flex-direction: column; gap: 2px; }
+
         .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--bg-card); display: flex; justify-content: space-around; padding: 12px 0; border-top: 2px solid var(--bg-input); z-index: 100; }
         .nav-item { color: var(--text-muted); font-size: 12px; text-align: center; text-decoration: none; cursor: pointer; font-weight: bold; }
         .nav-item.active { color: var(--primary); }
 
         .history-item { background: var(--bg-input); padding: 8px 10px; border-radius: 4px; margin-top: 6px; font-size: 12px; border-left: 3px solid var(--primary); }
-
-        .p2p-invite-banner { background: var(--gold); color: #000; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-weight: bold; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .p2p-btn-row { display: flex; gap: 6px; }
-        .p2p-btn-row button { padding: 8px; font-size: 13px; }
     </style>
 </head>
 <body>
 
+<div id="p2p-toast" class="p2p-toast-banner">
+    <div id="p2p-toast-text">⚔️ 対戦招待が届きました</div>
+    <div class="p2p-btn-row">
+        <button onclick="handleP2PResponse(true)" style="background:#00e701; color:#000; flex:1;">参戦</button>
+        <button onclick="handleP2PResponse(false)" style="background:#fff; color:#000; flex:1;">拒否</button>
+    </div>
+</div>
+
 <div class="sidebar-overlay" id="menu-overlay" onclick="toggleSidebar(false)"></div>
 
 <div class="sidebar" id="sidebar-menu">
-    <h3>💰 金庫 (Vault)</h3>
+    <div class="vip-rank-card">
+        <div class="vip-rank-header">
+            <span class="vip-diamond-icon"></span>
+            <span id="vip-current-name">ブロンズ 1</span>
+        </div>
+        <div class="vip-progress-container">
+            <div class="vip-progress-bar" id="vip-progress-bar"></div>
+        </div>
+        <div class="vip-progress-footer">
+            <span id="vip-progress-percent">0.00%</span>
+            <span class="vip-next-label">
+                <span class="vip-diamond-icon" style="background:#f39c12;"></span>
+                <span id="vip-next-name">シルバー 1</span>
+            </span>
+        </div>
+    </div>
+
+    <button onclick="openSubModal('vault')" style="background-color:var(--gold); color:#000; text-align:left;">💰 保管庫 (Vault) を開く</button>
+    <button onclick="openSubModal('vip')" style="background-color:#9b59b6; color:#fff; text-align:left;">👑 VIP 特典・ボーナス</button>
+    <button onclick="openSubModal('tip')" style="background-color:#3498db; color:#fff; text-align:left;">💸 友達にチップを送る</button>
+    
+    <button onclick="toggleSidebar(false)" class="secondary" style="margin-top:auto;">閉じる</button>
+</div>
+
+<div class="sub-modal" id="modal-vault">
+    <div class="modal-header"><h3>💰 保管庫 (Vault)</h3><span style="cursor:pointer;" onclick="closeSubModal('vault')">✕</span></div>
     <div style="background:var(--bg-main); padding:12px; border-radius:6px; margin-bottom:15px; text-align:center;">
-        <div style="font-size:11px; color:var(--text-muted);">現在金庫にある額</div>
+        <div style="font-size:11px; color:var(--text-muted);">現在保管庫にある額</div>
         <div style="font-size:22px; font-weight:bold; color:var(--gold);">￥<span id="vault-balance">0</span></div>
     </div>
-    <div style="display:flex; flex-direction:column; gap:8px;">
-        <input type="number" id="vault-amount" placeholder="金額を入力" style="margin-bottom:0;">
-        <button onclick="handleVault('deposit')" style="background-color:var(--gold); color:#000;">💸 金庫に預ける</button>
-        <button onclick="handleVault('withdraw')" class="secondary" style="margin-top:0;">📥 金庫から引き出す</button>
-    </div>
-    <button onclick="toggleSidebar(false)" class="secondary" style="margin-top:30px; width:100%;">閉じる</button>
+    <input type="number" id="vault-amount" placeholder="金額を入力">
+    <button onclick="handleVault('deposit')" style="background-color:var(--gold); color:#000; margin-bottom:6px;">💸 保管庫に預ける</button>
+    <button onclick="handleVault('withdraw')" class="secondary">📥 保管庫から引き出す</button>
 </div>
+
+<div class="sub-modal" id="modal-vip" style="max-width: 450px;">
+    <div class="modal-header"><h3>👑 VIPリワードセンター</h3><span style="cursor:pointer;" onclick="closeSubModal('vip')">✕</span></div>
+    
+    <div class="bonus-card">
+        <div class="bonus-info"><strong>⚡ インスタントレーキバック</strong><span style="font-size:11px; color:var(--text-muted);">プール額: ￥<span id="pool-rakeback">0</span></span></div>
+        <button onclick="claimVipBonus('rakeback')" style="width:auto; padding:6px 12px; font-size:12px;">受取</button>
+    </div>
+    <div class="bonus-card">
+        <div class="bonus-info"><strong>📅 デイリーレーキバック</strong><span style="font-size:11px; color:var(--text-muted);">プール額: ￥<span id="pool-daily">0</span></span></div>
+        <button onclick="claimVipBonus('daily')" style="width:auto; padding:6px 12px; font-size:12px;">受取</button>
+    </div>
+    <div class="bonus-card">
+        <div class="bonus-info"><strong>⏳ ウィークリーボーナス</strong><span style="font-size:11px; color:var(--text-muted);">現在の期間：未開封シークレット</span></div>
+        <button onclick="claimVipBonus('weekly')" style="width:auto; padding:6px 12px; font-size:12px; background:var(--gold);">開封受取</button>
+    </div>
+    <div class="bonus-card">
+        <div class="bonus-info"><strong>🌙 マンスリーボーナス</strong><span style="font-size:11px; color:var(--text-muted);">現在の期間：未開封シークレット</span></div>
+        <button onclick="claimVipBonus('monthly')" style="width:auto; padding:6px 12px; font-size:12px; background:var(--gold);">開封受取</button>
+    </div>
+</div>
+
+<div class="sub-modal" id="modal-tip">
+    <div class="modal-header"><h3>💸 チップをフレンドに送る</h3><span style="cursor:pointer;" onclick="closeSubModal('tip')">✕</span></div>
+    <input type="text" id="tip-target-id" placeholder="送る相手のユーザーID">
+    <input type="number" id="tip-amount" placeholder="送金金額 (￥)">
+    <button onclick="executeTipTransfer()" style="background-color:#3498db; color:#fff;">送金を確定する</button>
+</div>
+
 
 <div class="container">
     <div class="logo">Koyo<span>casino</span></div>
@@ -135,8 +214,6 @@
         </div>
 
         <div id="section-game" class="tab-content active-tab">
-            <div id="p2p-invite-area"></div>
-
             <div class="room-compact-bar">
                 <div class="room-info-label">🏠 部屋: <span id="current-room-id">ロビー</span></div>
                 <div class="room-action-inputs">
@@ -148,10 +225,11 @@
             </div>
 
             <div class="game-menu">
-                <div class="game-btn active" id="menu-mines" onclick="selectGameType('mines')">💣マインズ</div>
+                <div class="game-btn active" id="menu-mines" onclick="selectGameType('mines')">💣マイン</div>
                 <div class="game-btn" id="menu-bj" onclick="selectGameType('bj')">🃏BJ</div>
-                <div class="game-btn" id="menu-hilow" onclick="selectGameType('hilow')">📈ハイロー</div>
-                <div class="game-btn" id="menu-roulette" onclick="selectGameType('roulette')">🎡ルーレット</div>
+                <div class="game-btn" id="menu-hilow" onclick="selectGameType('hilow')">📈H-L</div>
+                <div class="game-btn" id="menu-roulette" onclick="selectGameType('roulette')">🎡ルー</div>
+                <div class="game-btn" id="menu-dice" onclick="selectGameType('dice')">🎲ダイス</div>
             </div>
 
             <div class="panel" style="padding: 15px;">
@@ -168,10 +246,38 @@
                     <input type="number" id="mines-count" value="3" min="1" max="24">
                 </div>
 
+                <div id="setting-dice" class="hidden">
+                    <label style="font-size:11px; color:var(--text-muted);">賭け方モードを選択</label>
+                    <select id="dice-bet-mode" onchange="toggleDiceModeUi()">
+                        <option value="exact">出目をピンポイントで予想 (1〜6)</option>
+                        <option value="range">設定値以上(Over) / 以下(Under) を狙う</option>
+                    </select>
+                    <div id="dice-exact-box">
+                        <label style="font-size:11px; color:var(--text-muted);">予想するサイコロの目</label>
+                        <select id="dice-exact-target">
+                            <option value="1">1 (配当 5.8x)</option><option value="2">2 (配当 5.8x)</option>
+                            <option value="3">3 (配当 5.8x)</option><option value="4">4 (配当 5.8x)</option>
+                            <option value="4">5 (配当 5.8x)</option><option value="6">6 (配当 5.8x)</option>
+                        </select>
+                    </div>
+                    <div id="dice-range-box" class="hidden">
+                        <div style="display:flex; gap:5px; margin-bottom:5px;">
+                            <select id="dice-range-direction" style="margin-bottom:0;" onchange="recalcDiceRangeOdds()">
+                                <option value="over">以上 (Over)</option>
+                                <option value="under">以下 (Under)</option>
+                            </select>
+                            <input type="number" id="dice-range-target" value="4" min="1" max="6" style="margin-bottom:0;" oninput="recalcDiceRangeOdds()">
+                        </div>
+                        <div id="dice-range-odds-preview" style="font-size:11px; color:var(--gold); text-align:right;">見込み配当: 1.94x</div>
+                    </div>
+                </div>
+
                 <button id="btn-action-main" onclick="startIndividualGame()">ベットして勝負開始</button>
 
-                <div id="bj-p2p-invite-container" class="hidden" style="margin-top:8px;">
-                    <button onclick="sendP2PInvite()" style="background-color:var(--gold); color:#000;">⚔️ 部屋の友達に対戦を申し込む</button>
+                <div id="bj-p2p-invite-container" class="hidden" style="margin-top:10px; background: rgba(0,0,0,0.2); padding:10px; border-radius:6px; border:1px solid #2f4553;">
+                    <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px;">対戦相手を選択</label>
+                    <select id="p2p-target-selector" style="padding:8px; font-size:13px; margin-bottom:8px;"><option value="">-- 部屋のプレイヤーを読み込み中 --</option></select>
+                    <button onclick="sendP2PInvite()" style="background-color:var(--gold); color:#000; padding:10px; font-size:14px;">⚔️ 選択した相手に対戦を申し込む</button>
                 </div>
 
                 <div id="bj-controls" class="hidden" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; margin-top:10px;">
@@ -259,13 +365,16 @@
     let selectedGameType = 'mines'; let currentRoom = 'lobby'; let roomUnsubscribe = null;
     let localGameState = null;
 
-    // 👑 ルーレット動的制御データ
+    // 👑 ルーレット・ダイス・VIP・送金制御用グローバルデータ
     let rouletteSelectedSpot = 'red'; 
-    let rouletteWheelAngle = 0; 
-    let rouletteBallAngle = 0; 
     let isRouletteSpinning = false;
+    let isDiceSpinning = false;
     const rouletteNumbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
     function isNumRed(n) { if(n===0)return false; const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]; return reds.includes(n); }
+
+    // 👑 VIPランク定義
+    const vipRanks = ["ブロンズ", "シルバー", "ゴールド", "プラチナ", "ジェイド", "サファイア", "ルビー", "ダイヤモンド"];
+    const rankRequirements = [0, 10000, 50000, 200000, 1000000, 5000000, 20000000, 100000000];
 
     function adjustBetMultiplier(mult) {
         let input = document.getElementById('bet-amount');
@@ -274,16 +383,146 @@
         input.value = val;
     }
 
-    function leaveRoom() {
-        currentRoom = 'lobby';
-        document.getElementById('current-room-id').innerText = 'ロビー';
-        document.getElementById('room-input').value = '';
-        listenRoom(currentRoom);
-    }
-
     function toggleSidebar(open) {
         document.getElementById('sidebar-menu').classList.toggle('open', open);
         document.getElementById('menu-overlay').classList.toggle('show', open);
+    }
+
+    function openSubModal(type) {
+        document.getElementById(`modal-${type}`).classList.add('open');
+    }
+    function closeSubModal(type) {
+        document.getElementById(`modal-${type}`).classList.remove('open');
+    }
+
+    function toggleDiceModeUi() {
+        const mode = document.getElementById('dice-bet-mode').value;
+        document.getElementById('dice-exact-box').classList.toggle('hidden', mode !== 'exact');
+        document.getElementById('dice-range-box').classList.toggle('hidden', mode !== 'range');
+    }
+
+    function recalcDiceRangeOdds() {
+        const dir = document.getElementById('dice-range-direction').value;
+        const target = parseInt(document.getElementById('dice-range-target').value) || 4;
+        let winWays = 0;
+        for(let i=1; i<=6; i++) {
+            if(dir === 'over' && i >= target) winWays++;
+            if(dir === 'under' && i <= target) winWays++;
+        }
+        let odds = winWays > 0 ? (6 / winWays) * 0.98 : 0;
+        document.getElementById('dice-range-odds-preview').innerText = `見込み配当: ${odds > 0 ? odds.toFixed(2)+'x' : 'なし(設定エラー)'}`;
+    }
+
+    // 👑 他プレイヤーへの安全なID指定型チップ送金トランザクション
+    async function executeTipTransfer() {
+        const targetId = document.getElementById('tip-target-id').value.trim();
+        const amount = parseInt(document.getElementById('tip-amount').value);
+        if(!targetId || !amount || amount <= 0) return alert("入力内容が正しくありません");
+        if(targetId === currentUser) return alert("自分自身に送金することはできません");
+
+        const targetRef = db.collection('users').doc(targetId);
+        const myRef = db.collection('users').doc(currentUser);
+
+        await db.runTransaction(async t => {
+            const targetDoc = await t.get(targetRef);
+            if(!targetDoc.exists) throw "指定されたユーザーIDが存在しません";
+            const myDoc = await t.get(myRef);
+            let myBal = myDoc.data().balance || 0;
+            if(myBal < amount) throw "あなたの残高が足りません";
+
+            t.update(myRef, { balance: myBal - amount });
+            t.update(targetRef, { balance: (targetDoc.data().balance || 0) + amount });
+        }).then(() => {
+            alert(`💸 ${targetId} へ ￥${amount.toLocaleString()} のチップを送金しました！`);
+            document.getElementById('tip-target-id').value = "";
+            document.getElementById('tip-amount').value = "";
+            closeSubModal('tip');
+        }).catch(err => alert("❌ エラー: " + err));
+    }
+
+    // 👑 4大ボーナス（レーキバック・各種ボーナス）の個別請求ロジック
+    async function claimVipBonus(type) {
+        const userRef = db.collection('users').doc(currentUser);
+        await db.runTransaction(async t => {
+            const doc = await t.get(userRef);
+            let data = doc.data();
+            let claimAmt = 0;
+            
+            if(type === 'rakeback') { claimAmt = Math.floor(data.poolRakeback || 0); t.update(userRef, { poolRakeback: 0 }); }
+            else if(type === 'daily') { claimAmt = Math.floor(data.poolDaily || 0); t.update(userRef, { poolDaily: 0 }); }
+            else if(type === 'weekly') { claimAmt = Math.floor(data.poolWeekly || 0); t.update(userRef, { poolWeekly: 0 }); }
+            else if(type === 'monthly') { claimAmt = Math.floor(data.poolMonthly || 0); t.update(userRef, { poolMonthly: 0 }); }
+
+            if(claimAmt <= 0) throw "受け取れるボーナスがありません";
+            t.update(userRef, { balance: (data.balance || 0) + claimAmt });
+            return claimAmt;
+        }).then((amt) => {
+            alert(`🎉 VIPボーナスとして ￥${amt.toLocaleString()} を獲得し、残高へ反映されました！`);
+        }).catch(err => alert("⚠️ " + err));
+    }
+
+    // 👑 賭け金に応じたVIP進行度とボーナスプール値の即時インクリメント計算
+    async function processWagerVipMetrics(wagerAmount) {
+        const userRef = db.collection('users').doc(currentUser);
+        await db.runTransaction(async t => {
+            const doc = await t.get(userRef);
+            let data = doc.data();
+            let totalWagered = (data.wagered || 0) + wagerAmount;
+            
+            // 各種オンカジ準拠レーキ・ボーナスプール分配（インスタント0.5%, デイリー0.3%, 週・月はランダム加算を含む蓄積）
+            let poolRb = (data.poolRakeback || 0) + (wagerAmount * 0.005);
+            let poolDl = (data.poolDaily || 0) + (wagerAmount * 0.003);
+            let poolWk = (data.poolWeekly || 0) + (wagerAmount * (0.004 + Math.random()*0.002));
+            let poolMn = (data.poolMonthly || 0) + (wagerAmount * (0.006 + Math.random()*0.003));
+
+            t.update(userRef, {
+                wagered: totalWagered,
+                poolRakeback: poolRb,
+                poolDaily: poolDl,
+                poolWeekly: poolWk,
+                poolMonthly: poolMn
+            });
+        });
+    }
+
+    // 👑 画像レイアウトを忠実に再現したリアルタイムVIPバー更新表示
+    function updateVipDashboardUI(userData) {
+        let wagered = userData.wagered || 0;
+        let currentRankIdx = 0;
+        
+        for(let i = rankRequirements.length - 1; i >= 0; i--) {
+            if(wagered >= rankRequirements[i]) { currentRankIdx = i; break; }
+        }
+
+        let nextRankIdx = Math.min(currentRankIdx + 1, vipRanks.length - 1);
+        let currentRankName = vipRanks[currentRankIdx];
+        let nextRankName = vipRanks[nextRankIdx];
+        
+        let startReq = rankRequirements[currentRankIdx];
+        let nextReq = rankRequirements[nextRankIdx];
+        let diffReq = nextReq - startReq;
+        
+        let progressPercent = 0;
+        if(diffReq > 0) {
+            progressPercent = ((wagered - startReq) / diffReq) * 100;
+            if(progressPercent > 100) progressPercent = 100;
+            if(progressPercent < 0) progressPercent = 0;
+        } else {
+            progressPercent = 100; // カンスト
+        }
+
+        // 内部レベル判定用（例として進捗に基づくレベル付与）
+        let level = Math.floor(progressPercent / 20) + 1;
+        if(currentRankIdx === vipRanks.length - 1) level = "MAX";
+
+        document.getElementById('vip-current-name').innerText = `${currentRankName} ${level}`;
+        document.getElementById('vip-next-name').innerText = `${nextRankName} 1`;
+        document.getElementById('vip-progress-bar').style.width = `${progressPercent}%`;
+        document.getElementById('vip-progress-percent').innerText = `${progressPercent.toFixed(2)}%`;
+
+        // 特典モーダル内のリアルタイム蓄積数値表示の同期
+        document.getElementById('pool-rakeback').innerText = Math.floor(userData.poolRakeback || 0).toLocaleString();
+        document.getElementById('pool-daily').innerText = Math.floor(userData.poolDaily || 0).toLocaleString();
     }
 
     async function handleVault(action) {
@@ -298,13 +537,21 @@
                 if(bal < amt) throw "残高が足りません";
                 t.update(userRef, { balance: bal - amt, vaultBalance: vault + amt });
             } else {
-                if(vault < amt) throw "金庫の資金が足りません";
+                if(vault < amt) throw "保管庫の資金が足りません";
                 t.update(userRef, { balance: bal + amt, vaultBalance: vault - amt });
             }
         }).then(() => {
-            alert("✨ 金庫の処理が完了しました！");
+            alert("✨ 保管庫の処理が完了しました！");
             document.getElementById('vault-amount').value = "";
+            closeSubModal('vault');
         }).catch(err => alert("❌ エラー: " + err));
+    }
+
+    function leaveRoom() {
+        currentRoom = 'lobby';
+        document.getElementById('current-room-id').innerText = 'ロビー';
+        document.getElementById('room-input').value = '';
+        listenRoom(currentRoom);
     }
 
     function toggleAuthMode() { isSignUpMode = !isSignUpMode; document.getElementById('auth-title').innerText = isSignUpMode ? "新規登録" : "ログイン"; }
@@ -315,7 +562,7 @@
         const ref = db.collection('users').doc(u); const doc = await ref.get();
         if(isSignUpMode) { 
             if(doc.exists) return alert("❌ すでに登録されているIDです"); 
-            await ref.set({ password: p, balance: 1000, vaultBalance: 0 });
+            await ref.set({ password: p, balance: 1000, vaultBalance: 0, wagered: 0, poolRakeback: 0, poolDaily: 0, poolWeekly: 0, poolMonthly: 0 });
             alert("✨ 登録完了！デフォルトで￥1,000付与されました！");
         } else { 
             if(!doc.exists || doc.data().password !== p) return alert("❌ IDまたはパスワードが違います"); 
@@ -333,6 +580,7 @@
             if(d.exists) {
                 document.getElementById('display-balance').innerText = d.data().balance.toLocaleString(); 
                 document.getElementById('vault-balance').innerText = (d.data().vaultBalance || 0).toLocaleString();
+                updateVipDashboardUI(d.data());
             }
         });
         selectGameType('mines');
@@ -344,26 +592,43 @@
         const titleEl = document.getElementById('table-sync-title');
         titleEl.innerHTML = rId === 'lobby' ? `📢 ロビー（他のプレイヤーは部屋に移動してください）` : `👥 ルーム内プレイヤーの状況同期`;
         if(roomUnsubscribe) roomUnsubscribe();
-        roomUnsubscribe = db.collection('rooms').doc(rId).onSnapshot(d => { if(d.exists) renderTable(d.data()); });
+        roomUnsubscribe = db.collection('rooms').doc(rId).onSnapshot(d => { 
+            if(d.exists) {
+                renderTable(d.data()); 
+                updateP2PTargetDropdown(d.data().players || {});
+            } 
+        });
+    }
+
+    // 👑 部屋のメンバー選択用ドロップダウンメニューの動的更新
+    function updateP2PTargetDropdown(playersMap) {
+        const select = document.getElementById('p2p-target-selector');
+        if(!select) return;
+        select.innerHTML = "";
+        
+        let validTargets = Object.keys(playersMap).filter(id => id !== currentUser);
+        if(validTargets.length === 0) {
+            select.innerHTML = `<option value="">-- 部屋に他のプレイヤーがいません --</option>`;
+            return;
+        }
+        
+        select.innerHTML = `<option value="">-- 対戦相手を選択してください --</option>`;
+        validTargets.forEach(id => {
+            select.innerHTML += `<option value="${id}">${id}</option>`;
+        });
     }
 
     async function createNewRoom() {
         const rCode = 'ROOM-' + Math.floor(1000 + Math.random() * 9000);
-        // 空の初期状態で部屋ドキュメントをFirestoreに確保
         await db.collection('rooms').doc(rCode).set({ players: {}, p2pInvite: null });
         document.getElementById('room-input').value = rCode;
         joinRoom();
     }
 
-    // 👑 存在しない適当な部屋コードでの入室を完全に弾く安全バリデーション
     async function joinRoom() {
         const r = document.getElementById('room-input').value.trim(); 
         if(!r) return;
-        
-        if(r === 'lobby') {
-            leaveRoom();
-            return;
-        }
+        if(r === 'lobby') { leaveRoom(); return; }
 
         const roomRef = db.collection('rooms').doc(r);
         const snap = await roomRef.get();
@@ -374,17 +639,31 @@
 
         currentRoom = r; 
         document.getElementById('current-room-id').innerText = currentRoom; 
+        
+        // 部屋に参加したことを示すダミー状態を書き込み（人数無制限追跡用）
+        await db.runTransaction(async t => {
+            const rSnap = await t.get(roomRef);
+            let rData = rSnap.data() || { players: {} };
+            if(!rData.players) rData.players = {};
+            if(!rData.players[currentUser]) {
+                rData.players[currentUser] = { status: 'idle', lastUpdated: Date.now() };
+            }
+            t.set(roomRef, rData);
+        });
+
         listenRoom(currentRoom);
     }
 
     function selectGameType(g) {
         selectedGameType = g;
-        ['mines','bj','hilow','roulette'].forEach(x => document.getElementById(`menu-${x}`).classList.remove('active'));
+        ['mines','bj','hilow','roulette','dice'].forEach(x => document.getElementById(`menu-${x}`).classList.remove('active'));
         document.getElementById(`menu-${g}`).classList.add('active');
         document.getElementById('setting-mines').classList.add('hidden');
+        document.getElementById('setting-dice').classList.add('hidden');
         document.getElementById('bj-p2p-invite-container').classList.add('hidden');
         
         if(g === 'mines') document.getElementById('setting-mines').classList.remove('hidden');
+        if(g === 'dice') { document.getElementById('setting-dice').classList.remove('hidden'); toggleDiceModeUi(); recalcDiceRangeOdds(); }
         if(g === 'bj' && currentRoom !== 'lobby') document.getElementById('bj-p2p-invite-container').classList.remove('hidden');
 
         document.getElementById('mines-controls').classList.add('hidden');
@@ -403,6 +682,8 @@
             localGameState = { gameType: 'hilow', status: 'idle', dealerCards: [], currentMultiplier: 1.0, hasChosen: false };
         } else if(selectedGameType === 'roulette') {
             localGameState = { gameType: 'roulette', status: 'idle', winningNumber: null, won: false };
+        } else if(selectedGameType === 'dice') {
+            localGameState = { gameType: 'dice', status: 'idle', rolledValue: null, won: false };
         }
         renderMyOwnBoard();
         updateMainActionButtonState();
@@ -410,12 +691,10 @@
 
     function updateMainActionButtonState() {
         const btn = document.getElementById('btn-action-main');
-        if ((localGameState && localGameState.status === 'playing') || isRouletteSpinning) {
-            btn.disabled = true;
-            btn.innerText = "勝負進行中...";
+        if ((localGameState && localGameState.status === 'playing') || isRouletteSpinning || isDiceSpinning) {
+            btn.disabled = true; btn.innerText = "勝負進行中...";
         } else {
-            btn.disabled = false;
-            btn.innerText = "ベットして勝負開始";
+            btn.disabled = false; btn.innerText = "ベットして勝負開始";
         }
     }
 
@@ -433,28 +712,29 @@
         return { high: Math.max(1.01, (13 / highWays) * 0.985), low: Math.max(1.01, (13 / lowWays) * 0.985) };
     }
 
-    // 👑 誰からでも完全に対戦招待をリアルタイムに送受信できるP2Pシステム（残高ガード修正済）
+    // 👑 選択したプレイヤーを狙い撃ちで招待を送信する関数（残高ガード完備）
     async function sendP2PInvite() {
-        if(currentRoom === 'lobby') return alert("ロビーでは対戦できません。部屋に移動してください");
+        if(currentRoom === 'lobby') return alert("ロビーでは対戦できません。");
+        const targetId = document.getElementById('p2p-target-selector').value;
+        if(!targetId) return alert("対戦を申し込む相手を選択してください。");
+
         const bet = parseInt(document.getElementById('bet-amount').value);
         if(!bet || bet <= 0) return alert("ベット額を正しく入力してください");
 
         const uDoc = await db.collection('users').doc(currentUser).get();
-        if(uDoc.data().balance < bet) {
-            alert("❌ 残高が足りないため、対戦を申し込むことができません！");
-            return; // 確実に処理をストップ
-        }
+        if(uDoc.data().balance < bet) { alert("❌ 残高が足りないため、対戦を申し込めません。"); return; }
 
         const ref = db.collection('rooms').doc(currentRoom);
         await ref.update({
             p2pInvite: {
                 host: currentUser,
+                guestTarget: targetId,
                 bet: bet,
                 status: 'pending',
                 timestamp: Date.now()
             }
         });
-        alert("⚔️ 部屋のメンバーに対戦招待を送信しました。相手の選択を待っています...");
+        alert(`⚔️ ${targetId} に対戦招待を送信しました。返答を待っています...`);
     }
 
     async function handleP2PResponse(accept) {
@@ -463,6 +743,9 @@
         if(!snap.exists || !snap.data().p2pInvite) return;
         
         let invite = snap.data().p2pInvite;
+        // トーストを引っ込める
+        document.getElementById('p2p-toast').classList.remove('show');
+
         if(!accept) {
             await ref.update({ "p2pInvite.status": 'rejected' });
             return;
@@ -473,6 +756,7 @@
 
         await adjustBalance(invite.host, -invite.bet);
         await adjustBalance(currentUser, -invite.bet);
+        await processWagerVipMetrics(invite.bet);
 
         let roomData = snap.data();
         roomData.p2pGame = {
@@ -519,8 +803,7 @@
             let totalPrize = g.bet * 2;
 
             if(g.hostStatus === 'busted' && g.guestStatus === 'busted') {
-                await adjustBalance(g.host, g.bet); await adjustBalance(g.guest, g.bet);
-                alert("🤝 両者バーストのため引き分け返却！");
+                await adjustBalance(g.host, g.bet); await adjustBalance(g.guest, g.bet); alert("🤝 両者バーストのため引き分け！");
             } else if(g.hostStatus === 'busted') {
                 await adjustBalance(g.guest, totalPrize); alert(`🏆 ${g.guest}の勝利！ ￥${totalPrize.toLocaleString()} 獲得！`);
             } else if(g.guestStatus === 'busted') {
@@ -541,15 +824,26 @@
         const uDoc = await db.collection('users').doc(currentUser).get();
         if(uDoc.data().balance < bet) return alert("❌ 残高が足りません！");
 
-        // 👑 ルーレット用のゲーム開始分岐を完全統合
         if(selectedGameType === 'roulette') {
             if(isRouletteSpinning) return;
             await adjustBalance(currentUser, -bet);
+            await processWagerVipMetrics(bet);
             runRouletteEngine(bet);
             return;
         }
 
+        // 👑 ダイスゲーム開始ハンドラ
+        if(selectedGameType === 'dice') {
+            if(isDiceSpinning) return;
+            await adjustBalance(currentUser, -bet);
+            await processWagerVipMetrics(bet);
+            runDiceEngine(bet);
+            return;
+        }
+
         await adjustBalance(currentUser, -bet);
+        await processWagerVipMetrics(bet);
+        
         const rRef = db.collection('rooms').doc(currentRoom);
         const snap = await rRef.get();
         let roomData = snap.exists ? snap.data() : { players: {} };
@@ -582,7 +876,7 @@
         updateMainActionButtonState();
     }
 
-    // 👑 本物のオンカジ物理挙動をシミュレートするルーレットアニメーションエンジン
+    // 👑 物理同期バグを完全解決した精密ルーレットエンジン
     function runRouletteEngine(betAmt) {
         isRouletteSpinning = true;
         updateMainActionButtonState();
@@ -590,121 +884,197 @@
         const winningNum = rouletteNumbers[Math.floor(Math.random() * rouletteNumbers.length)];
         const targetIndex = rouletteNumbers.indexOf(winningNum);
         
-        // 物理挙動シミュレーション用の変数をセット
-        let spinVelocity = 0.2 + Math.random() * 0.1; 
-        let ballVelocity = -0.3 - Math.random() * 0.1;
-        
-        let duration = 4000 + Math.random() * 2000; 
+        let duration = 3500; 
         let startTime = Date.now();
+        
+        // 1つのポケットが占めるラジアン角度
+        const arcSize = (2 * Math.PI) / rouletteNumbers.length;
 
         function animateWheel() {
             let elapsed = Date.now() - startTime;
-            
-            // 徐々に減速させる物理摩擦係数
-            rouletteWheelAngle += spinVelocity;
-            rouletteBallAngle += ballVelocity;
-            
-            spinVelocity *= 0.985;
-            ballVelocity *= 0.982;
+            let progress = elapsed / duration;
+            if(progress > 1) progress = 1;
 
-            drawRouletteCanvas(rouletteWheelAngle, rouletteBallAngle);
+            // イージングを効かせた滑らかな減速回転
+            let easeOutPower = 1 - Math.pow(1 - progress, 3); 
+            
+            // 盤面は正方向に高速回転から徐々に減速
+            let currentWheelAngle = easeOutPower * (Math.PI * 10);
+            
+            // 👑 ボールを当選ポケット位置へ数学的に逆算同期させる超精密物理ロックロジック
+            // 盤面の現在角度に対して、当選インデックスのポケットの中心が真上(または弾の軌道上)にピタッと重なるようにボール角度を絶対収束させます
+            let currentBallAngle = - (currentWheelAngle + (targetIndex * arcSize) + (arcSize / 2)) + (Math.PI * 0.5);
 
-            if (elapsed < duration) {
+            drawRouletteCanvas(currentWheelAngle, currentBallAngle);
+
+            if (progress < 1) {
                 requestAnimationFrame(animateWheel);
             } else {
-                // スピン終了、最終結果の確定と配当ロジック
                 isRouletteSpinning = false;
-                
-                let isWin = false;
-                let payoutMultiplier = 0;
+                let isWin = false; let payoutMultiplier = 0;
 
                 if (rouletteSelectedSpot === 'red' && isNumRed(winningNum)) { isWin = true; payoutMultiplier = 2; }
                 else if (rouletteSelectedSpot === 'black' && !isNumRed(winningNum) && winningNum !== 0) { isWin = true; payoutMultiplier = 2; }
+                else if (rouletteSelectedSpot === '0' && winningNum === 0) { isWin = true; payoutMultiplier = 36; }
                 else if (parseInt(rouletteSelectedSpot) === winningNum) { isWin = true; payoutMultiplier = 36; }
 
                 let totalWin = isWin ? betAmt * payoutMultiplier : 0;
                 if (isWin) {
                     adjustBalance(currentUser, totalWin);
-                    alert(`🎡 結果: [ ${winningNum} (${isNumRed(winningNum)?'赤':'黒'}) ] に当選！\n🎯 おめでとうございます！ ￥${totalWin.toLocaleString()} の配当を獲得！`);
+                    alert(`🎡 結果: [ ${winningNum} ] 当選！\n🎯 おめでとうございます！ ￥${totalWin.toLocaleString()} の配当を獲得！`);
                 } else {
-                    alert(`🎡 結果: [ ${winningNum} (${winningNum===0?'緑':isNumRed(winningNum)?'赤':'黒'}) ]\n💀 残念、ハズレです。`);
+                    alert(`🎡 結果: [ ${winningNum} ]\n💀 残念、ハズレです。`);
                 }
 
                 localGameState = { gameType: 'roulette', status: 'idle', winningNumber: winningNum, won: isWin, totalWin: totalWin };
                 renderMyOwnBoard();
                 updateMainActionButtonState();
-                
-                // ルーム同期用にステータスを送信
-                const rRef = db.collection('rooms').doc(currentRoom);
-                rRef.get().then(snap => {
-                    if(snap.exists) {
-                        let d = snap.data();
-                        if(!d.players) d.players = {};
-                        d.players[currentUser] = { gameType: 'roulette', status: isWin?'won':'lost', bet: betAmt, lastUpdated: Date.now() };
-                        rRef.set(d);
-                    }
-                });
+                syncStatusToRoom(isWin ? 'won' : 'lost', betAmt);
             }
         }
         requestAnimationFrame(animateWheel);
     }
 
-    // Canvasによるルーレット描画処理
     function drawRouletteCanvas(wAngle, bAngle) {
-        const cvs = document.getElementById('roulette-canvas');
-        if(!cvs) return;
-        const ctx = cvs.getContext('2d');
-        const cx = 110, cy = 110, r = 95;
+        const cvs = document.getElementById('roulette-canvas'); if(!cvs) return;
+        const ctx = cvs.getContext('2d'); const cx = 110, cy = 110, r = 95;
         ctx.clearRect(0, 0, 220, 220);
 
-        // 外枠ウッドベゼル
         ctx.beginPath(); ctx.arc(cx, cy, r + 8, 0, 2*Math.PI); ctx.fillStyle = '#2f4553'; ctx.fill();
         ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2*Math.PI); ctx.fillStyle = '#0f212e'; ctx.fill();
 
-        // 各セグメント（数字ポケット）の描画
-        const totalPockets = rouletteNumbers.length;
-        const arcSize = (2 * Math.PI) / totalPockets;
+        const totalPockets = rouletteNumbers.length; const arcSize = (2 * Math.PI) / totalPockets;
 
         for (let i = 0; i < totalPockets; i++) {
             let currentArc = wAngle + (i * arcSize);
-            ctx.beginPath();
-            ctx.moveTo(cx, cy);
-            ctx.arc(cx, cy, r - 15, currentArc, currentArc + arcSize);
-            ctx.lineTo(cx, cy);
-            
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r - 15, currentArc, currentArc + arcSize); ctx.lineTo(cx, cy);
             let num = rouletteNumbers[i];
-            ctx.fillStyle = num === 0 ? '#00e701' : isNumRed(num) ? '#fe2247' : '#1a2c38';
-            ctx.fill();
+            ctx.fillStyle = num === 0 ? '#00e701' : isNumRed(num) ? '#fe2247' : '#1a2c38'; ctx.fill();
             ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.stroke();
 
-            // 数字テキストの描画
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.rotate(currentArc + arcSize / 2);
-            ctx.fillStyle = '#fff';
-            ctx.font = '9px Arial';
-            ctx.textAlign = 'right';
-            ctx.fillText(num, r - 20, 3);
-            ctx.restore();
+            ctx.save(); ctx.translate(cx, cy); ctx.rotate(currentArc + arcSize / 2); ctx.fillStyle = '#fff'; ctx.font = '9px Arial'; ctx.textAlign = 'right'; ctx.fillText(num, r - 20, 3); ctx.restore();
         }
 
-        // 内円金杯パーツ
         ctx.beginPath(); ctx.arc(cx, cy, r - 45, 0, 2*Math.PI); ctx.fillStyle = '#10222e'; ctx.fill();
         ctx.beginPath(); ctx.arc(cx, cy, 10, 0, 2*Math.PI); ctx.fillStyle = '#f39c12'; ctx.fill();
 
-        // 🎴 物理ローテーションに基づく弾（ボール）の描画
-        let ballRadius = r - 28; 
-        let bx = cx + Math.cos(bAngle) * ballRadius;
-        let by = cy + Math.sin(bAngle) * ballRadius;
+        let ballRadius = r - 28; let bx = cx + Math.cos(bAngle) * ballRadius; let by = cy + Math.sin(bAngle) * ballRadius;
         ctx.beginPath(); ctx.arc(bx, by, 5, 0, 2*Math.PI); ctx.fillStyle = '#ffffff'; ctx.fill();
         ctx.lineWidth = 1; ctx.strokeStyle = '#000'; ctx.stroke();
+    }
+
+    // 👑 リアル回転演出付き高性能ダイスシミュレーションエンジン
+    function runDiceEngine(betAmt) {
+        isDiceSpinning = true;
+        updateMainActionButtonState();
+
+        const finalRoll = Math.floor(Math.random() * 6) + 1; // 内部の出目を決定
+        
+        const mode = document.getElementById('dice-bet-mode').value;
+        const exactTarget = parseInt(document.getElementById('dice-exact-target').value);
+        const rangeDir = document.getElementById('dice-range-direction').value;
+        const rangeTarget = parseInt(document.getElementById('dice-range-target').value);
+
+        let duration = 2000;
+        let startTime = Date.now();
+
+        function animateDice() {
+            let elapsed = Date.now() - startTime;
+            let progress = elapsed / duration;
+            if(progress > 1) progress = 1;
+
+            const cvs = document.getElementById('dice-canvas');
+            if(cvs) {
+                const ctx = cvs.getContext('2d');
+                ctx.clearRect(0,0,220,120);
+
+                // 転がっている感を出すためのランダム振動座標と回転アングル
+                let tx = 110 + (progress < 1 ? (Math.random() - 0.5) * 40 : 0);
+                let ty = 60 + (progress < 1 ? (Math.random() - 0.5) * 20 : 0);
+                let currentAngle = progress < 1 ? Math.random() * Math.PI * 2 : 0;
+                let faceNum = progress < 1 ? Math.floor(Math.random()*6)+1 : finalRoll;
+
+                ctx.save();
+                ctx.translate(tx, ty);
+                ctx.rotate(currentAngle);
+                
+                // サイコロ本体の描画
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.roundRect(-25, -25, 50, 50, 8);
+                ctx.fill();
+                ctx.lineWidth = 3; ctx.strokeStyle = "#2f4553"; ctx.stroke();
+
+                // 出目のドット描画
+                ctx.fillStyle = faceNum === 1 ? "#fe2247" : "#000000";
+                let dotR = faceNum === 1 ? 6 : 4;
+                
+                const drawDot = (dx, dy) => { ctx.beginPath(); ctx.arc(dx, dy, dotR, 0, 2*Math.PI); ctx.fill(); };
+                if([1,3,5].includes(faceNum)) drawDot(0, 0);
+                if([2,3,4,5,6].includes(faceNum)) { drawDot(-13, -13); drawDot(13, 13); }
+                if([4,5,6].includes(faceNum)) { drawDot(13, -13); drawDot(-13, 13); }
+                if(faceNum === 6) { drawDot(-13, 0); drawDot(13, 0); }
+
+                ctx.restore();
+            }
+
+            if(progress < 1) {
+                requestAnimationFrame(animateDice);
+            } else {
+                isDiceSpinning = false;
+                let isWin = false;
+                let payoutMultiplier = 0;
+
+                if(mode === 'exact') {
+                    if(finalRoll === exactTarget) { isWin = true; payoutMultiplier = 5.8; }
+                } else {
+                    if(rangeDir === 'over' && finalRoll >= rangeTarget) isWin = true;
+                    if(rangeDir === 'under' && finalRoll <= rangeTarget) isWin = true;
+                    
+                    if(isWin) {
+                        let winWays = 0;
+                        for(let i=1; i<=6; i++) {
+                            if(rangeDir === 'over' && i >= rangeTarget) winWays++;
+                            if(rangeDir === 'under' && i <= rangeTarget) winWays++;
+                        }
+                        payoutMultiplier = (6 / winWays) * 0.98;
+                    }
+                }
+
+                let totalWin = isWin ? betAmt * payoutMultiplier : 0;
+                if(isWin) {
+                    adjustBalance(currentUser, Math.floor(totalWin));
+                    alert(`🎲 サイコロの出目: [ ${finalRoll} ]\n🎯 的中！ ${payoutMultiplier.toFixed(2)}倍の配当、￥${Math.floor(totalWin).toLocaleString()} を獲得しました！`);
+                } else {
+                    alert(`🎲 サイコロの出目: [ ${finalRoll} ]\n💀 残念、予想が外れました。`);
+                }
+
+                localGameState = { gameType: 'dice', status: 'idle', rolledValue: finalRoll, won: isWin };
+                renderMyOwnBoard();
+                updateMainActionButtonState();
+                syncStatusToRoom(isWin ? 'won' : 'lost', betAmt);
+            }
+        }
+        requestAnimationFrame(animateDice);
+    }
+
+    function syncStatusToRoom(statusStr, betAmt) {
+        const rRef = db.collection('rooms').doc(currentRoom);
+        rRef.get().then(snap => {
+            if(snap.exists) {
+                let d = snap.data(); if(!d.players) d.players = {};
+                d.players[currentUser] = { gameType: selectedGameType, status: statusStr, bet: betAmt, lastUpdated: Date.now() };
+                rRef.set(d);
+            }
+        });
     }
 
     function changeRouletteSpot(spot) {
         rouletteSelectedSpot = spot;
         document.querySelectorAll('.roulette-spot-btn').forEach(btn => btn.classList.remove('selected'));
-        const activeBtn = document.getElementById(`rspot-${spot}`);
-        if(activeBtn) activeBtn.classList.add('selected');
+        const activeBtn = document.getElementById(`rspot-${spot}`); if(activeBtn) activeBtn.classList.add('selected');
+        const picker = document.getElementById('roulette-number-picker');
+        if(picker && !['red','black','0'].includes(spot)) picker.value = spot;
     }
 
     function updateHiLowButtonLabels(currentCard, currentPool) {
@@ -799,39 +1169,71 @@
         box.innerHTML = ""; if(!localGameState) return;
 
         let p = localGameState;
-        let gameName = p.gameType==='mines'?'💣マインズ':p.gameType==='bj'?'🃏BJ':p.gameType==='hilow'?'📈ハイロー':'🎡ルーレット';
+        let gameName = p.gameType==='mines'?'💣マインズ':p.gameType==='bj'?'🃏BJ':p.gameType==='hilow'?'📈ハイロー':p.gameType==='roulette'?'🎡ルーレット':'🎲ダイス';
         let statusText = p.status === 'playing' ? `<span style="color:var(--primary)">PLAYING</span>` : `<span style="color:var(--text-muted)">READY</span>`;
         box.innerHTML = `<div class="player-header"><div>👤 あなたの盤面 (${gameName})</div><div>${statusText}</div></div>`;
 
-        // 👑 ルーレット用のUIボードレンダリング
+        // 👑 ルーレットUI
         if(p.gameType === 'roulette') {
-            const rouWrapper = document.createElement('div');
-            rouWrapper.className = 'roulette-container';
+            const rouWrapper = document.createElement('div'); rouWrapper.className = 'roulette-container';
             rouWrapper.innerHTML = `<canvas id="roulette-canvas" width="220" height="220"></canvas>`;
-            
-            // ベット選択グリッドの作成
-            const grid = document.createElement('div');
-            grid.className = 'roulette-bet-grid';
+            const grid = document.createElement('div'); grid.className = 'roulette-bet-grid';
             grid.innerHTML = `
                 <div class="roulette-spot-btn ${rouletteSelectedSpot==='red'?'selected':''}" id="rspot-red" style="background:#fe2247;" onclick="changeRouletteSpot('red')">🔴 赤 (x2)</div>
                 <div class="roulette-spot-btn ${rouletteSelectedSpot==='black'?'selected':''}" id="rspot-black" style="background:#1a2c38;" onclick="changeRouletteSpot('black')">⚫ 黒 (x2)</div>
                 <div class="roulette-spot-btn ${rouletteSelectedSpot==='0'?'selected':''}" id="rspot-0" style="background:#00e701; color:#000;" onclick="changeRouletteSpot('0')">0 (x36)</div>
             `;
-            // 1〜36のダイレクトナンバーベット用入力セレクト
-            const selectContainer = document.createElement('div');
-            selectContainer.style = "width:100%; margin-top:6px;";
+            const selectContainer = document.createElement('div'); selectContainer.style = "width:100%; margin-top:6px;";
             let optionsHtml = `<option value="none">-- 特定の数字を指定して賭ける (x36) --</option>`;
-            for(let i=1; i<=36; i++) {
-                optionsHtml += `<option value="${i}" ${rouletteSelectedSpot===String(i)?'selected':''}>数字の ${i} (${isNumRed(i)?'赤':'黒'})</option>`;
-            }
+            for(let i=1; i<=36; i++) { optionsHtml += `<option value="${i}" ${rouletteSelectedSpot===String(i)?'selected':''}>数字の ${i} (${isNumRed(i)?'赤':'黒'})</option>`; }
             selectContainer.innerHTML = `<select id="roulette-number-picker" style="margin-bottom:0; font-size:13px; padding:8px;" onchange="if(this.value!=='none') changeRouletteSpot(this.value)">${optionsHtml}</select>`;
+            rouWrapper.appendChild(grid); rouWrapper.appendChild(selectContainer); box.appendChild(rouWrapper);
+            setTimeout(() => drawRouletteCanvas(0, 0), 10); return;
+        }
 
-            rouWrapper.appendChild(grid);
-            rouWrapper.appendChild(selectContainer);
-            box.appendChild(rouWrapper);
+        // 👑 新ゲーム：ダイスUIの表示
+        if(p.gameType === 'dice') {
+            const diceWrapper = document.createElement('div'); diceWrapper.className = 'roulette-container';
+            diceWrapper.innerHTML = `<canvas id="dice-canvas" width="220" height="120" style="background:#0a1118; border-radius:8px; border:2px solid #2f4553;"></canvas>`;
+            box.appendChild(diceWrapper);
+            // 初回枠内サイコロの仮描画
+            setTimeout(() => {
+                const cvs = document.getElementById('dice-canvas'); if(!cvs) return;
+                const ctx = cvs.getContext('2d'); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.roundRect(85,35,50,50,8); ctx.fill();
+                ctx.fillStyle = "#fe2247"; ctx.beginPath(); ctx.arc(110,60,6,0,2*Math.PI); ctx.fill();
+            }, 10);
+            return;
+        }
 
-            // 初期位置または現在のアングルでルーレットを描画
-            setTimeout(() => drawRouletteCanvas(rouletteWheelAngle, rouletteBallAngle), 10);
+        // 👑 承認した後のP2P対戦画面（通常プレイと同じ中央エリアに完全マージ）
+        if(p.isP2PActiveGame && p.rawP2PData) {
+            let g = p.rawP2PData;
+            const p2pBox = document.createElement('div'); p2pBox.style = "display:flex; flex-direction:column; gap:10px; margin-top:5px;";
+            let isMyTurn = (g.turn === currentUser);
+            
+            const hostFlex = document.createElement('div'); hostFlex.className = 'cards-flex';
+            hostFlex.innerHTML = `<span style="font-size:11px; color:var(--text-muted);">${g.host}(${calcBJScore(g.hostCards)}点):</span>`;
+            g.hostCards.forEach(c => hostFlex.appendChild(createCardHTML(c, false)));
+
+            const guestFlex = document.createElement('div'); guestFlex.className = 'cards-flex';
+            guestFlex.innerHTML = `<span style="font-size:11px; color:var(--text-muted);">${g.guest}(${calcBJScore(g.guestCards)}点):</span>`;
+            g.guestCards.forEach(c => guestFlex.appendChild(createCardHTML(c, false)));
+
+            p2pBox.appendChild(hostFlex); p2pBox.appendChild(guestFlex);
+
+            if(g.status === 'playing' && isMyTurn) {
+                const actRow = document.createElement('div'); actRow.style = "display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;";
+                actRow.innerHTML = `
+                    <button onclick="p2pGameAction('hit')" style="background-color:var(--bg-input); color:#fff; border:1px solid #2f4553; padding:10px;">ヒット</button>
+                    <button onclick="p2pGameAction('stand')" style="background-color:var(--gold); color:#000; padding:10px;">スタンド</button>
+                `;
+                p2pBox.appendChild(actRow);
+            } else if(g.status === 'playing') {
+                const waitMsg = document.createElement('div'); waitMsg.style = "text-align:center; font-size:12px; color:var(--gold); margin-top:5px;";
+                waitMsg.innerText = "⏳ 相手がカードを選択しています...";
+                p2pBox.appendChild(waitMsg);
+            }
+            box.appendChild(p2pBox);
             return;
         }
 
@@ -842,8 +1244,7 @@
                 if(tile.revealed) cell.innerText = tile.type === 'bomb' ? "💣" : "💎";
                 else { cell.innerText = "？"; if(p.status === 'playing') cell.onclick = () => clickIndividualMines(i); }
                 grid.appendChild(cell);
-            });
-            box.appendChild(grid);
+            }); box.appendChild(grid);
             if(p.status === 'playing') {
                 let mult = getMinesMultiplier(p.gemsFound, p.bCount); const coMinesBtn = document.getElementById('btn-mines-cashout');
                 if(p.gemsFound > 0) { coMinesBtn.disabled = false; coMinesBtn.innerText = `💰 キャッシュアウト (￥${Math.floor(p.bet * mult)})`; } 
@@ -872,22 +1273,20 @@
         }
     }
 
-    // 同期枠レンダリング
     function renderTable(data) {
-        const inviteArea = document.getElementById('p2p-invite-area'); inviteArea.innerHTML = "";
+        const toast = document.getElementById('p2p-toast');
+        const toastText = document.getElementById('p2p-toast-text');
         
-        // 1. 招待ポップアップの処理
-        if(data.p2pInvite && data.p2pInvite.status === 'pending' && data.p2pInvite.host !== currentUser) {
-            inviteArea.innerHTML = `
-                <div class="p2p-invite-banner">
-                    ⚔️ ${data.p2pInvite.host} から￥${data.p2pInvite.bet.toLocaleString()}のBJ対戦招待！
-                    <div class="p2p-btn-row">
-                        <button onclick="handleP2PResponse(true)" style="background:#00e701; color:#000;">承認して参戦</button>
-                        <button onclick="handleP2PResponse(false)" style="background:#fe2247; color:#fff;">拒否</button>
-                    </div>
-                </div>
-            `;
+        // 👑 1. 横からぴょいっとスライド追従するBJ対戦招待判定（ターゲティング適合時のみ表示）
+        if(data.p2pInvite && data.p2pInvite.status === 'pending') {
+            if(data.p2pInvite.guestTarget === currentUser) {
+                toastText.innerText = `⚔️ ${data.p2pInvite.host} から￥${data.p2pInvite.bet.toLocaleString()}の対戦招待！`;
+                toast.classList.add('show');
+            }
+        } else {
+            toast.classList.remove('show');
         }
+
         if(data.p2pInvite && data.p2pInvite.status === 'rejected' && data.p2pInvite.host === currentUser) {
             alert("❌ 対戦招待が拒否されました。");
             db.collection('rooms').doc(currentRoom).update({ p2pInvite: null });
@@ -896,49 +1295,27 @@
         const pSide = document.getElementById('table-players'); pSide.innerHTML = "";
         if(!data || !data.players) return;
 
-        if(data.players[currentUser] && selectedGameType !== 'roulette') {
+        // 👑 2. P2P対戦が成立した時、通常プレイ画面エリアに完全結合して描画するロジック
+        if(data.p2pGame && data.p2pGame.status === 'playing') {
+            let g = data.p2pGame;
+            if(currentUser === g.host || currentUser === g.guest) {
+                localGameState = { gameType: 'bj', isP2PActiveGame: true, rawP2PData: g, status: 'playing' };
+                renderMyOwnBoard();
+                updateMainActionButtonState();
+            }
+        } else if(data.players[currentUser] && !isRouletteSpinning && !isDiceSpinning && selectedGameType !== 'roulette' && selectedGameType !== 'dice') {
             localGameState = data.players[currentUser];
             renderMyOwnBoard();
             updateMainActionButtonState();
         }
 
-        // 2. P2Pリアルタイム対戦ボード
-        if(data.p2pGame && data.p2pGame.status === 'playing') {
-            let g = data.p2pGame;
-            if(currentUser === g.host || currentUser === g.guest) {
-                const p2pBox = document.createElement('div'); p2pBox.className = 'player-hand-box'; p2pBox.style.border = "2px solid var(--gold)";
-                let isMyTurn = (g.turn === currentUser);
-                let turnText = isMyTurn ? `<span style="color:var(--primary); font-weight:bold;">★ あなたのターン ★</span>` : `<span style="color:var(--text-muted)">相手の選択中...</span>`;
-                p2pBox.innerHTML = `<div class="player-header" style="color:var(--gold);"><div>⚔️ BJ対戦中 (賭け金: ￥${(g.bet*2).toLocaleString()})</div><div>${turnText}</div></div>`;
-
-                const hostFlex = document.createElement('div'); hostFlex.className = 'cards-flex';
-                hostFlex.innerHTML = `<span style="font-size:10px; color:var(--text-muted);">${g.host}(${calcBJScore(g.hostCards)}):</span>`;
-                g.hostCards.forEach(c => hostFlex.appendChild(createCardHTML(c, false)));
-
-                const guestFlex = document.createElement('div'); guestFlex.className = 'cards-flex';
-                guestFlex.innerHTML = `<span style="font-size:10px; color:var(--text-muted);">${g.guest}(${calcBJScore(g.guestCards)}):</span>`;
-                g.guestCards.forEach(c => guestFlex.appendChild(createCardHTML(c, false)));
-
-                p2pBox.appendChild(hostFlex); p2pBox.appendChild(guestFlex);
-
-                if(isMyTurn) {
-                    const actRow = document.createElement('div'); actRow.style = "display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-top:8px;";
-                    actRow.innerHTML = `
-                        <button onclick="p2pGameAction('hit')" style="background-color:var(--bg-input); color:#fff; border:1px solid #2f4553;">ヒット</button>
-                        <button onclick="p2pGameAction('stand')" style="background-color:var(--gold); color:#000;">スタンド</button>
-                    `;
-                    p2pBox.appendChild(actRow);
-                }
-                pSide.appendChild(p2pBox);
-            }
-        }
-
-        // ルーム内同期表示
+        // ルーム内同期表示リスト
         Object.keys(data.players).forEach(name => {
             if(name === currentUser) return;
             const p = data.players[name];
+            if(!p.gameType) return;
             const box = document.createElement('div'); box.className = 'player-hand-box';
-            let gameName = p.gameType==='mines'?'💣':p.gameType==='bj'?'🃏BJ':p.gameType==='hilow'?'📈':'🎡ルーレット';
+            let gameName = p.gameType==='mines'?'💣':p.gameType==='bj'?'🃏BJ':p.gameType==='hilow'?'📈':p.gameType==='roulette'?'🎡':'🎲';
             box.innerHTML = `<div class="player-header"><div>👤 ${name} (${gameName})</div><div>${p.status.toUpperCase()}</div></div>`;
             pSide.appendChild(box);
         });
@@ -953,7 +1330,6 @@
     }
 
     function switchTab(tabName) {
-        // 👑 選択バーが押された時に画面を瞬時に最上部へ自動スクロールする修正
         window.scrollTo({ top: 0, behavior: 'instant' });
 
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab'));
