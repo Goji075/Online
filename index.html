@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Koyocasino - Hyper Ultimate</title>
+    <title>Koyocasino - Elite 3G Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
@@ -28,12 +28,10 @@
         button { width: 100%; padding: 14px; background-color: var(--primary); border: none; border-radius: 4px; color: #000; font-size: 16px; font-weight: bold; cursor: pointer; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
         button.secondary { background-color: var(--bg-input); color: var(--text-main); border: 1px solid #2f4553; margin-top: 5px; }
-        button.bet-target { background-color: var(--bg-input); color: #fff; border: 1px solid #2f4553; margin-bottom: 5px; }
-        button.bet-target.selected { border-color: var(--primary); color: var(--primary); background-color: rgba(0,231,1,0.1); }
         .user-bar { display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-card); padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; }
         .balance-box { background-color: var(--bg-input); padding: 6px 12px; border-radius: 4px; font-weight: bold; color: var(--primary); }
-        .game-menu { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 15px; }
-        .game-btn { background-color: var(--bg-input); color: #fff; padding: 10px 2px; text-align: center; border-radius: 6px; border: 1px solid #2f4553; font-size: 10px; font-weight: bold; cursor: pointer; }
+        .game-menu { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 15px; }
+        .game-btn { background-color: var(--bg-input); color: #fff; padding: 12px 2px; text-align: center; border-radius: 6px; border: 1px solid #2f4553; font-size: 12px; font-weight: bold; cursor: pointer; }
         .game-btn.active { border-color: var(--primary); color: var(--primary); }
         .table-area { background: #0f2a1d; border: 4px solid #2f4553; border-radius: 20px; padding: 15px; min-height: 250px; margin-bottom: 15px; }
         .dealer-side { text-align: center; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px; }
@@ -84,10 +82,8 @@
         <div id="game-section">
             <div class="game-menu">
                 <div class="game-btn active" id="menu-mines" onclick="selectGame('mines')">💣マインズ</div>
-                <div class="game-btn" id="menu-bj" onclick="selectGame('bj')">🃏BJ</div>
-                <div class="game-btn" id="menu-baccarat" onclick="selectGame('baccarat')">👑バカラ</div>
+                <div class="game-btn" id="menu-bj" onclick="selectGame('bj')">🃏ブラックジャック</div>
                 <div class="game-btn" id="menu-hilow" onclick="selectGame('hilow')">📈ハイロー</div>
-                <div class="game-btn" id="menu-poker" onclick="selectGame('poker')">🃏ポーカー</div>
             </div>
 
             <div class="panel" style="padding: 15px;">
@@ -99,15 +95,6 @@
                     <input type="number" id="mines-count" value="3" min="1" max="24">
                 </div>
 
-                <div id="setting-baccarat" class="hidden">
-                    <label style="font-size:11px; color:var(--text-muted);">ベット対象を選択（カードが配られる前に予想）</label>
-                    <div style="display:flex; gap:5px;">
-                        <button class="bet-target id-target" id="target-player" onclick="setBaccaratTarget('player')">プレイヤー (2倍)</button>
-                        <button class="bet-target id-target" id="target-banker" onclick="setBaccaratTarget('banker')">バンカー (1.95倍)</button>
-                        <button class="bet-target id-target" id="target-tie" onclick="setBaccaratTarget('tie')">タイ (9倍)</button>
-                    </div>
-                </div>
-
                 <button id="btn-action-main" onclick="pressMainGameAction()">ベットして勝負開始</button>
 
                 <div id="bj-controls" class="hidden" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; margin-top:10px;">
@@ -116,10 +103,15 @@
                     <button class="secondary" style="padding:10px 2px; font-size:12px; background-color:#3498db; color:#fff;" id="btn-bj-double" onclick="gameSubAction('double')">ダブル</button>
                     <button class="secondary" style="padding:10px 2px; font-size:12px; background-color:#9b59b6; color:#fff;" id="btn-bj-split" onclick="gameSubAction('split')">スプリット</button>
                 </div>
-                <div id="hilow-controls" class="hidden" style="display:flex; gap:10px; margin-top:10px;">
-                    <button style="background-color:var(--primary);" onclick="gameSubAction('high')">🔼 HIGH</button>
-                    <button style="background-color:var(--accent); color:white;" onclick="gameSubAction('low')">🔽 LOW</button>
+                
+                <div id="hilow-controls" class="hidden" style="margin-top:10px; display:flex; flex-direction:column; gap:6px;">
+                    <div style="display:flex; gap:10px;">
+                        <button style="background-color:var(--primary);" id="btn-hilow-high" onclick="gameSubAction('high')">🔼 HIGH (x0.00)</button>
+                        <button style="background-color:var(--accent); color:white;" id="btn-hilow-low" onclick="gameSubAction('low')">🔽 LOW (x0.00)</button>
+                    </div>
+                    <button style="background-color:var(--gold); color:#000;" id="btn-hilow-cashout" onclick="gameSubAction('cashout')">💰 キャッシュアウト (￥0)</button>
                 </div>
+                
                 <div id="mines-controls" class="hidden" style="margin-top:10px;">
                     <button style="background-color:var(--gold); color:#000;" id="btn-mines-cashout" onclick="gameSubAction('cashout')">💰 キャッシュアウト (￥0)</button>
                 </div>
@@ -127,7 +119,7 @@
 
             <div class="table-area" id="casino-table">
                 <div class="dealer-side">
-                    <div style="font-size:11px; color:var(--text-muted);" id="table-dealer-title">ディーラー / コミュニティカード</div>
+                    <div style="font-size:11px; color:var(--text-muted);" id="table-dealer-title">ディーラー / システムカード</div>
                     <div class="cards-flex" id="dealer-cards"></div>
                 </div>
                 <div class="players-side" id="table-players"></div>
@@ -161,7 +153,6 @@
 </div>
 
 <script>
-    // Firebase設定を即時反映
     const firebaseConfig = {
         apiKey: "AIzaSyCyoFehr8SM7OaiYeua0Sdbpt3pJiAXI74",
         authDomain: "koyocasino.firebaseapp.com",
@@ -177,7 +168,6 @@
 
     let currentUser = null; let isSignUpMode = false; let isAdminLoggedIn = false;
     let selectedGameType = 'mines'; let currentRoom = 'lobby'; let roomUnsubscribe = null;
-    let baccaratSelectedTarget = 'player';
 
     // --- 認証システム（重複ブロック・データ永続化） ---
     function toggleAuthMode() { isSignUpMode = !isSignUpMode; document.getElementById('auth-title').innerText = isSignUpMode ? "新規登録" : "ログイン"; }
@@ -191,7 +181,6 @@
         const doc = await ref.get();
 
         if(isSignUpMode) { 
-            // 完全に何個も作れるバグを修正
             if(doc.exists) return alert("❌ このユーザーIDはすでに登録されています！"); 
             await ref.set({ password: p, balance: 10000 }); 
             alert("✨ 登録完了！10,000円付与しました。");
@@ -229,42 +218,56 @@
 
     function selectGame(g) {
         selectedGameType = g;
-        ['mines','bj','baccarat','hilow','poker'].forEach(x => document.getElementById(`menu-${x}`).classList.remove('active'));
+        ['mines','bj','hilow'].forEach(x => document.getElementById(`menu-${x}`).classList.remove('active'));
         document.getElementById(`menu-${g}`).classList.add('active');
         document.getElementById('setting-mines').classList.add('hidden');
-        document.getElementById('setting-baccarat').classList.add('hidden');
         document.getElementById('bj-controls').classList.add('hidden');
         document.getElementById('hilow-controls').classList.add('hidden');
         document.getElementById('mines-controls').classList.add('hidden');
 
         if(g === 'mines') document.getElementById('setting-mines').classList.remove('hidden');
-        if(g === 'baccarat') document.getElementById('setting-baccarat').classList.remove('hidden');
         db.collection('rooms').doc(currentRoom).update({ gameType: g }).catch(()=>{});
-    }
-
-    function setBaccaratTarget(t) {
-        baccaratSelectedTarget = t;
-        ['player','banker','tie'].forEach(x => document.getElementById(`target-${x}`).classList.remove('selected'));
-        document.getElementById(`target-${t}`).classList.add('selected');
     }
 
     // --- 🎮 新・本格派カジノロジック（ガチ仕様） ---
     const suites = ['♠','♥','♦','♣']; const vals = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
     const draw = () => suites[Math.floor(Math.random()*4)] + vals[Math.floor(Math.random()*13)];
 
-    // 本家マインズ確率配当計算式
+    // 本家仕様マインズ確率配当計算式
     function getMinesMultiplier(gems, bombs) {
-        let n = 25;
-        let p = 1;
-        for(let i=0; i<gems; i++) { p *= (n - bombs - i) / (n - i); }
-        return (0.99 / p); // ハウスエッジ1%を考慮した本家仕様
+        if (gems === 0) return 1.0;
+        let p = 1.0;
+        for (let i = 0; i < gems; i++) {
+            let totalTilesRemaining = 25 - i;
+            let safeTilesRemaining = totalTilesRemaining - bombs;
+            if (safeTilesRemaining <= 0) return 0;
+            p *= (safeTilesRemaining / totalTilesRemaining);
+        }
+        return (0.99 / p);
+    }
+
+    // 【新実装】現在のカードに基づいたハイロー倍率のリアルタイム計算
+    function getHiLowOdds(currentCardStr) {
+        let currentVal = getCardVal(currentCardStr); // 1(A) 〜 13(K)
+        
+        // トランプ1組(13段階)における確率計算 (同じ数字はHIGH/LOW両方セーフとする本家ルール)
+        let highWays = 13 - currentVal + 1;
+        let lowWays = currentVal;
+        
+        // ハウスエッジ1.5%を考慮した正確な倍率
+        let highOdds = (13 / highWays) * 0.985;
+        let lowOdds = (13 / lowWays) * 0.985;
+        
+        return {
+            high: Math.max(1.01, highOdds),
+            low: Math.max(1.01, lowOdds)
+        };
     }
 
     async function pressMainGameAction() {
         const bet = parseInt(document.getElementById('bet-amount').value);
         if(!bet || bet <= 0) return alert("ベット額を入れてください");
         
-        // 所持金チェック
         const uDoc = await db.collection('users').doc(currentUser).get();
         if(uDoc.data().balance < bet) return alert("❌ 残高が足りません！");
 
@@ -289,34 +292,31 @@
             roomData.dealerCards = [draw(), 'HIDDEN'];
             roomData.players[currentUser] = { bet: bet, cards: [c1, c2], subHand: [], isSplit: false, status: 'playing' };
             document.getElementById('bj-controls').classList.remove('hidden');
-            // スプリット判定の可視化
             document.getElementById('btn-bj-split').disabled = (c1.substring(1) !== c2.substring(1));
         }
-        else if(selectedGameType === 'baccarat') {
-            // 本家フロー：賭け先を決めてから、プレイヤーとバンカーに配られる
-            const pCards = [draw(), draw()]; const bCards = [draw(), draw()];
-            roomData.dealerCards = bCards; // Banker
-            roomData.players[currentUser] = { bet: bet, target: baccaratSelectedTarget, cards: pCards, status: 'calculated' };
-            await db.collection('rooms').doc(currentRoom).set(roomData);
-            setTimeout(() => resolveBaccaratGame(pCards, bCards, baccaratSelectedTarget, bet), 1000);
-            return;
-        }
         else if(selectedGameType === 'hilow') {
-            roomData.dealerCards = [draw()];
-            roomData.players[currentUser] = { bet: bet, status: 'playing' };
+            let firstCard = draw();
+            roomData.dealerCards = [firstCard];
+            // currentMultiplierに今までの累積倍率を保存していく
+            roomData.players[currentUser] = { bet: bet, currentMultiplier: 1.0, status: 'playing' };
+            
             document.getElementById('hilow-controls').classList.remove('hidden');
-        }
-        else if(selectedGameType === 'poker') {
-            // ガチのテキサスホールデム仕様に変更
-            let dHand = [draw(), draw(), draw(), draw(), draw()]; // 5枚のコミュニティボード
-            roomData.dealerCards = dHand;
-            roomData.players[currentUser] = { bet: bet, cards: [draw(), draw()], status: 'showdown' };
-            await db.collection('rooms').doc(currentRoom).set(roomData);
-            setTimeout(() => resolveHoldemPoker(roomData.players[currentUser].cards, dHand, bet), 1500);
-            return;
+            updateHiLowButtonLabels(firstCard, bet * 1.0);
         }
 
         await db.collection('rooms').doc(currentRoom).set(roomData);
+    }
+
+    function updateHiLowButtonLabels(currentCard, currentPool) {
+        let odds = getHiLowOdds(currentCard);
+        document.getElementById('btn-hilow-high').innerText = `🔼 HIGH (x${odds.high.toFixed(2)}) 次の配当: ￥${Math.floor(currentPool * odds.high)}`;
+        document.getElementById('btn-hilow-low').innerText = `🔽 LOW (x${odds.low.toFixed(2)}) 次の配当: ￥${Math.floor(currentPool * odds.low)}`;
+        document.getElementById('btn-hilow-cashout').innerText = `💰 キャッシュアウト (￥${Math.floor(currentPool)})`;
+        if(currentPool <= parseInt(document.getElementById('bet-amount').value)) {
+            document.getElementById('btn-hilow-cashout').disabled = true; // 初手はキャッシュアウト不可
+        } else {
+            document.getElementById('btn-hilow-cashout').disabled = false;
+        }
     }
 
     async function gameSubAction(action) {
@@ -347,23 +347,54 @@
                 bjDealerTurn(data, p);
             }
         }
+        // 【大改良】ハイロー倍率蓄積 ＆ 逃げ・利確ロジック
         else if(selectedGameType === 'hilow') {
-            let next = draw(); let curVal = getCardVal(data.dealerCards[data.dealerCards.length-1]); let nextVal = getCardVal(next);
-            data.dealerCards.push(next);
-            if((action==='high' && nextVal>=curVal) || (action==='low' && nextVal<=curVal)) {
-                let payout = Math.floor(p.bet * 1.85);
-                alert(`🎯 的中！1.85倍配当 (￥${payout}) を獲得！`); adjustBalance(currentUser, payout);
-            } else { alert("💥 外れ。没収されました。"); }
-            document.getElementById('hilow-controls').classList.add('hidden');
+            let currentCard = data.dealerCards[data.dealerCards.length - 1];
+            
+            if (action === 'cashout') {
+                let finalWin = Math.floor(p.bet * p.currentMultiplier);
+                alert(`💰 キャッシュアウト成功！ 連続的中おめでとうございます！ ￥${finalWin.toLocaleString()} 獲得！`);
+                await adjustBalance(currentUser, finalWin);
+                document.getElementById('hilow-controls').classList.add('hidden');
+                p.status = 'cashedout';
+            } else {
+                let odds = getHiLowOdds(currentCard);
+                let nextCard = draw();
+                data.dealerCards.push(nextCard);
+
+                let curVal = getCardVal(currentCard);
+                let nextVal = getCardVal(nextCard);
+                
+                let isWin = false;
+                let stepMultiplier = 1.0;
+
+                if (action === 'high') {
+                    stepMultiplier = odds.high;
+                    if (nextVal >= curVal) isWin = true; // 同じ数字もセーフ（本家仕様）
+                } else if (action === 'low') {
+                    stepMultiplier = odds.low;
+                    if (nextVal <= curVal) isWin = true;
+                }
+
+                if (isWin) {
+                    p.currentMultiplier *= stepMultiplier; // 倍率を累積・ストック！
+                    let currentPool = p.bet * p.currentMultiplier;
+                    alert(`🎯 的中！ 倍率蓄積中: ${p.currentMultiplier.toFixed(2)}倍 (現在 ￥${Math.floor(currentPool)})！ さらに続けますか？`);
+                    updateHiLowButtonLabels(nextCard, currentPool);
+                } else {
+                    alert(`💥 外れ！ 運ばれたカードは [ ${nextCard} ] でした。全額没収です...`);
+                    document.getElementById('hilow-controls').classList.add('hidden');
+                    p.status = 'lost';
+                }
+            }
         }
         else if(selectedGameType === 'mines' && action === 'cashout') {
             let mult = getMinesMultiplier(p.gemsFound, p.bCount);
-            if(p.gemsFound === 0) mult = 1.0;
             let win = Math.floor(p.bet * mult);
             alert(`💰 キャッシュアウト成功！ ${mult.toFixed(2)}倍 で ￥${win} を獲得！`);
             await adjustBalance(currentUser, win);
             document.getElementById('mines-controls').classList.add('hidden');
-            data.minesGrid.forEach(t => t.revealed = true); // 爆弾位置を全部見せる
+            data.minesGrid.forEach(t => t.revealed = true);
         }
         await ref.set(data);
     }
@@ -405,7 +436,7 @@
         }
     }
 
-    // --- 各種計算補助・ガチ役判定ロジック ---
+    // --- 各種計算補助ロジック ---
     function calcBJScore(cards) {
         let total = 0; let aces = 0;
         cards.forEach(c => { if(c === 'HIDDEN') return; let v = c.substring(1); if(['J','Q','K'].includes(v)) total += 10; else if(v === 'A') { total += 11; aces++; } else total += parseInt(v); });
@@ -413,40 +444,6 @@
     }
     function getCardVal(c) { let v = c.substring(1); if(v==='A') return 1; if(v==='J') return 11; if(v==='Q') return 12; if(v==='K') return 13; return parseInt(v); }
     
-    function resolveBaccaratGame(pCards, bCards, target, bet) {
-        let pScore = (getCardVal(pCards[0]) + getCardVal(pCards[1])) % 10;
-        let bScore = (getCardVal(bCards[0]) + getCardVal(bCards[1])) % 10;
-        let result = 'tie'; if(pScore > bScore) result = 'player'; else if(bScore > pScore) result = 'banker';
-        if(target === result) {
-            let payout = bet * (target==='tie' ? 9 : (target==='player' ? 2 : 1.95));
-            alert(`👑 バカラ結果\nPLAYER: [${pScore}] vs BANKER: [${bScore}]\n的中！ ￥${Math.floor(payout).toLocaleString()} を獲得！`);
-            adjustBalance(currentUser, Math.floor(payout));
-        } else { alert(`👑 バカラ結果\nPLAYER: [${pScore}] vs BANKER: [${bScore}]\n不的中... 没収されました。`); }
-    }
-
-    // テキサスホールデム判定
-    function resolveHoldemPoker(pHand, board, bet) {
-        let all = [...pHand, ...board].map(c => getCardVal(c));
-        let counts = {}; all.forEach(x => counts[x] = (counts[x] || 0) + 1);
-        let maxCount = Math.max(...Object.values(counts));
-        
-        // 簡易アルゴリズムによる本格役判定
-        let handName = "ハイカード"; let mult = 0;
-        if(maxCount === 4) { handName = "フォーカード"; mult = 25; }
-        else if(Object.values(counts).includes(3) && Object.values(counts).includes(2)) { handName = "フルハウス"; mult = 12; }
-        else if(maxCount === 3) { handName = "スリーカード"; mult = 5; }
-        else if(Object.values(counts).filter(x => x===2).length >= 2) { handName = "ツーペア"; mult = 3; }
-        else if(maxCount === 2) { handName = "ワンペア"; mult = 1.5; }
-
-        if(mult > 0) {
-            let win = Math.floor(bet * mult);
-            alert(`🃏 ポーカー結果\n【${handName}】が成立！ 倍率${mult}倍で ￥${win.toLocaleString()} を獲得！`);
-            adjustBalance(currentUser, win);
-        } else {
-            alert(`🃏 ポーカー結果\n役が作れませんでした（ハイカード）。CPUに負けました。`);
-        }
-    }
-
     async function adjustBalance(u, amt) {
         const r = db.collection('users').doc(u); 
         await db.runTransaction(async t => { const doc = await t.get(r); t.update(r, { balance: (doc.data().balance||0)+amt }); }); 
@@ -459,6 +456,14 @@
 
         const pSide = document.getElementById('table-players'); pSide.innerHTML = "";
         
+        // ハイロー選択中かつプレイ中なら、リアルタイムのラベル表示を同期維持
+        if(data.gameType === 'hilow' && data.dealerCards && data.dealerCards.length > 0 && data.players[currentUser]) {
+            let p = data.players[currentUser];
+            if (p.status === 'playing') {
+                updateHiLowButtonLabels(data.dealerCards[data.dealerCards.length - 1], p.bet * p.currentMultiplier);
+            }
+        }
+
         if(data.gameType === 'mines' && data.minesGrid && data.minesGrid.length > 0) {
             const grid = document.createElement('div'); grid.className = 'mines-grid';
             data.minesGrid.forEach((tile, i) => {
@@ -475,7 +480,8 @@
             Object.keys(data.players).forEach(name => {
                 const p = data.players[name];
                 const box = document.createElement('div'); box.className = 'player-hand-box';
-                box.innerHTML = `<div style="font-size:11px;">${name}</div><div style="font-size:10px; color:var(--primary)">￥${p.bet}</div>`;
+                let subText = data.gameType === 'hilow' ? `${(p.currentMultiplier || 1.0).toFixed(2)}倍蓄積` : `￥${p.bet}`;
+                box.innerHTML = `<div style="font-size:11px;">${name}</div><div style="font-size:10px; color:var(--primary)">${subText}</div>`;
                 const cFlex = document.createElement('div'); cFlex.className = 'cards-flex';
                 if(p.cards) p.cards.forEach(c => cFlex.appendChild(createCardHTML(c)));
                 if(p.isSplit && p.subHand) {
