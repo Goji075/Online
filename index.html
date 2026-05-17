@@ -138,7 +138,7 @@
 <body>
 
 <div id="p2p-toast" class="p2p-toast-banner">
-    <div id="p2p-toast-text">⚔️ 対戦招待が届きました</div>
+    <div id="p2p-toast-text">⚔️ 对戦招待が届きました</div>
     <div class="p2p-btn-row">
         <button onclick="handleP2PResponse(true)" style="background:#00e701; color:#000; flex:1;">参戦</button>
         <button onclick="handleP2PResponse(false)" style="background:#fff; color:#000; flex:1;">拒否</button>
@@ -170,6 +170,8 @@
     <button onclick="openSubModal('tip')" style="background-color:#3498db; color:#fff; text-align:left;">💸 友達にチップを送る</button>
     <button onclick="openSubModal('leaderboard')" style="background-color:#2ecc71; color:#000; text-align:left;">🏆 所持金ランキング (Rankings)</button>
     <button onclick="openSubModal('txhistory')" style="background-color:#2c3e50; color:#fff; text-align:left;">📜 取引履歴 (Logs)</button>
+    
+    <button onclick="deleteCurrentAccount()" style="background-color:var(--accent); color:#fff; text-align:left; margin-top:15px;">⚠️ アカウント削除 (Delete User)</button>
     
     <button onclick="toggleSidebar(false)" class="secondary" style="margin-top:auto;">閉じる</button>
 </div>
@@ -1634,6 +1636,36 @@
                 list.innerHTML += `<div class="history-item"><div style="display:flex; justify-content:space-between; font-weight:bold; color:#fff;"><span>コード: ${data.code}</span><span style="color:var(--primary)">+￥${data.amount.toLocaleString()}</span></div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">使用日時: ${dateStr}</div></div>`;
             });
         });
+    }
+
+    // アカウントの完全削除処理機能
+    async function deleteCurrentAccount() {
+        if(!currentUser) return;
+        const confirmDelete = confirm(`⚠️ 本当にアカウント「${currentUser}」を完全に削除しますか？\nこの操作は取り消せず、所持金やVIPランク、全てのデータが消去されます。`);
+        if(!confirmDelete) return;
+
+        try {
+            // Firestore から該当ユーザーのドキュメントを物理削除
+            await db.collection('users').doc(currentUser).delete();
+            
+            alert(`✨ アカウント「${currentUser}」の削除が完了しました。`);
+            
+            // クライアント側セッション初期化と画面リセット
+            currentUser = null;
+            sessionStorage.removeItem('koyo_logged_user');
+            toggleSidebar(false);
+            
+            // 認証画面(ログイン)へ強制移行
+            document.getElementById('main-content').classList.add('hidden');
+            document.getElementById('app-nav').classList.add('hidden');
+            document.getElementById('auth-screen').style.display = 'block';
+            document.getElementById('auth-username').value = "";
+            document.getElementById('auth-password').value = "";
+            
+            if(roomUnsubscribe) { roomUnsubscribe(); roomUnsubscribe = null; }
+        } catch(e) {
+            alert("❌ アカウントの削除中にエラーが発生しました: " + e);
+        }
     }
 </script>
 </body>
