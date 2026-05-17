@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Koyocasino - Elite Edition</title>
+    <title>Koyocasino - Premium Live</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
@@ -70,7 +70,6 @@
 <div class="container">
     <div class="logo">Koyo<span>casino</span></div>
 
-    <!-- 1. 認証画面 -->
     <div id="auth-screen" class="panel">
         <h2 id="auth-title">ログイン</h2>
         <input type="text" id="auth-username" placeholder="ユーザーID">
@@ -79,14 +78,12 @@
         <button class="secondary" id="btn-auth-toggle" onclick="toggleAuthMode()">新規登録はこちら</button>
     </div>
 
-    <!-- メインアプリ -->
     <div id="main-content" class="hidden">
         <div class="user-bar">
             <div>👤 <span id="display-username">-</span></div>
             <div class="balance-box">￥<span id="display-balance">0</span></div>
         </div>
 
-        <!-- ルームバー -->
         <div id="room-bar" class="panel" style="padding: 12px; display:flex; justify-content:space-between; align-items:center;">
             <div>🏠 部屋: <span id="current-room-id" style="font-weight:bold; color:var(--primary);">ロビー</span></div>
             <div style="display:flex; gap:5px;">
@@ -95,7 +92,6 @@
             </div>
         </div>
 
-        <!-- ゲームメニュー -->
         <div id="game-section">
             <div class="game-menu">
                 <div class="game-btn active" id="menu-mines" onclick="selectGame('mines')">💣 マインズ</div>
@@ -105,13 +101,10 @@
                 <div class="game-btn" id="menu-poker" onclick="selectGame('poker')">🃏 ポーカー</div>
             </div>
 
-            <!-- 本格ベットコントロール -->
             <div class="panel" style="padding: 15px;">
-                <!-- 共通ベット額入力 -->
                 <label style="font-size:11px; color:var(--text-muted);">ベット額設定</label>
                 <input type="number" id="bet-amount" value="100" min="10" placeholder="ベット額">
 
-                <!-- 各ゲーム固有の詳細設定オプション -->
                 <div id="setting-mines">
                     <label style="font-size:11px; color:var(--text-muted);">爆弾の数 (1〜24)</label>
                     <input type="number" id="mines-count" value="3" min="1" max="24">
@@ -126,12 +119,10 @@
                     </select>
                 </div>
 
-                <!-- アクションボタン -->
                 <button id="btn-action-main" onclick="pressMainGameAction()">勝負を開始する</button>
 
-                <!-- 途中操作用コントロール -->
                 <div id="bj-controls" class="hidden" style="display:flex; gap:10px; margin-top:10px;">
-                    <button class="secondary" onclick="gameSubAction('hit')">ヒット (カードを引く)</button>
+                    <button class="secondary" onclick="gameSubAction('hit')">ヒット (引く)</button>
                     <button class="secondary" onclick="gameSubAction('stand')" style="background-color:var(--gold); color:#000;">スタンド (勝負)</button>
                 </div>
                 <div id="hilow-controls" class="hidden" style="display:flex; gap:10px; margin-top:10px;">
@@ -139,11 +130,10 @@
                     <button style="background-color:var(--accent); color:white;" onclick="gameSubAction('low')">🔽 次はLOW</button>
                 </div>
                 <div id="mines-controls" class="hidden" style="margin-top:10px;">
-                    <button style="background-color:var(--gold); color:#000;" onclick="gameSubAction('cashout')">💰 キャッシュアウト (利益確定)</button>
+                    <button style="background-color:var(--gold); color:#000;" onclick="gameSubAction('cashout')">💰 キャッシュアウト (利確)</button>
                 </div>
             </div>
 
-            <!-- 同期カジノテーブル -->
             <div class="table-area" id="casino-table">
                 <div class="dealer-side">
                     <div style="font-size:11px; color:var(--text-muted);" id="table-dealer-title">ディーラー / システム</div>
@@ -153,7 +143,6 @@
             </div>
         </div>
 
-        <!-- チャージ、管理者パネル等は裏に格納 -->
         <div id="charge-section" class="panel hidden">
             <h3>💸 残高チャージ</h3>
             <input type="text" id="charge-code" placeholder="コードを入力">
@@ -182,14 +171,15 @@
 </div>
 
 <script>
-    // --- 🔑 【超重要】ここに下の解説で取得したFirebase情報を貼り付けます ---
+    // --- 🔑 あなたのFirebase Configを組み込み済み ---
     const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_PROJECT_ID.appspot.com",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
+        apiKey: "AIzaSyCyoFehr8SM7OaiYeua0Sdbpt3pJiAXI74",
+        authDomain: "koyocasino.firebaseapp.com",
+        projectId: "koyocasino",
+        storageBucket: "koyocasino.firebasestorage.app",
+        messagingSenderId: "1065140182060",
+        appId: "1:1065140182060:web:e0c4da12a5b9842abcc589",
+        measurementId: "G-7X2GZQT5C9"
     };
 
     let db = null;
@@ -250,7 +240,7 @@
         if(db) db.collection('rooms').doc(currentRoom).update({ gameType: g });
     }
 
-    // --- 🎮 本格オンカジゲームロジック群 ---
+    // --- 🎮 カジノゲームロジック ---
     async function pressMainGameAction() {
         const bet = parseInt(document.getElementById('bet-amount').value);
         if(!bet || bet <= 0) return alert("正確なベット額を入れてください");
@@ -281,10 +271,8 @@
         else if(selectedGameType === 'baccarat') {
             const target = document.getElementById('baccarat-target').value;
             const pCards = [draw(), draw()]; const bCards = [draw(), draw()];
-            roomData.dealerCards = bCards; // Bankerの手札
+            roomData.dealerCards = bCards;
             roomData.players[currentUser] = { bet: bet, target: target, cards: pCards, status: 'calculated' };
-            
-            // バカラ勝敗判定(下部関数)
             setTimeout(() => resolveBaccaratGame(pCards, bCards, target, bet), 1500);
         }
         else if(selectedGameType === 'hilow') {
@@ -294,10 +282,9 @@
             document.getElementById('hilow-controls').classList.remove('hidden');
         }
         else if(selectedGameType === 'poker') {
-            // コミュニティカード3枚とプレイヤーの2枚
             roomData.dealerCards = [draw(), draw(), draw()];
             roomData.players[currentUser] = { bet: bet, cards: [draw(), draw()], status: 'showdown' };
-            setTimeout(() => { alert("ポーカー決算：役に応じて配当が付与されます！"); adjustBalance(currentUser, bet * 2); }, 2000);
+            setTimeout(() => { alert("ポーカー決算：2倍配当付与！"); adjustBalance(currentUser, bet * 2); }, 2000);
         }
 
         if(db) { await db.collection('rooms').doc(currentRoom).set(roomData); }
@@ -318,15 +305,15 @@
             if(action === 'hit') {
                 p.cards.push(draw());
                 let score = calcBJScore(p.cards);
-                if(score > 21) { alert("💥 バースト！21を超えました。没収です。"); p.status = 'lost'; document.getElementById('bj-controls').classList.add('hidden'); }
+                if(score > 21) { alert("💥 バースト！没収です。"); p.status = 'lost'; document.getElementById('bj-controls').classList.add('hidden'); }
             } else if(action === 'stand') {
-                data.dealerCards[1] = draw(); // 裏カードオープン
+                data.dealerCards[1] = draw();
                 let dScore = calcBJScore(data.dealerCards);
                 while(dScore < 17) { data.dealerCards.push(draw()); dScore = calcBJScore(data.dealerCards); }
                 let pScore = calcBJScore(p.cards);
                 if(dScore > 21 || pScore > dScore) { alert("🎯 勝利！配当2倍！"); adjustBalance(currentUser, p.bet * 2); }
-                else if(pScore === dScore) { alert("🤝 引き分け。ベット額が戻ります。"); adjustBalance(currentUser, p.bet); }
-                else { alert("💀 ディーラーの勝ち。"); }
+                else if(pScore === dScore) { alert("🤝 引き分け。返金されます。"); adjustBalance(currentUser, p.bet); }
+                else { alert("💀 負けました。"); }
                 document.getElementById('bj-controls').classList.add('hidden');
             }
         }
@@ -334,15 +321,15 @@
             let next = draw(); let curVal = getCardVal(data.dealerCards[data.dealerCards.length-1]); let nextVal = getCardVal(next);
             data.dealerCards.push(next);
             if((action==='high' && nextVal>=curVal) || (action==='low' && nextVal<=curVal)) {
-                alert("🎯 的中！配当1.7倍獲得！"); adjustBalance(currentUser, Math.floor(data.players[currentUser].bet * 1.7));
-            } else { alert("💥 外れ！没収です。"); }
+                alert("🎯 的中！1.7倍獲得！"); adjustBalance(currentUser, Math.floor(data.players[currentUser].bet * 1.7));
+            } else { alert("💥 不正解！没収です。"); }
             document.getElementById('hilow-controls').classList.add('hidden');
         }
         else if(selectedGameType === 'mines' && action === 'cashout') {
             let p = data.players[currentUser];
             let rate = 1 + (p.gemsFound * (p.bCount * 0.15));
             let win = Math.floor(p.bet * rate);
-            alert(`💰 キャッシュアウト成功！倍率 ${rate.toFixed(2)}倍 で ￥${win} を獲得！`);
+            alert(`💰 利確成功！ ${rate.toFixed(2)}倍 で ￥${win} 獲得！`);
             adjustBalance(currentUser, win);
             document.getElementById('mines-controls').classList.add('hidden');
         }
@@ -356,30 +343,22 @@
         let p = rData.players[currentUser];
 
         if(rData.minesGrid[idx].type === 'bomb') {
-            alert("💥 爆弾ペナルティ！全額没収です。");
+            alert("💥 爆弾！全額没収です。");
             p.status = 'lost'; document.getElementById('mines-controls').classList.add('hidden');
-            // 盤面全公開演出
             rData.minesGrid.forEach(t => t.revealed = true);
         } else {
             p.gemsFound++;
             let currentRate = 1 + (p.gemsFound * (p.bCount * 0.15));
-            alert(`💎 ダイヤ！現在の配当期待値: ${currentRate.toFixed(2)}倍`);
+            alert(`💎 ダイヤ！現在の期待値: ${currentRate.toFixed(2)}倍`);
         }
         await ref.set(rData);
     }
 
-    // --- 各種計算補助ロジック ---
+    // --- 計算ロジック ---
     function calcBJScore(cards) {
         let total = 0; let aces = 0;
-        cards.forEach(c => {
-            if(c === 'HIDDEN') return;
-            let v = c.substring(1);
-            if(['J','Q','K'].includes(v)) total += 10;
-            else if(v === 'A') { total += 11; aces++; }
-            else total += parseInt(v);
-        });
-        while(total > 21 && aces > 0) { total -= 10; aces--; }
-        return total;
+        cards.forEach(c => { if(c === 'HIDDEN') return; let v = c.substring(1); if(['J','Q','K'].includes(v)) total += 10; else if(v === 'A') { total += 11; aces++; } else total += parseInt(v); });
+        while(total > 21 && aces > 0) { total -= 10; aces--; } return total;
     }
     function getCardVal(c) { let v = c.substring(1); if(v==='A') return 1; if(v==='J') return 11; if(v==='Q') return 12; if(v==='K') return 13; return parseInt(v); }
     
@@ -387,20 +366,18 @@
         let pScore = (getCardVal(pCards[0]) + getCardVal(pCards[1])) % 10;
         let bScore = (getCardVal(bCards[0]) + getCardVal(bCards[1])) % 10;
         let result = 'tie'; if(pScore > bScore) result = 'player'; else if(bScore > pScore) result = 'banker';
-        
         if(target === result) {
             let payout = bet * (target==='tie' ? 9 : (target==='player' ? 2 : 1.95));
-            alert(`👑 バカラ結果: P[${pScore}] vs B[${bScore}]\n的中！￥${Math.floor(payout)} の払い戻し！`);
+            alert(`👑 バカラ結果: P[${pScore}] vs B[${bScore}]\n的中！ ￥${Math.floor(payout)} 獲得！`);
             adjustBalance(currentUser, Math.floor(payout));
-        } else { alert(`👑 バカラ結果: P[${pScore}] vs B[${bScore}]\n不的中。没収されました。`); }
+        } else { alert(`👑 バカラ結果: P[${pScore}] vs B[${bScore}]\n不的中。`); }
     }
 
     async function adjustBalance(u, amt) {
         if(db) { const r = db.collection('users').doc(u); await db.runTransaction(async t => { const doc = await t.get(r); t.update(r, { balance: (doc.data().balance||0)+amt }); }); }
-        else { localDB.users[u].balance += amt; }
     }
 
-    // --- 描画レンダリング(UIへのカード/マインズ反映) ---
+    // --- テーブル画面描画 ---
     function renderTable(data) {
         const dCards = document.getElementById('dealer-cards'); dCards.innerHTML = "";
         if(data.dealerCards) data.dealerCards.forEach(c => dCards.appendChild(createCardHTML(c)));
@@ -435,23 +412,27 @@
         const e = document.createElement('div'); if(cStr==='HIDDEN'){ e.className='card-back-mini'; return e; }
         const s = cStr.charAt(0); const v = cStr.substring(1); const isRed = s==='♥'||s==='♦';
         e.className = `card-mini ${isRed?'red':''}`; e.innerHTML = `<div>${s}</div><div style="text-align:center;font-size:14px;">${v}</div><div style="transform:rotate(180deg)">${s}</div>`;
+        
+        // カード登場時の3Dめくり回転演出
+        e.style.transform = "rotateY(90deg)";
+        e.style.transition = "transform 0.3s";
+        setTimeout(() => e.style.transform = "rotateY(0deg)", 50);
         return e;
     }
 
-    // --- 管理者 & チャージシステム ---
-    function loginAdmin() { if(document.getElementById('admin-password').value === 'megu@0705gorira') { isAdminLoggedIn = true; switchTab('admin'); } else { alert("不正"); } }
+    // --- 管理者パネル & チャージ機能 ---
+    function loginAdmin() { if(document.getElementById('admin-password').value === 'megu@0705gorira') { isAdminLoggedIn = true; switchTab('admin'); } else { alert("パスワード不一致"); } }
     async function generatePromoCode() {
         const amt = parseInt(document.getElementById('admin-code-amount').value) || 5000;
         let code = 'KOYO-' + Math.random().toString(36).substring(2, 10).toUpperCase();
         if(db) { await db.collection('promo_codes').doc(code).set({ amount: amt, used: false }); }
-        else { localDB.codes[code] = { amount: amt, used: false }; }
-        alert(`生成: ${code} (￥${amt})`); renderAdminCodes();
+        alert(`コード生成成功: ${code} (￥${amt}分)`); renderAdminCodes();
     }
     async function renderAdminCodes() {
         const div = document.getElementById('admin-codes-list'); div.innerHTML = "";
         if(db) {
             const snap = await db.collection('promo_codes').where('used','==',false).get();
-            snap.forEach(d => div.innerHTML += `<div style="font-size:12px;">${d.id} : ￥${d.data().amount}</div>`);
+            snap.forEach(d => div.innerHTML += `<div style="background:var(--bg-main); padding:6px; margin-top:4px; border-radius:4px; font-size:12px;">${d.id} : ￥${d.data().amount.toLocaleString()}</div>`);
         }
     }
     async function redeemCode() {
@@ -460,8 +441,8 @@
             const ref = db.collection('promo_codes').doc(c); const d = await ref.get();
             if(d.exists && !d.data().used) {
                 let amt = d.data().amount; await ref.update({ used: true }); await adjustBalance(currentUser, amt);
-                alert(`成功 ￥${amt}`); document.getElementById('charge-code').value = "";
-            } else alert("無効");
+                alert(`チャージ成功！ ￥${amt.toLocaleString()}が追加されました。`); document.getElementById('charge-code').value = "";
+            } else alert("無効または使用済みのコードです");
         }
     }
     function switchTab(t) {
