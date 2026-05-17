@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Koyocasino - Elite 3G Pro</title>
+    <title>Koyocasino - Elite 3G Perfect</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
@@ -68,18 +68,18 @@
             <div class="balance-box">￥<span id="display-balance">0</span></div>
         </div>
 
-        <div id="room-bar" class="panel" style="padding: 12px; display:flex; flex-direction:column; gap:8px;">
-            <div style="display:flex; justify-content:between; align-items:center;">
-                <div>🏠 現在の部屋: <span id="current-room-id" style="font-weight:bold; color:var(--primary);">ロビー</span></div>
-                <button onclick="createNewRoom()" style="padding:6px; font-size:11px; width:auto; margin-left:auto; background-color:var(--gold);">部屋を作る</button>
-            </div>
-            <div style="display:flex; gap:5px;">
-                <input type="text" id="room-input" placeholder="友達の部屋コードを入力" style="margin-bottom:0; padding:8px; font-size:13px;">
-                <button onclick="joinRoom()" style="padding:8px 15px; font-size:13px; width:auto;">参加</button>
-            </div>
-        </div>
-
         <div id="game-section">
+            <div id="room-bar" class="panel" style="padding: 12px; display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; justify-content:between; align-items:center;">
+                    <div>🏠 現在の部屋: <span id="current-room-id" style="font-weight:bold; color:var(--primary);">ロビー</span></div>
+                    <button onclick="createNewRoom()" style="padding:6px; font-size:11px; width:auto; margin-left:auto; background-color:var(--gold);">部屋を作る</button>
+                </div>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" id="room-input" placeholder="友達の部屋コードを入力" style="margin-bottom:0; padding:8px; font-size:13px;">
+                    <button onclick="joinRoom()" style="padding:8px 15px; font-size:13px; width:auto;">参加</button>
+                </div>
+            </div>
+
             <div class="game-menu">
                 <div class="game-btn active" id="menu-mines" onclick="selectGame('mines')">💣マインズ</div>
                 <div class="game-btn" id="menu-bj" onclick="selectGame('bj')">🃏ブラックジャック</div>
@@ -128,6 +128,7 @@
 
         <div id="charge-section" class="panel hidden">
             <h3>💸 残高チャージ</h3>
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">管理者が発行したプロモコードを入力してください。</p>
             <input type="text" id="charge-code" placeholder="コードを入力">
             <button onclick="redeemCode()">チャージを実行</button>
         </div>
@@ -169,7 +170,7 @@
     let currentUser = null; let isSignUpMode = false; let isAdminLoggedIn = false;
     let selectedGameType = 'mines'; let currentRoom = 'lobby'; let roomUnsubscribe = null;
 
-    // --- 認証システム（重複ブロック・データ永続化） ---
+    // --- 認証システム ---
     function toggleAuthMode() { isSignUpMode = !isSignUpMode; document.getElementById('auth-title').innerText = isSignUpMode ? "新規登録" : "ログイン"; }
     
     async function handleAuth() {
@@ -201,7 +202,7 @@
         listenRoom(currentRoom);
     }
 
-    // --- 簡単スマートな部屋管理 ---
+    // --- 部屋管理 ---
     function createNewRoom() {
         const rCode = 'ROOM-' + Math.floor(1000 + Math.random() * 9000);
         document.getElementById('room-input').value = rCode;
@@ -229,11 +230,10 @@
         db.collection('rooms').doc(currentRoom).update({ gameType: g }).catch(()=>{});
     }
 
-    // --- 🎮 新・本格派カジノロジック（ガチ仕様） ---
+    // --- ゲームロジック ---
     const suites = ['♠','♥','♦','♣']; const vals = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
     const draw = () => suites[Math.floor(Math.random()*4)] + vals[Math.floor(Math.random()*13)];
 
-    // 本家仕様マインズ確率配当計算式
     function getMinesMultiplier(gems, bombs) {
         if (gems === 0) return 1.0;
         let p = 1.0;
@@ -246,22 +246,13 @@
         return (0.99 / p);
     }
 
-    // 【新実装】現在のカードに基づいたハイロー倍率のリアルタイム計算
     function getHiLowOdds(currentCardStr) {
-        let currentVal = getCardVal(currentCardStr); // 1(A) 〜 13(K)
-        
-        // トランプ1組(13段階)における確率計算 (同じ数字はHIGH/LOW両方セーフとする本家ルール)
+        let currentVal = getCardVal(currentCardStr);
         let highWays = 13 - currentVal + 1;
         let lowWays = currentVal;
-        
-        // ハウスエッジ1.5%を考慮した正確な倍率
         let highOdds = (13 / highWays) * 0.985;
         let lowOdds = (13 / lowWays) * 0.985;
-        
-        return {
-            high: Math.max(1.01, highOdds),
-            low: Math.max(1.01, lowOdds)
-        };
+        return { high: Math.max(1.01, highOdds), low: Math.max(1.01, lowOdds) };
     }
 
     async function pressMainGameAction() {
@@ -297,9 +288,7 @@
         else if(selectedGameType === 'hilow') {
             let firstCard = draw();
             roomData.dealerCards = [firstCard];
-            // currentMultiplierに今までの累積倍率を保存していく
             roomData.players[currentUser] = { bet: bet, currentMultiplier: 1.0, status: 'playing' };
-            
             document.getElementById('hilow-controls').classList.remove('hidden');
             updateHiLowButtonLabels(firstCard, bet * 1.0);
         }
@@ -309,14 +298,10 @@
 
     function updateHiLowButtonLabels(currentCard, currentPool) {
         let odds = getHiLowOdds(currentCard);
-        document.getElementById('btn-hilow-high').innerText = `🔼 HIGH (x${odds.high.toFixed(2)}) 次の配当: ￥${Math.floor(currentPool * odds.high)}`;
-        document.getElementById('btn-hilow-low').innerText = `🔽 LOW (x${odds.low.toFixed(2)}) 次の配当: ￥${Math.floor(currentPool * odds.low)}`;
+        document.getElementById('btn-hilow-high').innerText = `🔼 HIGH (x${odds.high.toFixed(2)}) 次: ￥${Math.floor(currentPool * odds.high)}`;
+        document.getElementById('btn-hilow-low').innerText = `🔽 LOW (x${odds.low.toFixed(2)}) 次: ￥${Math.floor(currentPool * odds.low)}`;
         document.getElementById('btn-hilow-cashout').innerText = `💰 キャッシュアウト (￥${Math.floor(currentPool)})`;
-        if(currentPool <= parseInt(document.getElementById('bet-amount').value)) {
-            document.getElementById('btn-hilow-cashout').disabled = true; // 初手はキャッシュアウト不可
-        } else {
-            document.getElementById('btn-hilow-cashout').disabled = false;
-        }
+        document.getElementById('btn-hilow-cashout').disabled = (currentPool <= parseInt(document.getElementById('bet-amount').value));
     }
 
     async function gameSubAction(action) {
@@ -328,7 +313,7 @@
         if(selectedGameType === 'bj') {
             if(action === 'hit') {
                 p.cards.push(draw());
-                if(calcBJScore(p.cards) > 21) { alert("💥 バースト！没収です。"); p.status = 'lost'; document.getElementById('bj-controls').classList.add('hidden'); }
+                if(calcBJScore(p.cards) > 21) { alert("💥 バースト！"); p.status = 'lost'; document.getElementById('bj-controls').classList.add('hidden'); }
             } 
             else if(action === 'double') {
                 await adjustBalance(currentUser, -p.bet);
@@ -340,20 +325,18 @@
                 p.isSplit = true; p.subHand = [p.cards.pop()];
                 p.cards.push(draw()); p.subHand.push(draw());
                 document.getElementById('btn-bj-split').disabled = true;
-                alert("🃏 手札をスプリット（2分割）しました！");
+                alert("🃏 スプリット完了！");
             }
             else if(action === 'stand') {
                 document.getElementById('bj-controls').classList.add('hidden');
                 bjDealerTurn(data, p);
             }
         }
-        // 【大改良】ハイロー倍率蓄積 ＆ 逃げ・利確ロジック
         else if(selectedGameType === 'hilow') {
             let currentCard = data.dealerCards[data.dealerCards.length - 1];
-            
             if (action === 'cashout') {
                 let finalWin = Math.floor(p.bet * p.currentMultiplier);
-                alert(`💰 キャッシュアウト成功！ 連続的中おめでとうございます！ ￥${finalWin.toLocaleString()} 獲得！`);
+                alert(`💰 利確成功！ ￥${finalWin.toLocaleString()} 獲得！`);
                 await adjustBalance(currentUser, finalWin);
                 document.getElementById('hilow-controls').classList.add('hidden');
                 p.status = 'cashedout';
@@ -364,25 +347,19 @@
 
                 let curVal = getCardVal(currentCard);
                 let nextVal = getCardVal(nextCard);
-                
                 let isWin = false;
                 let stepMultiplier = 1.0;
 
-                if (action === 'high') {
-                    stepMultiplier = odds.high;
-                    if (nextVal >= curVal) isWin = true; // 同じ数字もセーフ（本家仕様）
-                } else if (action === 'low') {
-                    stepMultiplier = odds.low;
-                    if (nextVal <= curVal) isWin = true;
-                }
+                if (action === 'high') { stepMultiplier = odds.high; if (nextVal >= curVal) isWin = true; } 
+                else if (action === 'low') { stepMultiplier = odds.low; if (nextVal <= curVal) isWin = true; }
 
                 if (isWin) {
-                    p.currentMultiplier *= stepMultiplier; // 倍率を累積・ストック！
+                    p.currentMultiplier *= stepMultiplier;
                     let currentPool = p.bet * p.currentMultiplier;
-                    alert(`🎯 的中！ 倍率蓄積中: ${p.currentMultiplier.toFixed(2)}倍 (現在 ￥${Math.floor(currentPool)})！ さらに続けますか？`);
+                    alert(`🎯 的中！ ${p.currentMultiplier.toFixed(2)}倍 (￥${Math.floor(currentPool)})`);
                     updateHiLowButtonLabels(nextCard, currentPool);
                 } else {
-                    alert(`💥 外れ！ 運ばれたカードは [ ${nextCard} ] でした。全額没収です...`);
+                    alert(`💥 外れ！ カードは [ ${nextCard} ] でした。没収です。`);
                     document.getElementById('hilow-controls').classList.add('hidden');
                     p.status = 'lost';
                 }
@@ -391,7 +368,7 @@
         else if(selectedGameType === 'mines' && action === 'cashout') {
             let mult = getMinesMultiplier(p.gemsFound, p.bCount);
             let win = Math.floor(p.bet * mult);
-            alert(`💰 キャッシュアウト成功！ ${mult.toFixed(2)}倍 で ￥${win} を獲得！`);
+            alert(`💰 ￥${win} 獲得！`);
             await adjustBalance(currentUser, win);
             document.getElementById('mines-controls').classList.add('hidden');
             data.minesGrid.forEach(t => t.revealed = true);
@@ -402,12 +379,11 @@
     async function clickMinesTile(idx, rData) {
         const ref = db.collection('rooms').doc(currentRoom);
         if(rData.minesGrid[idx].revealed) return;
-        
         rData.minesGrid[idx].revealed = true;
         let p = rData.players[currentUser];
 
         if(rData.minesGrid[idx].type === 'bomb') {
-            alert("💥 BOMB！爆弾ペナルティ。全額没収です。");
+            alert("💥 BOMB！全額没収です。");
             p.status = 'lost'; document.getElementById('mines-controls').classList.add('hidden');
             rData.minesGrid.forEach(t => t.revealed = true);
         } else {
@@ -422,21 +398,12 @@
         data.dealerCards[1] = draw();
         let dScore = calcBJScore(data.dealerCards);
         while(dScore < 17) { data.dealerCards.push(draw()); dScore = calcBJScore(data.dealerCards); }
-        
         let pScore = calcBJScore(p.cards);
-        if(dScore > 21 || pScore > dScore) { alert("🎯 勝利！2倍の払い戻し。"); adjustBalance(currentUser, p.bet * 2); }
-        else if(pScore === dScore) { alert("🤝 プッシュ（引き分け）返金されます。"); adjustBalance(currentUser, p.bet); }
-        else { alert("💀 ディーラーの勝ち。"); }
-
-        if(p.isSplit) {
-            let pSubScore = calcBJScore(p.subHand);
-            alert(`🃏 スプリット側の勝負(スコア: ${pSubScore}):`);
-            if(dScore > 21 || pSubScore > dScore) { alert("🎯 スプリット側も勝利！"); adjustBalance(currentUser, p.bet * 2); }
-            else if(pSubScore === dScore) { adjustBalance(currentUser, p.bet); }
-        }
+        if(dScore > 21 || pScore > dScore) { alert("🎯 勝利！2倍配当。"); adjustBalance(currentUser, p.bet * 2); }
+        else if(pScore === dScore) { alert("🤝 引き分け返金。"); adjustBalance(currentUser, p.bet); }
+        else { alert("💀 敗北。"); }
     }
 
-    // --- 各種計算補助ロジック ---
     function calcBJScore(cards) {
         let total = 0; let aces = 0;
         cards.forEach(c => { if(c === 'HIDDEN') return; let v = c.substring(1); if(['J','Q','K'].includes(v)) total += 10; else if(v === 'A') { total += 11; aces++; } else total += parseInt(v); });
@@ -449,19 +416,16 @@
         await db.runTransaction(async t => { const doc = await t.get(r); t.update(r, { balance: (doc.data().balance||0)+amt }); }); 
     }
 
-    // --- テーブル同期レンダリング ---
+    // --- 同期レンダリング ---
     function renderTable(data) {
         const dCards = document.getElementById('dealer-cards'); dCards.innerHTML = "";
         if(data.dealerCards) data.dealerCards.forEach(c => dCards.appendChild(createCardHTML(c)));
 
         const pSide = document.getElementById('table-players'); pSide.innerHTML = "";
         
-        // ハイロー選択中かつプレイ中なら、リアルタイムのラベル表示を同期維持
         if(data.gameType === 'hilow' && data.dealerCards && data.dealerCards.length > 0 && data.players[currentUser]) {
             let p = data.players[currentUser];
-            if (p.status === 'playing') {
-                updateHiLowButtonLabels(data.dealerCards[data.dealerCards.length - 1], p.bet * p.currentMultiplier);
-            }
+            if (p.status === 'playing') updateHiLowButtonLabels(data.dealerCards[data.dealerCards.length - 1], p.bet * p.currentMultiplier);
         }
 
         if(data.gameType === 'mines' && data.minesGrid && data.minesGrid.length > 0) {
@@ -485,7 +449,7 @@
                 const cFlex = document.createElement('div'); cFlex.className = 'cards-flex';
                 if(p.cards) p.cards.forEach(c => cFlex.appendChild(createCardHTML(c)));
                 if(p.isSplit && p.subHand) {
-                    box.innerHTML += `<div style="font-size:9px; border-top:1px solid #fff; margin-top:5px;">スプリット手</div>`;
+                    box.innerHTML += `<div style="font-size:9px; border-top:1px solid #fff; margin-top:5px;">スプリット</div>`;
                     p.subHand.forEach(c => cFlex.appendChild(createCardHTML(c)));
                 }
                 box.appendChild(cFlex); pSide.appendChild(box);
@@ -500,7 +464,31 @@
         return e;
     }
 
-    // --- 管理者・チャージ ---
+    // --- 【バグ完全解消】確実なタブ切り替え処理 ---
+    function switchTab(t) {
+        // 親要素ごとガッツリ隠す・出すを設定
+        ['game','charge','admin'].forEach(x => { 
+            document.getElementById(`${x}-section`).classList.add('hidden'); 
+            document.getElementById(`nav-${x}`).classList.remove('active'); 
+        });
+        document.getElementById('admin-login-section').classList.add('hidden'); 
+        document.getElementById('admin-dashboard').classList.add('hidden');
+        
+        // 選択されたタブだけ表示
+        document.getElementById(`${t}-section`).classList.remove('hidden'); 
+        document.getElementById(`nav-${t}`).classList.add('active');
+        
+        if(t === 'admin') { 
+            if(isAdminLoggedIn) { 
+                document.getElementById('admin-dashboard').classList.remove('hidden'); 
+                renderAdminCodes(); 
+            } else { 
+                document.getElementById('admin-login-section').classList.remove('hidden'); 
+            } 
+        }
+    }
+
+    // --- 管理者裏コマンド ---
     function loginAdmin() { if(document.getElementById('admin-password').value === 'megu@0705gorira') { isAdminLoggedIn = true; switchTab('admin'); } else { alert("違います"); } }
     async function generatePromoCode() {
         const amt = parseInt(document.getElementById('admin-code-amount').value) || 5000;
@@ -520,12 +508,6 @@
             let amt = d.data().amount; await ref.update({ used: true }); await adjustBalance(currentUser, amt);
             alert(`成功 ￥${amt}`); document.getElementById('charge-code').value = "";
         } else alert("無効");
-    }
-    function switchTab(t) {
-        ['game','charge','admin'].forEach(x => { document.getElementById(`${x}-section`).classList.add('hidden'); document.getElementById(`nav-${x}`).classList.remove('active'); });
-        document.getElementById('admin-login-section').classList.add('hidden'); document.getElementById('admin-dashboard').classList.add('hidden');
-        document.getElementById(`${t}-section`).classList.remove('hidden'); document.getElementById(`nav-${t}`).classList.add('active');
-        if(t === 'admin') { if(isAdminLoggedIn) { document.getElementById('admin-dashboard').classList.remove('hidden'); renderAdminCodes(); } else { document.getElementById('admin-login-section').classList.remove('hidden'); } }
     }
 </script>
 </body>
