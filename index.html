@@ -75,7 +75,7 @@
         .room-mini-input { width: 100%; padding: 6px 10px; background: var(--bg-input); border: 1px solid #2f4553; border-radius: 4px; color: #fff; font-size: 13px; margin-bottom: 0; }
         .room-mini-btn { width: auto; padding: 6px 12px; font-size: 12px; font-weight: bold; border-radius: 4px; }
 
-        /* ロビーインジケーター（文字排除・スタイリッシュ化） */
+        /* ロビーインジケーター */
         .lobby-status-indicator { background: linear-gradient(90deg, rgba(33,55,67,0.6) 0%, rgba(15,33,46,0.1) 100%); height: 3px; border-radius: 2px; margin-bottom: 15px; display: flex; align-items: center; position: relative; }
         .lobby-status-indicator::before { content: ''; width: 12px; height: 3px; background: #3498db; border-radius: 2px; display: inline-block; box-shadow: 0 0 6px #3498db; }
 
@@ -123,12 +123,22 @@
         .history-item { background: var(--bg-input); padding: 8px 10px; border-radius: 4px; margin-top: 6px; font-size: 12px; border-left: 3px solid var(--primary); }
         .tx-history-box { max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
         .tx-item { background: var(--bg-input); padding: 8px 12px; border-radius: 4px; border-left: 3px solid var(--gold); font-size: 12px; }
+
+        /* ランキング用UI */
+        .leaderboard-box { display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto; margin-top: 10px; }
+        .leaderboard-row { display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); padding: 10px 14px; border-radius: 6px; font-size: 13px; border: 1px solid rgba(255,255,255,0.03); }
+        .leaderboard-row.top-3 { border-left: 3px solid var(--gold); background: linear-gradient(90deg, rgba(243,156,18,0.08) 0%, rgba(33,55,67,0.4) 100%); }
+        .rank-badge { font-weight: bold; width: 22px; color: var(--gold); }
+        
+        /* 管理者全プレイヤーマネー調整 */
+        .admin-user-row { display: flex; justify-content: space-between; align-items: center; background: #13222d; padding: 8px 10px; border-radius: 4px; margin-bottom: 6px; font-size: 12px; gap: 8px; }
+        .admin-money-input { width: 90px; padding: 4px 6px; font-size: 12px; margin-bottom: 0; background: var(--bg-main); border: 1px solid #2f4553; text-align: right; }
     </style>
 </head>
 <body>
 
 <div id="p2p-toast" class="p2p-toast-banner">
-    <div id="p2p-toast-text">⚔️ 对战招待が届きました</div>
+    <div id="p2p-toast-text">⚔️ 対戦招待が届きました</div>
     <div class="p2p-btn-row">
         <button onclick="handleP2PResponse(true)" style="background:#00e701; color:#000; flex:1;">参戦</button>
         <button onclick="handleP2PResponse(false)" style="background:#fff; color:#000; flex:1;">拒否</button>
@@ -158,6 +168,7 @@
     <button onclick="openSubModal('vault')" style="background-color:var(--gold); color:#000; text-align:left;">💰 保管庫 (Vault) を開く</button>
     <button onclick="openSubModal('vip')" style="background-color:#9b59b6; color:#fff; text-align:left;">👑 VIP 特典・ボーナス</button>
     <button onclick="openSubModal('tip')" style="background-color:#3498db; color:#fff; text-align:left;">💸 友達にチップを送る</button>
+    <button onclick="openSubModal('leaderboard')" style="background-color:#2ecc71; color:#000; text-align:left;">🏆 所持金ランキング (Rankings)</button>
     <button onclick="openSubModal('txhistory')" style="background-color:#2c3e50; color:#fff; text-align:left;">📜 取引履歴 (Logs)</button>
     
     <button onclick="toggleSidebar(false)" class="secondary" style="margin-top:auto;">閉じる</button>
@@ -218,6 +229,13 @@
     <div class="modal-header"><h3>📜 取引履歴 (Logs)</h3><span style="cursor:pointer;" onclick="closeSubModal('txhistory')">✕</span></div>
     <div class="tx-history-box" id="tx-history-container">
         <p style="font-size:12px; color:var(--text-muted); text-align:center;">履歴データを読み込み中...</p>
+    </div>
+</div>
+
+<div class="sub-modal" id="modal-leaderboard">
+    <div class="modal-header"><h3>🏆 所持金ランキング</h3><span style="cursor:pointer;" onclick="closeSubModal('leaderboard')">✕</span></div>
+    <div class="leaderboard-box" id="leaderboard-container">
+        <p style="font-size:12px; color:var(--text-muted); text-align:center;">ランキングを集計中...</p>
     </div>
 </div>
 
@@ -362,7 +380,12 @@
                 <h3>👑 Koyocasino 管理者パネル</h3>
                 <input type="number" id="admin-code-amount" value="5000">
                 <button onclick="generatePromoCode()">プロモコード生成</button>
-                <div id="admin-codes-list" style="margin-top:10px; max-height:200px; overflow-y:auto;"></div>
+                <div id="admin-codes-list" style="margin-top:10px; max-height:130px; overflow-y:auto; margin-bottom:15px;"></div>
+                
+                <h3 style="border-top:1px dashed #2f4553; padding-top:12px; margin-top:12px;">👤 全プレイヤー所持金操作</h3>
+                <div id="admin-player-money-list" style="margin-top:10px; max-height:250px; overflow-y:auto;">
+                    <p style="font-size:12px; color:var(--text-muted);">プレイヤーデータを読み込み中...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -390,7 +413,7 @@
 
     let currentUser = null; let isAdminLoggedIn = false; let isSignUpMode = false;
     let selectedGameType = 'mines'; let currentRoom = 'lobby'; let roomUnsubscribe = null;
-    let localGameState = null;
+    let localGameState = null; let isProcessingGameStart = false; // 重複・連打防止フラグ
 
     let rouletteSelectedSpot = 'red'; 
     let isRouletteSpinning = false;
@@ -407,8 +430,7 @@
         for(let lv=1; lv<=5; lv++) {
             rankRequirements.push({
                 name: `${baseRanks[r]} ${lv}`,
-                required: cumulativeWager,
-                reward: (r + 1) * lv * 1000
+                required: cumulativeWager
             });
             cumulativeWager += (r + 1) * 3000;
         }
@@ -429,6 +451,7 @@
 
     function openSubModal(type) {
         document.getElementById(`modal-${type}`).classList.add('open');
+        if(type === 'leaderboard') { fetchAndRenderLeaderboard(); }
     }
     function closeSubModal(type) {
         document.getElementById(`modal-${type}`).classList.remove('open');
@@ -507,7 +530,6 @@
         else { return `${mins}分 ${secs}秒`; }
     }
 
-    // 各種履歴ログ集約書き込み用共通関数
     async function logTransaction(type, amount, detail = "") {
         try {
             await db.collection('transactions').add({
@@ -520,7 +542,42 @@
         } catch(e) { console.error("Log error: ", e); }
     }
 
-    // 取引履歴の取得・描画ロジック
+    // 全プレイヤーの所持金ランキング取得機能
+    async function fetchAndRenderLeaderboard() {
+        const container = document.getElementById('leaderboard-container');
+        if(!container) return;
+        try {
+            const snap = await db.collection('users').get();
+            let users = [];
+            snap.forEach(d => {
+                let data = d.data();
+                users.push({ id: d.id, balance: data.balance || 0, wagered: data.wagered || 0 });
+            });
+            // 所持金順にソート
+            users.sort((a, b) => b.balance - a.balance);
+            
+            // 上位10名枠切り出し
+            let topUsers = users.slice(0, 10);
+            container.innerHTML = "";
+            
+            topUsers.forEach((u, index) => {
+                let rank = index + 1;
+                let isTop3 = rank <= 3 ? "top-3" : "";
+                container.innerHTML += `
+                    <div class="leaderboard-row ${isTop3}">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span class="rank-badge">#${rank}</span>
+                            <span style="font-weight:bold; color:#fff;">${u.id}</span>
+                        </div>
+                        <div style="color:var(--primary); font-weight:bold;">￥${u.balance.toLocaleString()}</div>
+                    </div>
+                `;
+            });
+        } catch(e) {
+            container.innerHTML = `<p style="font-size:12px; color:var(--accent);">ランキングの読み込みに失敗しました。</p>`;
+        }
+    }
+
     async function fetchAndRenderTxHistory() {
         const container = document.getElementById('tx-history-container');
         if(!container) return;
@@ -539,7 +596,6 @@
                 data.id = d.id;
                 logs.push(data);
             });
-            // タイムスタンプの降順でソート
             logs.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
             container.innerHTML = "";
@@ -587,7 +643,6 @@
         }).then(async () => {
             alert(`💸 ${targetId} へ ￥${amount.toLocaleString()} のチップを送金しました！`);
             await logTransaction("チップ送金(送信)", -amount, `宛先: ${targetId}`);
-            // 相手側ログ生成
             try { await db.collection('transactions').add({ username: targetId, type: "チップ受取(受信)", amount: amount, detail: `差出人: ${currentUser}`, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); } catch(err){}
             
             document.getElementById('tip-target-id').value = "";
@@ -596,7 +651,6 @@
         }).catch(err => alert("❌ エラー: " + err));
     }
 
-    // 全ボーナス受取制限のデイリー方式統一化
     async function claimVipBonus(type) {
         const userRef = db.collection('users').doc(currentUser);
         let now = Date.now();
@@ -647,6 +701,7 @@
         }
     }
 
+    // ランクアップ時のお金特典支給処理を完全に撤廃
     async function processWagerVipMetrics(wagerAmount) {
         const userRef = db.collection('users').doc(currentUser);
         await db.runTransaction(async t => {
@@ -656,25 +711,6 @@
             let oldWagered = data.wagered || 0;
             let totalWagered = oldWagered + wagerAmount;
             
-            let oldRankIdx = 0;
-            for(let i=0; i<rankRequirements.length; i++) {
-                if(oldWagered >= rankRequirements[i].required) oldRankIdx = i;
-            }
-            let newRankIdx = 0;
-            for(let i=0; i<rankRequirements.length; i++) {
-                if(totalWagered >= rankRequirements[i].required) newRankIdx = i;
-            }
-
-            let bonusRewardText = "";
-            let balanceBonus = 0;
-            
-            if(newRankIdx > oldRankIdx) {
-                for(let k = oldRankIdx + 1; k <= newRankIdx; k++) {
-                    balanceBonus += rankRequirements[k].reward;
-                }
-                bonusRewardText = `\n👑 ランクアップおめでとうございます！\n🎁 特典として ￥${balanceBonus.toLocaleString()} が支給されました！`;
-            }
-
             let poolRb = (data.poolRakeback || 0) + (wagerAmount * 0.005);
             let poolDl = (data.poolDaily || 0) + (wagerAmount * 0.003);
             let poolWk = (data.poolWeekly || 0) + (wagerAmount * 0.005);
@@ -682,19 +718,11 @@
 
             t.update(userRef, {
                 wagered: totalWagered,
-                balance: (data.balance || 0) + balanceBonus,
                 poolRakeback: poolRb,
                 poolDaily: poolDl,
                 poolWeekly: poolWk,
                 poolMonthly: poolMn
             });
-
-            if(balanceBonus > 0) {
-                setTimeout(async () => {
-                    alert(bonusRewardText);
-                    await logTransaction("👑 ランクアップ報酬支給", balanceBonus, `到達段階: ${rankRequirements[newRankIdx].name}`);
-                }, 400);
-            }
         });
     }
 
@@ -893,7 +921,7 @@
 
     function updateMainActionButtonState() {
         const btn = document.getElementById('btn-action-main');
-        if ((localGameState && localGameState.status === 'playing') || isRouletteSpinning || isDiceSpinning) {
+        if ((localGameState && localGameState.status === 'playing') || isRouletteSpinning || isDiceSpinning || isProcessingGameStart) {
             btn.disabled = true; btn.innerText = "勝負進行中...";
         } else {
             btn.disabled = false; btn.innerText = "ベットして勝負開始";
@@ -1002,24 +1030,30 @@
     }
 
     async function startIndividualGame() {
+        if(isProcessingGameStart) return; // ボタン連打対策ガード
+        isProcessingGameStart = true;
+        updateMainActionButtonState();
+
         const bet = parseInt(document.getElementById('bet-amount').value);
-        if(!bet || bet <= 0) return alert("ベット額を入力してください");
+        if(!bet || bet <= 0) { isProcessingGameStart = false; updateMainActionButtonState(); return alert("ベット額を入力してください"); }
         
         const uDoc = await db.collection('users').doc(currentUser).get();
-        if(uDoc.data().balance < bet) return alert("❌ 残高が足りません！");
+        if(uDoc.data().balance < bet) { isProcessingGameStart = false; updateMainActionButtonState(); return alert("❌ 残高が足りません！"); }
 
         if(selectedGameType === 'roulette') {
-            if(isRouletteSpinning) return;
+            if(isRouletteSpinning) { isProcessingGameStart = false; return; }
             await adjustBalance(currentUser, -bet);
             await processWagerVipMetrics(bet);
+            isProcessingGameStart = false; 
             runRouletteEngine(bet);
             return;
         }
 
         if(selectedGameType === 'dice') {
-            if(isDiceSpinning) return;
+            if(isDiceSpinning) { isProcessingGameStart = false; return; }
             await adjustBalance(currentUser, -bet);
             await processWagerVipMetrics(bet);
+            isProcessingGameStart = false;
             runDiceEngine(bet);
             return;
         }
@@ -1055,11 +1089,11 @@
         roomData.players[currentUser] = myGame;
         await rRef.set(roomData);
         localGameState = myGame;
+        isProcessingGameStart = false; // 解除
         renderMyOwnBoard();
         updateMainActionButtonState();
     }
 
-    // 🎡 ビジュアル完全準拠型ルーレットエンジン（止まった出目を結果とする方式）
     function runRouletteEngine(betAmt) {
         isRouletteSpinning = true;
         updateMainActionButtonState();
@@ -1067,7 +1101,6 @@
         let duration = 3000; 
         let startTime = Date.now();
         
-        // ランダムな回転量（初速・摩擦のゆらぎ）を付与
         const totalRotation = (Math.PI * 6) + (Math.random() * Math.PI * 2);
         const arcSize = (2 * Math.PI) / rouletteNumbers.length;
 
@@ -1078,8 +1111,6 @@
 
             let easeOutPower = 1 - Math.pow(1 - progress, 3); 
             let currentWheelAngle = easeOutPower * totalRotation;
-            
-            // ボールは逆に滑らせて、最後に真上で静止する演出用の位置計算
             let currentBallAngle = - currentWheelAngle + (Math.PI * 0.5);
 
             drawRouletteCanvas(currentWheelAngle, currentBallAngle);
@@ -1089,7 +1120,6 @@
             } else {
                 isRouletteSpinning = false;
                 
-                // 👑 アニメーション停止位置（真上 12時方向）にあるポケットを正確に逆算抽出し、結果と同期
                 let normalizedAngle = currentWheelAngle % (Math.PI * 2);
                 let pointerAngle = (Math.PI * 2) - normalizedAngle;
                 let targetIndex = Math.floor(pointerAngle / arcSize) % rouletteNumbers.length;
@@ -1143,16 +1173,13 @@
         ctx.beginPath(); ctx.arc(cx, cy, r - 45, 0, 2*Math.PI); ctx.fillStyle = '#10222e'; ctx.fill();
         ctx.beginPath(); ctx.arc(cx, cy, 10, 0, 2*Math.PI); ctx.fillStyle = '#f39c12'; ctx.fill();
 
-        // ボール
         let ballRadius = r - 28; let bx = cx + Math.cos(bAngle) * ballRadius; let by = cy + Math.sin(bAngle) * ballRadius;
         ctx.beginPath(); ctx.arc(bx, by, 5, 0, 2*Math.PI); ctx.fillStyle = '#ffffff'; ctx.fill();
         ctx.lineWidth = 1; ctx.strokeStyle = '#000'; ctx.stroke();
 
-        // 判定ポインター矢印（真上 12時方向）
         ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(cx, cy - r - 4); ctx.lineTo(cx - 6, cy - r + 8); ctx.lineTo(cx + 6, cy - r + 8); ctx.fill();
     }
 
-    // 🎲 アニメーション最終停止の目を強制結果にするダイスエンジン
     function runDiceEngine(betAmt) {
         isDiceSpinning = true;
         updateMainActionButtonState();
@@ -1170,7 +1197,6 @@
             let progress = elapsed / duration;
             if(progress > 1) progress = 1;
 
-            // 👑 完全に出目の変動アニメーション枠から「最終フレームの出目」を最終確定値として同期
             let finalRoll = Math.floor(Math.random() * 6) + 1;
 
             const cvs = document.getElementById('dice-canvas');
@@ -1377,7 +1403,7 @@
 
         if(p.gameType === 'dice') {
             const diceWrapper = document.createElement('div'); diceWrapper.className = 'roulette-container';
-            diceWrapper.innerHTML = `<canvas id="dice-canvas" width="220" height="120" style="background:#0a1118; border-radius:8px; border:2px solid #2f4553 PapayaWhip;"></canvas>`;
+            diceWrapper.innerHTML = `<canvas id="dice-canvas" width="220" height="120" style="background:#0a1118; border-radius:8px; border:2px solid #2f4553;"></canvas>`;
             box.appendChild(diceWrapper);
             setTimeout(() => {
                 const cvs = document.getElementById('dice-canvas'); if(!cvs) return;
@@ -1507,7 +1533,12 @@
         else if(tabName === 'charge') { document.getElementById('section-charge').classList.add('active-tab'); document.getElementById('nav-charge').classList.add('active'); } 
         else if(tabName === 'admin') {
             document.getElementById('section-admin').classList.add('active-tab'); document.getElementById('nav-admin').classList.add('active');
-            if(isAdminLoggedIn) { document.getElementById('admin-login-section').classList.add('hidden'); document.getElementById('admin-dashboard').classList.remove('hidden'); renderAdminCodes(); } 
+            if(isAdminLoggedIn) { 
+                document.getElementById('admin-login-section').classList.add('hidden'); 
+                document.getElementById('admin-dashboard').classList.remove('hidden'); 
+                renderAdminCodes(); 
+                fetchAndRenderAdminPlayerManager(); // 全ユーザー所持金操作マネージャーの展開
+            } 
             else { document.getElementById('admin-login-section').classList.remove('hidden'); document.getElementById('admin-dashboard').classList.add('hidden'); }
         }
     }
@@ -1523,6 +1554,59 @@
         const div = document.getElementById('admin-codes-list'); div.innerHTML = "";
         const snap = await db.collection('promo_codes').where('used','==',false).get();
         snap.forEach(d => div.innerHTML += `<div style="font-size:12px; background:#000; margin-top:2px; padding:6px; border-radius:4px;">${d.id} : ￥${d.data().amount}</div>`);
+    }
+
+    // 管理者パネル内：全プレイヤー所持金管理リスト描画＆書き換え
+    async function fetchAndRenderAdminPlayerManager() {
+        const container = document.getElementById('admin-player-money-list');
+        if(!container) return;
+        try {
+            const snap = await db.collection('users').get();
+            container.innerHTML = "";
+            snap.forEach(doc => {
+                let uId = doc.id;
+                let data = doc.data();
+                let currentBal = data.balance || 0;
+
+                const row = document.createElement('div');
+                row.className = 'admin-user-row';
+                row.innerHTML = `
+                    <span style="font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">👤 ${uId}</span>
+                    <div style="display:flex; align-items:center; gap:4px;">
+                        <input type="number" id="admin-bal-input-${uId}" class="admin-money-input" value="${currentBal}">
+                        <button onclick="updatePlayerMoneyFromAdmin('${uId}')" style="width:auto; padding:5px 8px; font-size:11px; background:var(--gold); color:#000;">更新</button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        } catch(e) {
+            container.innerHTML = `<p style="font-size:12px; color:var(--accent);">プレイヤーリストの取得に失敗しました</p>`;
+        }
+    }
+
+    // 管理者権限による特定ユーザーの残高上書きコミット
+    async function updatePlayerMoneyFromAdmin(targetUserId) {
+        const inputEl = document.getElementById(`admin-bal-input-${targetUserId}`);
+        if(!inputEl) return;
+        const newAmount = parseInt(inputEl.value);
+        if(isNaN(newAmount) || newAmount < 0) return alert("正しい数値を入力してください");
+
+        try {
+            await db.collection('users').doc(targetUserId).update({ balance: newAmount });
+            alert(`✨ ${targetUserId} の所持金を ￥${newAmount.toLocaleString()} に更新しました！`);
+            // 管理者変更ログを対象ユーザーに挿入
+            try {
+                await db.collection('transactions').add({
+                    username: targetUserId,
+                    type: "🛠️ 管理者による残高調整",
+                    amount: 0,
+                    detail: `管理者によって所持金が ￥${newAmount.toLocaleString()} に再設定されました。`,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch(lErr){}
+        } catch(e) {
+            alert("❌ 残高更新エラー: " + e);
+        }
     }
 
     async function redeemCode() {
