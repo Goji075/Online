@@ -32,7 +32,7 @@
         .bet-adjust-group { display: flex; gap: 6px; margin-bottom: 12px; }
         .bet-adjust-btn { background: var(--bg-input); border: 1px solid #2f4553; color: var(--text-main); padding: 8px; font-size: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; width: 50%; }
 
-        /* 👑 1枚目の写真の箇所：下へスクロールしても常についてくる固定UI設定 */
+        /* 固定上部ナビバー */
         .user-bar { position: sticky; top: 0; z-index: 140; display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-card); padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: 1px solid #2f4553; }
         .balance-box { background-color: var(--bg-input); padding: 6px 12px; border-radius: 4px; font-weight: bold; color: var(--primary); margin-left: auto; margin-right: 10px; }
         .menu-trigger { font-size: 24px; cursor: pointer; color: var(--text-muted); user-select: none; padding: 0 5px; }
@@ -47,10 +47,19 @@
         .tab-content { display: none; }
         .tab-content.active-tab { display: block; }
 
-        .game-menu { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 15px; }
-        .game-btn { background-color: var(--bg-input); color: #fff; padding: 12px 2px; text-align: center; border-radius: 6px; border: 1px solid #2f4553; font-size: 12px; font-weight: bold; cursor: pointer; }
+        /* ゲームメニューグリッド拡張 */
+        .game-menu { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 15px; }
+        .game-btn { background-color: var(--bg-input); color: #fff; padding: 10px 2px; text-align: center; border-radius: 6px; border: 1px solid #2f4553; font-size: 11px; font-weight: bold; cursor: pointer; }
         .game-btn.active { border-color: var(--primary); color: var(--primary); }
         
+        /* 👑 すっきりスマート化したコンパクトルーム管理UI */
+        .room-compact-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; background: var(--bg-card); padding: 10px 14px; border-radius: 8px; border: 1px solid #2f4553; margin-bottom: 15px; }
+        .room-info-label { font-size: 13px; font-weight: bold; color: var(--text-muted); }
+        .room-info-label span { color: var(--primary); }
+        .room-action-inputs { display: flex; gap: 4px; flex-grow: 1; max-width: 260px; }
+        .room-mini-input { width: 100%; padding: 6px 10px; background: var(--bg-input); border: 1px solid #2f4553; border-radius: 4px; color: #fff; font-size: 13px; margin-bottom: 0; }
+        .room-mini-btn { width: auto; padding: 6px 12px; font-size: 12px; font-weight: bold; border-radius: 4px; }
+
         .my-game-area { background: rgba(26, 44, 56, 0.6); border: 2px solid var(--primary); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
         .table-area { background: #0f2a1d; border: 4px solid #2f4553; border-radius: 20px; padding: 15px; min-height: 150px; margin-bottom: 15px; }
         
@@ -58,15 +67,12 @@
         .player-hand-box { background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border: 1px solid #2f4553; }
         .player-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 4px; }
         
-        /* トランプサイズ制御 */
+        /* トランプ設定 */
         .cards-flex { display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; margin-top: 5px; align-items: center; }
         .card-mini { width: 42px; height: 60px; background: white; color: black; border-radius: 4px; display: flex; flex-direction: column; justify-content: space-between; padding: 3px; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); animation: flipIn 0.3s ease-out; }
         .card-mini.red { color: var(--accent); }
         .card-back-mini { width: 42px; height: 60px; background: linear-gradient(135deg, #fe2247 0%, #960018 100%); border: 1px solid white; border-radius: 4px; }
-        
-        /* 👑 ディーラー手札専用のミニサイズクラス (プレイヤーが迷わないよう縮小) */
         .card-dealer-size { width: 32px !important; height: 46px !important; font-size: 9px !important; padding: 2px !important; }
-        .card-dealer-size style, .card-dealer-size div { font-size: 11px !important; }
 
         @keyframes flipIn { from { transform: rotateY(90deg); opacity: 0; } to { transform: rotateY(0deg); opacity: 1; } }
 
@@ -74,13 +80,19 @@
         .mines-tile { aspect-ratio: 1; background-color: var(--bg-input); border-radius: 4px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: bold; border: 2px solid #2f4553; }
         .mines-tile.revealed { background-color: #103147; border-color: var(--primary); }
         
+        /* 👑 ルーレット用UI追加 */
+        .roulette-container { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 10px 0; }
+        #roulette-canvas { background: #0a1118; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: 4px solid #2f4553; }
+        .roulette-bet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; width: 100%; margin-top: 10px; }
+        .roulette-spot-btn { background: var(--bg-input); border: 2px solid #2f4553; color: white; padding: 8px 4px; font-size: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; text-align: center; }
+        .roulette-spot-btn.selected { border-color: var(--gold); background: #2c4a5e; }
+
         .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--bg-card); display: flex; justify-content: space-around; padding: 12px 0; border-top: 2px solid var(--bg-input); z-index: 100; }
         .nav-item { color: var(--text-muted); font-size: 12px; text-align: center; text-decoration: none; cursor: pointer; font-weight: bold; }
         .nav-item.active { color: var(--primary); }
 
         .history-item { background: var(--bg-input); padding: 8px 10px; border-radius: 4px; margin-top: 6px; font-size: 12px; border-left: 3px solid var(--primary); }
 
-        /* P2P 招待用通知パネル */
         .p2p-invite-banner { background: var(--gold); color: #000; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-weight: bold; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .p2p-btn-row { display: flex; gap: 6px; }
         .p2p-btn-row button { padding: 8px; font-size: 13px; }
@@ -125,24 +137,21 @@
         <div id="section-game" class="tab-content active-tab">
             <div id="p2p-invite-area"></div>
 
-            <div class="panel" style="padding: 12px; display:flex; flex-direction:column; gap:8px;">
-                <div style="display:flex; justify-content:between; align-items:center;">
-                    <div>🏠 現在の部屋: <span id="current-room-id" style="font-weight:bold; color:var(--primary);">ロビー</span></div>
-                    <div style="display:flex; gap:5px; margin-left:auto;">
-                        <button onclick="createNewRoom()" style="padding:6px 10px; font-size:11px; width:auto; background-color:var(--gold);">部屋を作る</button>
-                        <button onclick="leaveRoom()" style="padding:6px 10px; font-size:11px; width:auto; background-color:var(--accent); color:#fff;">部屋を退出</button>
-                    </div>
-                </div>
-                <div style="display:flex; gap:5px;">
-                    <input type="text" id="room-input" placeholder="友達の部屋コードを入力" style="margin-bottom:0; padding:8px; font-size:13px;">
-                    <button onclick="joinRoom()" style="padding:8px 15px; font-size:13px; width:auto;">参加</button>
+            <div class="room-compact-bar">
+                <div class="room-info-label">🏠 部屋: <span id="current-room-id">ロビー</span></div>
+                <div class="room-action-inputs">
+                    <input type="text" id="room-input" class="room-mini-input" placeholder="部屋コード">
+                    <button onclick="joinRoom()" class="room-mini-btn" style="background: var(--primary); color:#000;">参加</button>
+                    <button onclick="createNewRoom()" class="room-mini-btn" style="background: var(--gold); color:#000;">作成</button>
+                    <button onclick="leaveRoom()" class="room-mini-btn" style="background: var(--accent); color:#fff;">退出</button>
                 </div>
             </div>
 
             <div class="game-menu">
                 <div class="game-btn active" id="menu-mines" onclick="selectGameType('mines')">💣マインズ</div>
-                <div class="game-btn" id="menu-bj" onclick="selectGameType('bj')">🃏ブラックジャック</div>
+                <div class="game-btn" id="menu-bj" onclick="selectGameType('bj')">🃏BJ</div>
                 <div class="game-btn" id="menu-hilow" onclick="selectGameType('hilow')">📈ハイロー</div>
+                <div class="game-btn" id="menu-roulette" onclick="selectGameType('roulette')">🎡ルーレット</div>
             </div>
 
             <div class="panel" style="padding: 15px;">
@@ -250,6 +259,14 @@
     let selectedGameType = 'mines'; let currentRoom = 'lobby'; let roomUnsubscribe = null;
     let localGameState = null;
 
+    // 👑 ルーレット動的制御データ
+    let rouletteSelectedSpot = 'red'; 
+    let rouletteWheelAngle = 0; 
+    let rouletteBallAngle = 0; 
+    let isRouletteSpinning = false;
+    const rouletteNumbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+    function isNumRed(n) { if(n===0)return false; const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]; return reds.includes(n); }
+
     function adjustBetMultiplier(mult) {
         let input = document.getElementById('bet-amount');
         let val = Math.floor(parseInt(input.value) * mult);
@@ -298,8 +315,8 @@
         const ref = db.collection('users').doc(u); const doc = await ref.get();
         if(isSignUpMode) { 
             if(doc.exists) return alert("❌ すでに登録されているIDです"); 
-            await ref.set({ password: p, balance: 0, vaultBalance: 0 });
-            alert("✨ 登録完了！");
+            await ref.set({ password: p, balance: 1000, vaultBalance: 0 });
+            alert("✨ 登録完了！デフォルトで￥1,000付与されました！");
         } else { 
             if(!doc.exists || doc.data().password !== p) return alert("❌ IDまたはパスワードが違います"); 
         }
@@ -325,28 +342,44 @@
 
     function listenRoom(rId) {
         const titleEl = document.getElementById('table-sync-title');
-        if(rId === 'lobby') {
-            titleEl.innerHTML = `📢 ロビー（他のプレイヤーは部屋に移動してください）`;
-        } else {
-            titleEl.innerHTML = `👥 ルーム内プレイヤーの状況同期`;
-        }
+        titleEl.innerHTML = rId === 'lobby' ? `📢 ロビー（他のプレイヤーは部屋に移動してください）` : `👥 ルーム内プレイヤーの状況同期`;
         if(roomUnsubscribe) roomUnsubscribe();
         roomUnsubscribe = db.collection('rooms').doc(rId).onSnapshot(d => { if(d.exists) renderTable(d.data()); });
     }
 
-    function createNewRoom() {
+    async function createNewRoom() {
         const rCode = 'ROOM-' + Math.floor(1000 + Math.random() * 9000);
+        // 空の初期状態で部屋ドキュメントをFirestoreに確保
+        await db.collection('rooms').doc(rCode).set({ players: {}, p2pInvite: null });
         document.getElementById('room-input').value = rCode;
         joinRoom();
     }
-    function joinRoom() {
-        const r = document.getElementById('room-input').value.trim(); if(!r) return;
-        currentRoom = r; document.getElementById('current-room-id').innerText = currentRoom; listenRoom(currentRoom);
+
+    // 👑 存在しない適当な部屋コードでの入室を完全に弾く安全バリデーション
+    async function joinRoom() {
+        const r = document.getElementById('room-input').value.trim(); 
+        if(!r) return;
+        
+        if(r === 'lobby') {
+            leaveRoom();
+            return;
+        }
+
+        const roomRef = db.collection('rooms').doc(r);
+        const snap = await roomRef.get();
+        if(!snap.exists) {
+            alert("❌ 指定された部屋コードは存在しません。正しいコードを入力するか、新しく部屋を作成してください。");
+            return;
+        }
+
+        currentRoom = r; 
+        document.getElementById('current-room-id').innerText = currentRoom; 
+        listenRoom(currentRoom);
     }
 
     function selectGameType(g) {
         selectedGameType = g;
-        ['mines','bj','hilow'].forEach(x => document.getElementById(`menu-${x}`).classList.remove('active'));
+        ['mines','bj','hilow','roulette'].forEach(x => document.getElementById(`menu-${x}`).classList.remove('active'));
         document.getElementById(`menu-${g}`).classList.add('active');
         document.getElementById('setting-mines').classList.add('hidden');
         document.getElementById('bj-p2p-invite-container').classList.add('hidden');
@@ -368,15 +401,16 @@
             localGameState = { gameType: 'bj', status: 'idle', playerCards: [], dealerCards: [] };
         } else if(selectedGameType === 'hilow') {
             localGameState = { gameType: 'hilow', status: 'idle', dealerCards: [], currentMultiplier: 1.0, hasChosen: false };
+        } else if(selectedGameType === 'roulette') {
+            localGameState = { gameType: 'roulette', status: 'idle', winningNumber: null, won: false };
         }
         renderMyOwnBoard();
         updateMainActionButtonState();
     }
 
-    // 👑 ベット中かどうかに応じて勝負開始ボタンを暗転・有効化を切り替える防御ロジック
     function updateMainActionButtonState() {
         const btn = document.getElementById('btn-action-main');
-        if (localGameState && localGameState.status === 'playing') {
+        if ((localGameState && localGameState.status === 'playing') || isRouletteSpinning) {
             btn.disabled = true;
             btn.innerText = "勝負進行中...";
         } else {
@@ -399,14 +433,17 @@
         return { high: Math.max(1.01, (13 / highWays) * 0.985), low: Math.max(1.01, (13 / lowWays) * 0.985) };
     }
 
-    // --- 👑 プレイヤー間（P2P）ブラックジャック対戦ロジックシステム ---
+    // 👑 誰からでも完全に対戦招待をリアルタイムに送受信できるP2Pシステム（残高ガード修正済）
     async function sendP2PInvite() {
-        if(currentRoom === 'lobby') return alert("ロビーでは対戦できません。部屋を作成して友達を招待してください");
+        if(currentRoom === 'lobby') return alert("ロビーでは対戦できません。部屋に移動してください");
         const bet = parseInt(document.getElementById('bet-amount').value);
-        if(!bet || bet <= 0) return alert("対戦に賭けるベット額を正しく入力してください");
+        if(!bet || bet <= 0) return alert("ベット額を正しく入力してください");
 
         const uDoc = await db.collection('users').doc(currentUser).get();
-        if(uDoc.data().balance < bet) return alert("❌ 対戦に必要な残高が足りません！");
+        if(uDoc.data().balance < bet) {
+            alert("❌ 残高が足りないため、対戦を申し込むことができません！");
+            return; // 確実に処理をストップ
+        }
 
         const ref = db.collection('rooms').doc(currentRoom);
         await ref.update({
@@ -417,7 +454,7 @@
                 timestamp: Date.now()
             }
         });
-        alert("⚔️ 部屋のメンバーに対戦招待を送信しました。相手の承認を待っています...");
+        alert("⚔️ 部屋のメンバーに対戦招待を送信しました。相手の選択を待っています...");
     }
 
     async function handleP2PResponse(accept) {
@@ -431,11 +468,9 @@
             return;
         }
 
-        // 承認時：残高チェックとP2Pゲームの初期化
         const myDoc = await db.collection('users').doc(currentUser).get();
-        if(myDoc.data().balance < invite.bet) return alert("❌ 残高が足りないため承認できません！");
+        if(myDoc.data().balance < invite.bet) return alert("❌ 残高が足りないため参戦できません！");
 
-        // お互いの財布からベット額を徴収
         await adjustBalance(invite.host, -invite.bet);
         await adjustBalance(currentUser, -invite.bet);
 
@@ -447,11 +482,11 @@
             status: 'playing',
             hostCards: [draw(), draw()],
             guestCards: [draw(), draw()],
-            hostStatus: 'playing', // 'playing', 'stand', 'busted'
+            hostStatus: 'playing',
             guestStatus: 'playing',
-            turn: invite.host // ホストからターン開始
+            turn: invite.host
         };
-        roomData.p2pInvite = null; // 招待枠クリア
+        roomData.p2pInvite = null;
         await ref.set(roomData);
     }
 
@@ -467,26 +502,16 @@
         if(action === 'hit') {
             if(isHost) {
                 g.hostCards.push(draw());
-                if(calcBJScore(g.hostCards) > 21) {
-                    g.hostStatus = 'busted';
-                    g.turn = g.guest; // バーストしたら強制ターン交代
-                }
+                if(calcBJScore(g.hostCards) > 21) { g.hostStatus = 'busted'; g.turn = g.guest; }
             } else {
                 g.guestCards.push(draw());
-                if(calcBJScore(g.guestCards) > 21) {
-                    g.guestStatus = 'busted';
-                }
+                if(calcBJScore(g.guestCards) > 21) { g.guestStatus = 'busted'; }
             }
         } else if(action === 'stand') {
-            if(isHost) {
-                g.hostStatus = 'stand';
-                g.turn = g.guest; // スタンドしたらゲストのターンへ
-            } else {
-                g.guestStatus = 'stand';
-            }
+            if(isHost) { g.hostStatus = 'stand'; g.turn = g.guest; } 
+            else { g.guestStatus = 'stand'; }
         }
 
-        // 両者とも行動完了（スタンドまたはバースト）したか判定
         if((g.hostStatus === 'stand' || g.hostStatus === 'busted') && (g.guestStatus === 'stand' || g.guestStatus === 'busted')) {
             g.status = 'ended';
             let hScore = calcBJScore(g.hostCards);
@@ -494,43 +519,37 @@
             let totalPrize = g.bet * 2;
 
             if(g.hostStatus === 'busted' && g.guestStatus === 'busted') {
-                // 両者バーストは引き分け、ベット返却
-                await adjustBalance(g.host, g.bet);
-                await adjustBalance(g.guest, g.bet);
-                alert("🤝 両者バーストのため引き分け！賭け金が返却されました。");
+                await adjustBalance(g.host, g.bet); await adjustBalance(g.guest, g.bet);
+                alert("🤝 両者バーストのため引き分け返却！");
             } else if(g.hostStatus === 'busted') {
-                await adjustBalance(g.guest, totalPrize);
-                alert(`🏆 ${g.guest}の勝利！ ￥${totalPrize.toLocaleString()} 獲得！`);
+                await adjustBalance(g.guest, totalPrize); alert(`🏆 ${g.guest}の勝利！ ￥${totalPrize.toLocaleString()} 獲得！`);
             } else if(g.guestStatus === 'busted') {
-                await adjustBalance(g.host, totalPrize);
-                alert(`🏆 ${g.host}の勝利！ ￥${totalPrize.toLocaleString()} 獲得！`);
+                await adjustBalance(g.host, totalPrize); alert(`🏆 ${g.host}の勝利！ ￥${totalPrize.toLocaleString()} 獲得！`);
             } else {
-                // 健全なスコア比較
-                if(hScore > gScore) {
-                    await adjustBalance(g.host, totalPrize);
-                    alert(`🏆 ${g.host}の勝利！ (${hScore}点 vs ${gScore}点) ￥${totalPrize.toLocaleString()} 獲得！`);
-                } else if(gScore > hScore) {
-                    await adjustBalance(g.guest, totalPrize);
-                    alert(`🏆 ${g.guest}の勝利！ (${gScore}点 vs ${hScore}点) ￥${totalPrize.toLocaleString()} 獲得！`);
-                } else {
-                    await adjustBalance(g.host, g.bet);
-                    await adjustBalance(g.guest, g.bet);
-                    alert(`🤝 引き分け！ 両者 ${hScore}点。賭け金が返却されました。`);
-                }
+                if(hScore > gScore) { await adjustBalance(g.host, totalPrize); alert(`🏆 ${g.host}の勝利！ (${hScore}点)`); } 
+                else if(gScore > hScore) { await adjustBalance(g.guest, totalPrize); alert(`🏆 ${g.guest}の勝利！ (${gScore}点)`); } 
+                else { await adjustBalance(g.host, g.bet); await adjustBalance(g.guest, g.bet); alert("🤝 引き分け返却！"); }
             }
         }
         await ref.set(data);
     }
 
-    // --- 通常ソロゲーム開始 ---
     async function startIndividualGame() {
         const bet = parseInt(document.getElementById('bet-amount').value);
         if(!bet || bet <= 0) return alert("ベット額を入力してください");
         
         const uDoc = await db.collection('users').doc(currentUser).get();
         if(uDoc.data().balance < bet) return alert("❌ 残高が足りません！");
-        await adjustBalance(currentUser, -bet);
 
+        // 👑 ルーレット用のゲーム開始分岐を完全統合
+        if(selectedGameType === 'roulette') {
+            if(isRouletteSpinning) return;
+            await adjustBalance(currentUser, -bet);
+            runRouletteEngine(bet);
+            return;
+        }
+
+        await adjustBalance(currentUser, -bet);
         const rRef = db.collection('rooms').doc(currentRoom);
         const snap = await rRef.get();
         let roomData = snap.exists ? snap.data() : { players: {} };
@@ -547,14 +566,12 @@
             document.getElementById('mines-controls').classList.remove('hidden');
         }
         else if(selectedGameType === 'bj') {
-            myGame.playerCards = [draw(), draw()]; 
-            myGame.dealerCards = [draw(), 'HIDDEN'];
+            myGame.playerCards = [draw(), draw()]; myGame.dealerCards = [draw(), 'HIDDEN'];
             document.getElementById('bj-controls').classList.remove('hidden');
-            document.getElementById('btn-bj-hit').disabled = false;
-            document.getElementById('btn-bj-stand').disabled = false;
+            document.getElementById('btn-bj-hit').disabled = false; document.getElementById('btn-bj-stand').disabled = false;
         }
         else if(selectedGameType === 'hilow') {
-            let firstCard = draw(); myGame.dealerCards = [firstCard]; myGame.currentMultiplier = 1.0; myGame.hasChosen = false; // アクション履歴フラグ
+            let firstCard = draw(); myGame.dealerCards = [firstCard]; myGame.currentMultiplier = 1.0; myGame.hasChosen = false;
             document.getElementById('hilow-controls').classList.remove('hidden');
         }
 
@@ -565,19 +582,140 @@
         updateMainActionButtonState();
     }
 
+    // 👑 本物のオンカジ物理挙動をシミュレートするルーレットアニメーションエンジン
+    function runRouletteEngine(betAmt) {
+        isRouletteSpinning = true;
+        updateMainActionButtonState();
+
+        const winningNum = rouletteNumbers[Math.floor(Math.random() * rouletteNumbers.length)];
+        const targetIndex = rouletteNumbers.indexOf(winningNum);
+        
+        // 物理挙動シミュレーション用の変数をセット
+        let spinVelocity = 0.2 + Math.random() * 0.1; 
+        let ballVelocity = -0.3 - Math.random() * 0.1;
+        
+        let duration = 4000 + Math.random() * 2000; 
+        let startTime = Date.now();
+
+        function animateWheel() {
+            let elapsed = Date.now() - startTime;
+            
+            // 徐々に減速させる物理摩擦係数
+            rouletteWheelAngle += spinVelocity;
+            rouletteBallAngle += ballVelocity;
+            
+            spinVelocity *= 0.985;
+            ballVelocity *= 0.982;
+
+            drawRouletteCanvas(rouletteWheelAngle, rouletteBallAngle);
+
+            if (elapsed < duration) {
+                requestAnimationFrame(animateWheel);
+            } else {
+                // スピン終了、最終結果の確定と配当ロジック
+                isRouletteSpinning = false;
+                
+                let isWin = false;
+                let payoutMultiplier = 0;
+
+                if (rouletteSelectedSpot === 'red' && isNumRed(winningNum)) { isWin = true; payoutMultiplier = 2; }
+                else if (rouletteSelectedSpot === 'black' && !isNumRed(winningNum) && winningNum !== 0) { isWin = true; payoutMultiplier = 2; }
+                else if (parseInt(rouletteSelectedSpot) === winningNum) { isWin = true; payoutMultiplier = 36; }
+
+                let totalWin = isWin ? betAmt * payoutMultiplier : 0;
+                if (isWin) {
+                    adjustBalance(currentUser, totalWin);
+                    alert(`🎡 結果: [ ${winningNum} (${isNumRed(winningNum)?'赤':'黒'}) ] に当選！\n🎯 おめでとうございます！ ￥${totalWin.toLocaleString()} の配当を獲得！`);
+                } else {
+                    alert(`🎡 結果: [ ${winningNum} (${winningNum===0?'緑':isNumRed(winningNum)?'赤':'黒'}) ]\n💀 残念、ハズレです。`);
+                }
+
+                localGameState = { gameType: 'roulette', status: 'idle', winningNumber: winningNum, won: isWin, totalWin: totalWin };
+                renderMyOwnBoard();
+                updateMainActionButtonState();
+                
+                // ルーム同期用にステータスを送信
+                const rRef = db.collection('rooms').doc(currentRoom);
+                rRef.get().then(snap => {
+                    if(snap.exists) {
+                        let d = snap.data();
+                        if(!d.players) d.players = {};
+                        d.players[currentUser] = { gameType: 'roulette', status: isWin?'won':'lost', bet: betAmt, lastUpdated: Date.now() };
+                        rRef.set(d);
+                    }
+                });
+            }
+        }
+        requestAnimationFrame(animateWheel);
+    }
+
+    // Canvasによるルーレット描画処理
+    function drawRouletteCanvas(wAngle, bAngle) {
+        const cvs = document.getElementById('roulette-canvas');
+        if(!cvs) return;
+        const ctx = cvs.getContext('2d');
+        const cx = 110, cy = 110, r = 95;
+        ctx.clearRect(0, 0, 220, 220);
+
+        // 外枠ウッドベゼル
+        ctx.beginPath(); ctx.arc(cx, cy, r + 8, 0, 2*Math.PI); ctx.fillStyle = '#2f4553'; ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2*Math.PI); ctx.fillStyle = '#0f212e'; ctx.fill();
+
+        // 各セグメント（数字ポケット）の描画
+        const totalPockets = rouletteNumbers.length;
+        const arcSize = (2 * Math.PI) / totalPockets;
+
+        for (let i = 0; i < totalPockets; i++) {
+            let currentArc = wAngle + (i * arcSize);
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, r - 15, currentArc, currentArc + arcSize);
+            ctx.lineTo(cx, cy);
+            
+            let num = rouletteNumbers[i];
+            ctx.fillStyle = num === 0 ? '#00e701' : isNumRed(num) ? '#fe2247' : '#1a2c38';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.stroke();
+
+            // 数字テキストの描画
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(currentArc + arcSize / 2);
+            ctx.fillStyle = '#fff';
+            ctx.font = '9px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText(num, r - 20, 3);
+            ctx.restore();
+        }
+
+        // 内円金杯パーツ
+        ctx.beginPath(); ctx.arc(cx, cy, r - 45, 0, 2*Math.PI); ctx.fillStyle = '#10222e'; ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, cy, 10, 0, 2*Math.PI); ctx.fillStyle = '#f39c12'; ctx.fill();
+
+        // 🎴 物理ローテーションに基づく弾（ボール）の描画
+        let ballRadius = r - 28; 
+        let bx = cx + Math.cos(bAngle) * ballRadius;
+        let by = cy + Math.sin(bAngle) * ballRadius;
+        ctx.beginPath(); ctx.arc(bx, by, 5, 0, 2*Math.PI); ctx.fillStyle = '#ffffff'; ctx.fill();
+        ctx.lineWidth = 1; ctx.strokeStyle = '#000'; ctx.stroke();
+    }
+
+    function changeRouletteSpot(spot) {
+        rouletteSelectedSpot = spot;
+        document.querySelectorAll('.roulette-spot-btn').forEach(btn => btn.classList.remove('selected'));
+        const activeBtn = document.getElementById(`rspot-${spot}`);
+        if(activeBtn) activeBtn.classList.add('selected');
+    }
+
     function updateHiLowButtonLabels(currentCard, currentPool) {
         let odds = getHiLowOdds(currentCard);
         document.getElementById('btn-hilow-high').innerText = `🔼 HIGH (x${odds.high.toFixed(2)}) 次: ￥${Math.floor(currentPool * odds.high)}`;
         document.getElementById('btn-hilow-low').innerText = `🔽 LOW (x${odds.low.toFixed(2)}) 次: ￥${Math.floor(currentPool * odds.low)}`;
-        
-        // 👑 アクション(HIGH/LOWの選択)を起こすまではキャッシュアウトを暗転・無効化
         const coBtn = document.getElementById('btn-hilow-cashout');
         if (localGameState && localGameState.hasChosen) {
-            coBtn.disabled = false;
-            coBtn.innerText = `💰 キャッシュアウト (￥${Math.floor(currentPool)})`;
+            coBtn.disabled = false; coBtn.innerText = `💰 キャッシュアウト (￥${Math.floor(currentPool)})`;
         } else {
-            coBtn.disabled = true;
-            coBtn.innerText = "❌ 1度選ぶまでロック";
+            coBtn.disabled = true; coBtn.innerText = "❌ 1度選ぶまでロック";
         }
     }
 
@@ -588,41 +726,24 @@
         if(p.gameType === 'bj') {
             if(action === 'hit') {
                 p.playerCards.push(draw());
-                if(calcBJScore(p.playerCards) > 21) { 
-                    alert("💥 バースト！"); p.status = 'lost'; 
-                    document.getElementById('bj-controls').classList.add('hidden'); 
-                }
+                if(calcBJScore(p.playerCards) > 21) { alert("💥 バースト！"); p.status = 'lost'; document.getElementById('bj-controls').classList.add('hidden'); }
                 await ref.set(data); localGameState = p; renderMyOwnBoard(); updateMainActionButtonState();
             } 
             else if(action === 'stand') {
-                document.getElementById('btn-bj-hit').disabled = true;
-                document.getElementById('btn-bj-stand').disabled = true;
-                p.dealerCards[1] = draw();
-                await ref.set(data); localGameState = p; renderMyOwnBoard();
+                document.getElementById('btn-bj-hit').disabled = true; document.getElementById('btn-bj-stand').disabled = true;
+                p.dealerCards[1] = draw(); await ref.set(data); localGameState = p; renderMyOwnBoard();
 
                 let interval = setInterval(async () => {
-                    const freshSnap = await ref.get();
-                    let freshData = freshSnap.data();
-                    let freshP = freshData.players[currentUser];
+                    const freshSnap = await ref.get(); let freshData = freshSnap.data(); let freshP = freshData.players[currentUser];
                     let dScore = calcBJScore(freshP.dealerCards);
-                    
                     if(dScore < 17) {
-                        freshP.dealerCards.push(draw());
-                        await ref.set(freshData); localGameState = freshP; renderMyOwnBoard();
+                        freshP.dealerCards.push(draw()); await ref.set(freshData); localGameState = freshP; renderMyOwnBoard();
                     } else {
-                        clearInterval(interval);
-                        document.getElementById('bj-controls').classList.add('hidden');
+                        clearInterval(interval); document.getElementById('bj-controls').classList.add('hidden');
                         let pScore = calcBJScore(freshP.playerCards);
-                        if(dScore > 21 || pScore > dScore) { 
-                            alert(`🎯 勝利！ ディーラー:${dScore}点 vs あなた:${pScore}点`); 
-                            await adjustBalance(currentUser, freshP.bet * 2); freshP.status = 'won'; 
-                        } else if(pScore === dScore) { 
-                            alert(`🤝 引き分け！ (両者 ${pScore}点)`); 
-                            await adjustBalance(currentUser, freshP.bet); freshP.status = 'push'; 
-                        } else { 
-                            alert(`💀 敗北…… ディーラー:${dScore}点 vs あなた:${pScore}点`); 
-                            freshP.status = 'lost'; 
-                        }
+                        if(dScore > 21 || pScore > dScore) { alert(`🎯 勝利！ ディーラー:${dScore} vs あなた:${pScore}`); await adjustBalance(currentUser, freshP.bet * 2); freshP.status = 'won'; } 
+                        else if(pScore === dScore) { alert(`🤝 引き分け！ (${pScore}点)`); await adjustBalance(currentUser, freshP.bet); freshP.status = 'push'; } 
+                        else { alert(`💀 敗北…… ディーラー:${dScore} vs あなた:${pScore}`); freshP.status = 'lost'; }
                         await ref.set(freshData); localGameState = freshP; renderMyOwnBoard(); updateMainActionButtonState();
                     }
                 }, 1000);
@@ -639,13 +760,9 @@
                 let isWin = false; let stepMult = 1.0;
                 if(action === 'high') { stepMult = odds.high; if(nextVal >= curVal) isWin = true; }
                 else if(action === 'low') { stepMult = odds.low; if(nextVal <= curVal) isWin = true; }
-
-                p.hasChosen = true; // 行動フラグをONに
-                if(isWin) {
-                    p.currentMultiplier *= stepMult;
-                } else {
-                    alert(`💥 外れ！ カードは [ ${nextCard} ] でした。`); document.getElementById('hilow-controls').classList.add('hidden'); p.status = 'lost';
-                }
+                p.hasChosen = true;
+                if(isWin) p.currentMultiplier *= stepMult;
+                else { alert(`💥 外れ！ カードは [ ${nextCard} ] でした。`); document.getElementById('hilow-controls').classList.add('hidden'); p.status = 'lost'; }
             }
             await ref.set(data); localGameState = p; renderMyOwnBoard(); updateMainActionButtonState();
         }
@@ -661,14 +778,9 @@
         const ref = db.collection('rooms').doc(currentRoom); const snap = await ref.get();
         let data = snap.data(); let p = data.players[currentUser];
         if(!p || p.minesGrid[idx].revealed || p.status !== 'playing') return;
-
         p.minesGrid[idx].revealed = true;
-        if(p.minesGrid[idx].type === 'bomb') {
-            alert("💥 BOMB！"); p.status = 'lost'; document.getElementById('mines-controls').classList.add('hidden');
-            p.minesGrid.forEach(t => t.revealed = true);
-        } else {
-            p.gemsFound++;
-        }
+        if(p.minesGrid[idx].type === 'bomb') { alert("💥 BOMB！"); p.status = 'lost'; document.getElementById('mines-controls').classList.add('hidden'); p.minesGrid.forEach(t => t.revealed = true); } 
+        else p.gemsFound++;
         await ref.set(data); localGameState = p; renderMyOwnBoard(); updateMainActionButtonState();
     }
 
@@ -684,14 +796,44 @@
     // 独立マイボードのレンダリング
     function renderMyOwnBoard() {
         const box = document.getElementById('my-isolated-board');
-        box.innerHTML = "";
-        if(!localGameState) return;
+        box.innerHTML = ""; if(!localGameState) return;
 
         let p = localGameState;
-        let gameName = p.gameType === 'mines' ? '💣マインズ' : p.gameType === 'bj' ? '🃏BJ' : '📈ハイロー';
+        let gameName = p.gameType==='mines'?'💣マインズ':p.gameType==='bj'?'🃏BJ':p.gameType==='hilow'?'📈ハイロー':'🎡ルーレット';
         let statusText = p.status === 'playing' ? `<span style="color:var(--primary)">PLAYING</span>` : `<span style="color:var(--text-muted)">READY</span>`;
-        
         box.innerHTML = `<div class="player-header"><div>👤 あなたの盤面 (${gameName})</div><div>${statusText}</div></div>`;
+
+        // 👑 ルーレット用のUIボードレンダリング
+        if(p.gameType === 'roulette') {
+            const rouWrapper = document.createElement('div');
+            rouWrapper.className = 'roulette-container';
+            rouWrapper.innerHTML = `<canvas id="roulette-canvas" width="220" height="220"></canvas>`;
+            
+            // ベット選択グリッドの作成
+            const grid = document.createElement('div');
+            grid.className = 'roulette-bet-grid';
+            grid.innerHTML = `
+                <div class="roulette-spot-btn ${rouletteSelectedSpot==='red'?'selected':''}" id="rspot-red" style="background:#fe2247;" onclick="changeRouletteSpot('red')">🔴 赤 (x2)</div>
+                <div class="roulette-spot-btn ${rouletteSelectedSpot==='black'?'selected':''}" id="rspot-black" style="background:#1a2c38;" onclick="changeRouletteSpot('black')">⚫ 黒 (x2)</div>
+                <div class="roulette-spot-btn ${rouletteSelectedSpot==='0'?'selected':''}" id="rspot-0" style="background:#00e701; color:#000;" onclick="changeRouletteSpot('0')">0 (x36)</div>
+            `;
+            // 1〜36のダイレクトナンバーベット用入力セレクト
+            const selectContainer = document.createElement('div');
+            selectContainer.style = "width:100%; margin-top:6px;";
+            let optionsHtml = `<option value="none">-- 特定の数字を指定して賭ける (x36) --</option>`;
+            for(let i=1; i<=36; i++) {
+                optionsHtml += `<option value="${i}" ${rouletteSelectedSpot===String(i)?'selected':''}>数字の ${i} (${isNumRed(i)?'赤':'黒'})</option>`;
+            }
+            selectContainer.innerHTML = `<select id="roulette-number-picker" style="margin-bottom:0; font-size:13px; padding:8px;" onchange="if(this.value!=='none') changeRouletteSpot(this.value)">${optionsHtml}</select>`;
+
+            rouWrapper.appendChild(grid);
+            rouWrapper.appendChild(selectContainer);
+            box.appendChild(rouWrapper);
+
+            // 初期位置または現在のアングルでルーレットを描画
+            setTimeout(() => drawRouletteCanvas(rouletteWheelAngle, rouletteBallAngle), 10);
+            return;
+        }
 
         if(p.gameType === 'mines' && p.minesGrid) {
             const grid = document.createElement('div'); grid.className = 'mines-grid';
@@ -702,56 +844,39 @@
                 grid.appendChild(cell);
             });
             box.appendChild(grid);
-            
-            // 👑 マインズ：宝石を1つ以上見つけるまではキャッシュアウトを暗転・無効化
             if(p.status === 'playing') {
-                let mult = getMinesMultiplier(p.gemsFound, p.bCount);
-                const coMinesBtn = document.getElementById('btn-mines-cashout');
-                if(p.gemsFound > 0) {
-                    coMinesBtn.disabled = false;
-                    coMinesBtn.innerText = `💰 キャッシュアウト (￥${Math.floor(p.bet * mult)})`;
-                } else {
-                    coMinesBtn.disabled = true;
-                    coMinesBtn.innerText = "❌ 1マス開けるまでロック";
-                }
+                let mult = getMinesMultiplier(p.gemsFound, p.bCount); const coMinesBtn = document.getElementById('btn-mines-cashout');
+                if(p.gemsFound > 0) { coMinesBtn.disabled = false; coMinesBtn.innerText = `💰 キャッシュアウト (￥${Math.floor(p.bet * mult)})`; } 
+                else { coMinesBtn.disabled = true; coMinesBtn.innerText = "❌ 1マス開けるまでロック"; }
             }
         }
         else if(p.gameType === 'bj') {
             const dealerFlex = document.createElement('div'); dealerFlex.className = 'cards-flex';
             let dScore = calcBJScore(p.dealerCards);
             dealerFlex.innerHTML = `<span style="font-size:10px; color:var(--text-muted); align-self:center; margin-right:4px;">ディーラー(${dScore}):</span>`;
-            // 👑 ディーラーの手札には縮小用クラス「card-dealer-size」を必ず付与
             if(p.dealerCards) p.dealerCards.forEach(c => dealerFlex.appendChild(createCardHTML(c, true)));
-            
             const playerFlex = document.createElement('div'); playerFlex.className = 'cards-flex';
             let pScore = calcBJScore(p.playerCards);
             playerFlex.innerHTML = `<span style="font-size:10px; color:var(--text-muted); align-self:center; margin-right:4px;">あなた(${pScore}):</span>`;
             if(p.playerCards) p.playerCards.forEach(c => playerFlex.appendChild(createCardHTML(c, false)));
-
             box.appendChild(dealerFlex); box.appendChild(playerFlex);
         }
         else if(p.gameType === 'hilow') {
             const cardFlex = document.createElement('div'); cardFlex.className = 'cards-flex';
             cardFlex.innerHTML = `<span style="font-size:10px; color:var(--text-muted); align-self:center; margin-right:4px;">履歴:</span>`;
             if(p.dealerCards) p.dealerCards.forEach(c => cardFlex.appendChild(createCardHTML(c, false)));
-            
             const infoDiv = document.createElement('div'); infoDiv.style = "font-size:11px; text-align:center; color:var(--gold); margin-top:5px;";
             infoDiv.innerText = `倍率: ${(p.currentMultiplier || 1.0).toFixed(2)}倍 (￥${Math.floor((p.bet || 100) * (p.currentMultiplier || 1.0))})`;
             box.appendChild(cardFlex); box.appendChild(infoDiv);
-
-            if(p.status === 'playing') {
-                updateHiLowButtonLabels(p.dealerCards[p.dealerCards.length - 1], p.bet * p.currentMultiplier);
-            }
+            if(p.status === 'playing') updateHiLowButtonLabels(p.dealerCards[p.dealerCards.length - 1], p.bet * p.currentMultiplier);
         }
     }
 
     // 同期枠レンダリング
     function renderTable(data) {
-        // --- 👑 リアルタイム招待通知 ＆ P2P対戦中ボードの描画ロジック ---
-        const inviteArea = document.getElementById('p2p-invite-area');
-        inviteArea.innerHTML = "";
+        const inviteArea = document.getElementById('p2p-invite-area'); inviteArea.innerHTML = "";
         
-        // 1. 招待が届いている時のポップアップ描画
+        // 1. 招待ポップアップの処理
         if(data.p2pInvite && data.p2pInvite.status === 'pending' && data.p2pInvite.host !== currentUser) {
             inviteArea.innerHTML = `
                 <div class="p2p-invite-banner">
@@ -771,31 +896,21 @@
         const pSide = document.getElementById('table-players'); pSide.innerHTML = "";
         if(!data || !data.players) return;
 
-        if(data.players[currentUser]) {
+        if(data.players[currentUser] && selectedGameType !== 'roulette') {
             localGameState = data.players[currentUser];
             renderMyOwnBoard();
             updateMainActionButtonState();
         }
 
-        // 2. もしP2P対戦が始まったら、ルーム同期枠の最上部に特設P2P対戦ボードを表示
+        // 2. P2Pリアルタイム対戦ボード
         if(data.p2pGame && data.p2pGame.status === 'playing') {
             let g = data.p2pGame;
             if(currentUser === g.host || currentUser === g.guest) {
-                const p2pBox = document.createElement('div');
-                p2pBox.className = 'player-hand-box';
-                p2pBox.style.border = "2px solid var(--gold)";
-                
+                const p2pBox = document.createElement('div'); p2pBox.className = 'player-hand-box'; p2pBox.style.border = "2px solid var(--gold)";
                 let isMyTurn = (g.turn === currentUser);
                 let turnText = isMyTurn ? `<span style="color:var(--primary); font-weight:bold;">★ あなたのターン ★</span>` : `<span style="color:var(--text-muted)">相手の選択中...</span>`;
-                
-                p2pBox.innerHTML = `
-                    <div class="player-header" style="color:var(--gold);">
-                        <div>⚔️ プレイヤーP2P対戦 (賭け金: ￥${(g.bet*2).toLocaleString()})</div>
-                        <div>${turnText}</div>
-                    </div>
-                `;
+                p2pBox.innerHTML = `<div class="player-header" style="color:var(--gold);"><div>⚔️ BJ対戦中 (賭け金: ￥${(g.bet*2).toLocaleString()})</div><div>${turnText}</div></div>`;
 
-                // カード並び
                 const hostFlex = document.createElement('div'); hostFlex.className = 'cards-flex';
                 hostFlex.innerHTML = `<span style="font-size:10px; color:var(--text-muted);">${g.host}(${calcBJScore(g.hostCards)}):</span>`;
                 g.hostCards.forEach(c => hostFlex.appendChild(createCardHTML(c, false)));
@@ -804,13 +919,10 @@
                 guestFlex.innerHTML = `<span style="font-size:10px; color:var(--text-muted);">${g.guest}(${calcBJScore(g.guestCards)}):</span>`;
                 g.guestCards.forEach(c => guestFlex.appendChild(createCardHTML(c, false)));
 
-                p2pBox.appendChild(hostFlex);
-                p2pBox.appendChild(guestFlex);
+                p2pBox.appendChild(hostFlex); p2pBox.appendChild(guestFlex);
 
-                // 操作用ボタン
                 if(isMyTurn) {
-                    const actRow = document.createElement('div');
-                    actRow.style = "display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-top:8px;";
+                    const actRow = document.createElement('div'); actRow.style = "display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-top:8px;";
                     actRow.innerHTML = `
                         <button onclick="p2pGameAction('hit')" style="background-color:var(--bg-input); color:#fff; border:1px solid #2f4553;">ヒット</button>
                         <button onclick="p2pGameAction('stand')" style="background-color:var(--gold); color:#000;">スタンド</button>
@@ -821,67 +933,29 @@
             }
         }
 
-        // 通常の他プレイヤーの状況描写
+        // ルーム内同期表示
         Object.keys(data.players).forEach(name => {
             if(name === currentUser) return;
-
             const p = data.players[name];
             const box = document.createElement('div'); box.className = 'player-hand-box';
-            let gameName = p.gameType === 'mines' ? '💣マインズ' : p.gameType === 'bj' ? '🃏BJ' : '📈ハイロー';
-            let statusText = p.status === 'playing' ? `<span style="color:var(--primary)">PLAYING</span>` : `<span style="color:var(--text-muted)">${p.status.toUpperCase()}</span>`;
-            
-            box.innerHTML = `<div class="player-header"><div>👤 ${name} (${gameName})</div><div>${statusText}</div></div>`;
-
-            if(p.gameType === 'mines' && p.minesGrid) {
-                const grid = document.createElement('div'); grid.className = 'mines-grid';
-                p.minesGrid.forEach((tile) => {
-                    const cell = document.createElement('div'); cell.className = `mines-tile ${tile.revealed?'revealed':''}`;
-                    if(tile.revealed) cell.innerText = tile.type === 'bomb' ? "💣" : "💎";
-                    else cell.innerText = "？";
-                    grid.appendChild(cell);
-                });
-                box.appendChild(grid);
-            }
-            else if(p.gameType === 'bj') {
-                const dealerFlex = document.createElement('div'); dealerFlex.className = 'cards-flex';
-                let dScore = calcBJScore(p.dealerCards);
-                dealerFlex.innerHTML = `<span style="font-size:10px; color:var(--text-muted); align-self:center; margin-right:4px;">ディーラー(${dScore}):</span>`;
-                if(p.dealerCards) p.dealerCards.forEach(c => dealerFlex.appendChild(createCardHTML(c, true)));
-                
-                const playerFlex = document.createElement('div'); playerFlex.className = 'cards-flex';
-                let pScore = calcBJScore(p.playerCards);
-                playerFlex.innerHTML = `<span style="font-size:10px; color:var(--text-muted); align-self:center; margin-right:4px;">プレイヤー(${pScore}):</span>`;
-                if(p.playerCards) p.playerCards.forEach(c => playerFlex.appendChild(createCardHTML(c, false)));
-
-                box.appendChild(dealerFlex); box.appendChild(playerFlex);
-            }
-            else if(p.gameType === 'hilow') {
-                const cardFlex = document.createElement('div'); cardFlex.className = 'cards-flex';
-                cardFlex.innerHTML = `<span style="font-size:10px; color:var(--text-muted); align-self:center; margin-right:4px;">履歴:</span>`;
-                if(p.dealerCards) p.dealerCards.forEach(c => cardFlex.appendChild(createCardHTML(c, false)));
-                
-                const infoDiv = document.createElement('div'); infoDiv.style = "font-size:11px; text-align:center; color:var(--gold); margin-top:5px;";
-                infoDiv.innerText = `倍率: ${(p.currentMultiplier || 1.0).toFixed(2)}倍`;
-                box.appendChild(cardFlex); box.appendChild(infoDiv);
-            }
+            let gameName = p.gameType==='mines'?'💣':p.gameType==='bj'?'🃏BJ':p.gameType==='hilow'?'📈':'🎡ルーレット';
+            box.innerHTML = `<div class="player-header"><div>👤 ${name} (${gameName})</div><div>${p.status.toUpperCase()}</div></div>`;
             pSide.appendChild(box);
         });
     }
 
-    // 👑 引数にisDealerを追加し、trueの場合はサイズを縮小するクラスを上乗せ
     function createCardHTML(cStr, isDealer) {
-        const e = document.createElement('div'); 
-        if(cStr==='HIDDEN'){ 
-            e.className=`card-back-mini ${isDealer ? 'card-dealer-size' : ''}`; 
-            return e; 
-        }
+        const e = document.createElement('div'); if(cStr==='HIDDEN'){ e.className=`card-back-mini ${isDealer?'card-dealer-size':''}`; return e; }
         const s = cStr.charAt(0); const v = cStr.substring(1); const isRed = s==='♥'||s==='♦';
-        e.className = `card-mini ${isRed?'red':''} ${isDealer ? 'card-dealer-size' : ''}`; 
+        e.className = `card-mini ${isRed?'red':''} ${isDealer?'card-dealer-size':''}`; 
         e.innerHTML = `<div>${s}</div><div style="text-align:center;font-size:14px;">${v}</div><div style="transform:rotate(180deg)">${s}</div>`;
         return e;
     }
 
     function switchTab(tabName) {
+        // 👑 選択バーが押された時に画面を瞬時に最上部へ自動スクロールする修正
+        window.scrollTo({ top: 0, behavior: 'instant' });
+
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab'));
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
@@ -911,19 +985,9 @@
         const c = document.getElementById('charge-code').value.trim(); if(!c) return;
         const ref = db.collection('promo_codes').doc(c); const d = await ref.get();
         if(d.exists && !d.data().used) {
-            let amt = d.data().amount; 
-            await ref.update({ used: true }); 
-            await adjustBalance(currentUser, amt);
-            
-            await db.collection('promo_history').add({
-                username: currentUser,
-                code: c,
-                amount: amt,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            alert(`🎉 チャージ成功！ ￥${amt.toLocaleString()} 獲得！`); 
-            document.getElementById('charge-code').value = "";
+            let amt = d.data().amount; await ref.update({ used: true }); await adjustBalance(currentUser, amt);
+            await db.collection('promo_history').add({ username: currentUser, code: c, amount: amt, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+            alert(`🎉 チャージ成功！ ￥${amt.toLocaleString()} 獲得！`); document.getElementById('charge-code').value = "";
         } else alert("無効または使用済みです");
     }
 
@@ -932,26 +996,13 @@
         .onSnapshot(snap => {
             const list = document.getElementById('promo-history-list');
             if(snap.empty) { list.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">履歴はありません。</p>`; return; }
-            
-            let docs = [];
-            snap.forEach(d => docs.push(d.data()));
+            let docs = []; snap.forEach(d => docs.push(d.data()));
             docs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-
             list.innerHTML = "";
             docs.forEach(data => {
                 let dateStr = "処理中...";
-                if(data.timestamp) {
-                    const date = data.timestamp.toDate();
-                    dateStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
-                }
-                list.innerHTML += `
-                    <div class="history-item">
-                        <div style="display:flex; justify-content:space-between; font-weight:bold; color:#fff;">
-                            <span>コード: ${data.code}</span>
-                            <span style="color:var(--primary)">+￥${data.amount.toLocaleString()}</span>
-                        </div>
-                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">使用日時: ${dateStr}</div>
-                    </div>`;
+                if(data.timestamp) { const date = data.timestamp.toDate(); dateStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`; }
+                list.innerHTML += `<div class="history-item"><div style="display:flex; justify-content:space-between; font-weight:bold; color:#fff;"><span>コード: ${data.code}</span><span style="color:var(--primary)">+￥${data.amount.toLocaleString()}</span></div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">使用日時: ${dateStr}</div></div>`;
             });
         });
     }
