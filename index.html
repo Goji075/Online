@@ -61,13 +61,13 @@
         .tab-content { display: none; }
         .tab-content.active-tab { display: block; }
 
-        /* 改良：潰れない・省略されない、分かりやすく並んだゲーム選択UI */
+        /* ゲーム選択UI */
         .game-menu-v2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 15px; }
         .game-menu-v2 .game-btn-full { background-color: var(--bg-input); color: #fff; padding: 12px 8px; text-align: center; border-radius: 6px; border: 2px solid #2f4553; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .game-menu-v2 .game-btn-full.active { border-color: var(--primary); color: var(--primary); background-color: rgba(0, 231, 1, 0.05); }
         .game-menu-v2 .game-btn-full-span { grid-column: span 2; }
         
-        /* スタイリッシュなルーム管理UI */
+        /* ルーム管理UI */
         .room-compact-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; background: var(--bg-card); padding: 10px 14px; border-radius: 8px; border: 1px solid #2f4553; margin-bottom: 15px; }
         .room-info-label { font-size: 13px; font-weight: bold; color: var(--text-muted); }
         .room-info-label span { color: var(--primary); }
@@ -75,9 +75,9 @@
         .room-mini-input { width: 100%; padding: 6px 10px; background: var(--bg-input); border: 1px solid #2f4553; border-radius: 4px; color: #fff; font-size: 13px; margin-bottom: 0; }
         .room-mini-btn { width: auto; padding: 6px 12px; font-size: 12px; font-weight: bold; border-radius: 4px; }
 
-        /* スタイリッシュなロビーヘッダー表示 */
-        .lobby-status-indicator { background: linear-gradient(90deg, rgba(33,55,67,0.4) 0%, rgba(15,33,46,0.8) 100%); border-left: 4px solid #3498db; padding: 8px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; color: #3498db; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-        .lobby-status-indicator::before { content: ''; width: 8px; height: 8px; background: #3498db; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #3498db; }
+        /* ロビーインジケーター（文字排除・スタイリッシュ化） */
+        .lobby-status-indicator { background: linear-gradient(90deg, rgba(33,55,67,0.6) 0%, rgba(15,33,46,0.1) 100%); height: 3px; border-radius: 2px; margin-bottom: 15px; display: flex; align-items: center; position: relative; }
+        .lobby-status-indicator::before { content: ''; width: 12px; height: 3px; background: #3498db; border-radius: 2px; display: inline-block; box-shadow: 0 0 6px #3498db; }
 
         .my-game-area { background: rgba(26, 44, 56, 0.6); border: 2px solid var(--primary); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
         .table-area { background: #0f2a1d; border: 4px solid #2f4553; border-radius: 20px; padding: 15px; min-height: 150px; margin-bottom: 15px; }
@@ -121,12 +121,14 @@
         .nav-item.active { color: var(--primary); }
 
         .history-item { background: var(--bg-input); padding: 8px 10px; border-radius: 4px; margin-top: 6px; font-size: 12px; border-left: 3px solid var(--primary); }
+        .tx-history-box { max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+        .tx-item { background: var(--bg-input); padding: 8px 12px; border-radius: 4px; border-left: 3px solid var(--gold); font-size: 12px; }
     </style>
 </head>
 <body>
 
 <div id="p2p-toast" class="p2p-toast-banner">
-    <div id="p2p-toast-text">⚔️ 対戦招待が届きました</div>
+    <div id="p2p-toast-text">⚔️ 对战招待が届きました</div>
     <div class="p2p-btn-row">
         <button onclick="handleP2PResponse(true)" style="background:#00e701; color:#000; flex:1;">参戦</button>
         <button onclick="handleP2PResponse(false)" style="background:#fff; color:#000; flex:1;">拒否</button>
@@ -156,6 +158,7 @@
     <button onclick="openSubModal('vault')" style="background-color:var(--gold); color:#000; text-align:left;">💰 保管庫 (Vault) を開く</button>
     <button onclick="openSubModal('vip')" style="background-color:#9b59b6; color:#fff; text-align:left;">👑 VIP 特典・ボーナス</button>
     <button onclick="openSubModal('tip')" style="background-color:#3498db; color:#fff; text-align:left;">💸 友達にチップを送る</button>
+    <button onclick="openSubModal('txhistory')" style="background-color:#2c3e50; color:#fff; text-align:left;">📜 取引履歴 (Logs)</button>
     
     <button onclick="toggleSidebar(false)" class="secondary" style="margin-top:auto;">閉じる</button>
 </div>
@@ -187,12 +190,20 @@
         <button id="btn-claim-daily" onclick="claimVipBonus('daily')" style="width:auto; padding:6px 12px; font-size:12px;">受取</button>
     </div>
     <div class="bonus-card">
-        <div class="bonus-info"><strong>⏳ ウィークリーボーナス</strong><div id="weekly-timer-text" style="font-size:12px; font-weight:bold; color:var(--gold); margin-top:2px;">計算中...</div></div>
-        <button onclick="claimVipBonus('weekly')" style="width:auto; padding:6px 12px; font-size:12px; background:var(--gold);">開封受取</button>
+        <div class="bonus-info">
+            <strong>⏳ ウィークリーボーナス</strong>
+            <span style="font-size:11px; color:var(--text-muted);">プール額: ￥<span id="pool-weekly">0</span></span>
+            <div id="weekly-timer-badge" class="countdown-badge hidden">7日 00時間</div>
+        </div>
+        <button id="btn-claim-weekly" onclick="claimVipBonus('weekly')" style="width:auto; padding:6px 12px; font-size:12px; background:var(--gold); color:#000;">受取</button>
     </div>
     <div class="bonus-card">
-        <div class="bonus-info"><strong>🌙 マンスリーボーナス</strong><div id="monthly-timer-text" style="font-size:12px; font-weight:bold; color:var(--gold); margin-top:2px;">計算中...</div></div>
-        <button onclick="claimVipBonus('monthly')" style="width:auto; padding:6px 12px; font-size:12px; background:var(--gold);">開封受取</button>
+        <div class="bonus-info">
+            <strong>🌙 マンスリーボーナス</strong>
+            <span style="font-size:11px; color:var(--text-muted);">プール額: ￥<span id="pool-monthly">0</span></span>
+            <div id="monthly-timer-badge" class="countdown-badge hidden">30日 00時間</div>
+        </div>
+        <button id="btn-claim-monthly" onclick="claimVipBonus('monthly')" style="width:auto; padding:6px 12px; font-size:12px; background:var(--gold); color:#000;">受取</button>
     </div>
 </div>
 
@@ -201,6 +212,13 @@
     <input type="text" id="tip-target-id" placeholder="送る相手のユーザーID">
     <input type="number" id="tip-amount" placeholder="送金金額 (￥)">
     <button onclick="executeTipTransfer()" style="background-color:#3498db; color:#fff;">送金を確定する</button>
+</div>
+
+<div class="sub-modal" id="modal-txhistory">
+    <div class="modal-header"><h3>📜 取引履歴 (Logs)</h3><span style="cursor:pointer;" onclick="closeSubModal('txhistory')">✕</span></div>
+    <div class="tx-history-box" id="tx-history-container">
+        <p style="font-size:12px; color:var(--text-muted); text-align:center;">履歴データを読み込み中...</p>
+    </div>
 </div>
 
 
@@ -233,9 +251,7 @@
                 </div>
             </div>
 
-            <div id="lobby-status-container" class="lobby-status-indicator">
-                GLOBAL LOBBY (Solo Play Mode)
-            </div>
+            <div id="lobby-status-container" class="lobby-status-indicator"></div>
 
             <div class="game-menu-v2">
                 <div class="game-btn-full active" id="menu-mines" onclick="selectGameType('mines')">💣 マインズ</div>
@@ -382,28 +398,21 @@
     const rouletteNumbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
     function isNumRed(n) { if(n===0)return false; const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]; return reds.includes(n); }
 
-    // 👑 ランクシステム定義（各ランクレベル1〜5）
+    // ランクシステム定義
     const baseRanks = ["ブロンズ", "シルバー", "ゴールド", "プラチナ", "ジェイド", "サファイア", "ルビー", "ダイヤモンド"];
     const rankRequirements = [];
-    const rankRewardMapping = []; // 各レベルアップ時の賞金マッピング
 
-    // 累積ベット額要件を動的に初期設定（レベル1個あがるごとに難易度が上昇）
     let cumulativeWager = 0;
     for(let r=0; r<baseRanks.length; r++) {
         for(let lv=1; lv<=5; lv++) {
             rankRequirements.push({
                 name: `${baseRanks[r]} ${lv}`,
                 required: cumulativeWager,
-                reward: (r + 1) * lv * 1000 // ランクアップボーナス金額の決定
+                reward: (r + 1) * lv * 1000
             });
-            cumulativeWager += (r + 1) * 3000; // 次のレベルへの必要間隔
+            cumulativeWager += (r + 1) * 3000;
         }
     }
-
-    // ⏳ タイマー同期用の固定ターゲット（仮想オンカジの周期）
-    const weekPeriod = 7 * 24 * 60 * 60 * 1000;
-    const monthPeriod = 30 * 24 * 60 * 60 * 1000;
-    let baseTimeAnchor = 1716000000000; // 固定基準点
 
     function adjustBetMultiplier(mult) {
         let input = document.getElementById('bet-amount');
@@ -415,6 +424,7 @@
     function toggleSidebar(open) {
         document.getElementById('sidebar-menu').classList.toggle('open', open);
         document.getElementById('menu-overlay').classList.toggle('show', open);
+        if(open) { fetchAndRenderTxHistory(); }
     }
 
     function openSubModal(type) {
@@ -442,46 +452,43 @@
         document.getElementById('dice-range-odds-preview').innerText = `見込み配当: ${odds > 0 ? odds.toFixed(2)+'x' : 'なし(設定エラー)'}`;
     }
 
-    // セッション自動ログインチェック用
     window.addEventListener('DOMContentLoaded', () => {
         let savedUser = sessionStorage.getItem('koyo_logged_user');
         if(savedUser) {
             currentUser = savedUser;
             loginSuccess();
         }
-        
-        // カウントダウンタイマーの高頻度更新
         setInterval(updateCountdowns, 1000);
     });
 
-    // 👑 猶予時間に応じたスタイリッシュ自動フォーマット付きカウントダウン関数
+    // タイマー管理およびボタンロック処理
     function updateCountdowns() {
+        if(!localGameState) return;
         let now = Date.now();
         
+        // デイリー
+        if(localGameState.lastDailyClaim) {
+            let diffD = (localGameState.lastDailyClaim + (24 * 60 * 60 * 1000)) - now;
+            let badge = document.getElementById('daily-timer-badge');
+            let btn = document.getElementById('btn-claim-daily');
+            if(diffD > 0) { badge.classList.remove('hidden'); badge.innerText = formatTimeLeft(diffD); if(btn) btn.disabled = true; }
+            else { badge.classList.add('hidden'); if(btn) btn.disabled = false; }
+        }
         // ウィークリー
-        let nextWeekly = baseTimeAnchor + Math.ceil((now - baseTimeAnchor) / weekPeriod) * weekPeriod;
-        let diffW = nextWeekly - now;
-        document.getElementById('weekly-timer-text').innerText = formatTimeLeft(diffW);
-
+        if(localGameState.lastWeeklyClaim) {
+            let diffW = (localGameState.lastWeeklyClaim + (7 * 24 * 60 * 60 * 1000)) - now;
+            let badge = document.getElementById('weekly-timer-badge');
+            let btn = document.getElementById('btn-claim-weekly');
+            if(diffW > 0) { badge.classList.remove('hidden'); badge.innerText = formatTimeLeft(diffW); if(btn) btn.disabled = true; }
+            else { badge.classList.add('hidden'); if(btn) btn.disabled = false; }
+        }
         // マンスリー
-        let nextMonthly = baseTimeAnchor + Math.ceil((now - baseTimeAnchor) / monthPeriod) * monthPeriod;
-        let diffM = nextMonthly - now;
-        document.getElementById('monthly-timer-text').innerText = formatTimeLeft(diffM);
-
-        // デイリー受取制限タイマー（ローカル判定用バッジ表示）
-        if(localGameState && localGameState.lastDailyClaim) {
-            let nextDaily = localGameState.lastDailyClaim + (24 * 60 * 60 * 1000);
-            let diffD = nextDaily - now;
-            const badge = document.getElementById('daily-timer-badge');
-            const btn = document.getElementById('btn-claim-daily');
-            if(diffD > 0) {
-                badge.classList.remove('hidden');
-                badge.innerText = formatTimeLeft(diffD);
-                if(btn) btn.disabled = true;
-            } else {
-                badge.classList.add('hidden');
-                if(btn) btn.disabled = false;
-            }
+        if(localGameState.lastMonthlyClaim) {
+            let diffM = (localGameState.lastMonthlyClaim + (30 * 24 * 60 * 60 * 1000)) - now;
+            let badge = document.getElementById('monthly-timer-badge');
+            let btn = document.getElementById('btn-claim-monthly');
+            if(diffM > 0) { badge.classList.remove('hidden'); badge.innerText = formatTimeLeft(diffM); if(btn) btn.disabled = true; }
+            else { badge.classList.add('hidden'); if(btn) btn.disabled = false; }
         }
     }
 
@@ -495,12 +502,67 @@
         let mins = Math.floor(rem / 60);
         let secs = rem % 60;
 
-        if (totalSecs >= 24 * 3600) {
-            return `${days}日 ${hours}時間`;
-        } else if (totalSecs >= 3600) {
-            return `${hours}時間 ${mins}分`;
-        } else {
-            return `${mins}分 ${secs}秒`;
+        if (totalSecs >= 24 * 3600) { return `${days}日 ${hours}時間`; }
+        else if (totalSecs >= 3600) { return `${hours}時間 ${mins}分`; }
+        else { return `${mins}分 ${secs}秒`; }
+    }
+
+    // 各種履歴ログ集約書き込み用共通関数
+    async function logTransaction(type, amount, detail = "") {
+        try {
+            await db.collection('transactions').add({
+                username: currentUser,
+                type: type,
+                amount: amount,
+                detail: detail,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch(e) { console.error("Log error: ", e); }
+    }
+
+    // 取引履歴の取得・描画ロジック
+    async function fetchAndRenderTxHistory() {
+        const container = document.getElementById('tx-history-container');
+        if(!container) return;
+        try {
+            const snap = await db.collection('transactions')
+                .where('username', '==', currentUser)
+                .get();
+            
+            if(snap.empty) {
+                container.innerHTML = `<p style="font-size:12px; color:var(--text-muted); text-align:center;">履歴はありません。</p>`;
+                return;
+            }
+            let logs = [];
+            snap.forEach(d => {
+                let data = d.data();
+                data.id = d.id;
+                logs.push(data);
+            });
+            // タイムスタンプの降順でソート
+            logs.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+            container.innerHTML = "";
+            logs.forEach(log => {
+                let dateStr = "⏱️ 処理中...";
+                if(log.timestamp) {
+                    const dt = log.timestamp.toDate();
+                    dateStr = `${dt.getMonth()+1}/${dt.getDate()} ${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}`;
+                }
+                let displayAmt = log.amount !== 0 ? ` (￥${log.amount.toLocaleString()})` : "";
+                container.innerHTML += `
+                    <div class="tx-item">
+                        <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                            <span>${log.type}</span>
+                            <span style="color:var(--gold);">${displayAmt}</span>
+                        </div>
+                        <div style="color:var(--text-muted); font-size:11px; margin-top:2px;">${log.detail}</div>
+                        <div style="color:var(--text-muted); font-size:10px; text-align:right; margin-top:1px;">${dateStr}</div>
+                    </div>
+                `;
+            });
+        } catch(e) {
+            container.innerHTML = `<p style="font-size:12px; color:var(--accent);">読み込み失敗: ${e}</p>`;
         }
     }
 
@@ -522,15 +584,19 @@
 
             t.update(myRef, { balance: myBal - amount });
             t.update(targetRef, { balance: (targetDoc.data().balance || 0) + amount });
-        }).then(() => {
+        }).then(async () => {
             alert(`💸 ${targetId} へ ￥${amount.toLocaleString()} のチップを送金しました！`);
+            await logTransaction("チップ送金(送信)", -amount, `宛先: ${targetId}`);
+            // 相手側ログ生成
+            try { await db.collection('transactions').add({ username: targetId, type: "チップ受取(受信)", amount: amount, detail: `差出人: ${currentUser}`, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); } catch(err){}
+            
             document.getElementById('tip-target-id').value = "";
             document.getElementById('tip-amount').value = "";
             closeSubModal('tip');
         }).catch(err => alert("❌ エラー: " + err));
     }
 
-    // 👑 デイリー24時間完全制限付き報酬受取ロジック
+    // 全ボーナス受取制限のデイリー方式統一化
     async function claimVipBonus(type) {
         const userRef = db.collection('users').doc(currentUser);
         let now = Date.now();
@@ -540,34 +606,47 @@
                 const doc = await t.get(userRef);
                 let data = doc.data();
                 let claimAmt = 0;
+                let updateData = {};
                 
                 if(type === 'rakeback') { 
                     claimAmt = Math.floor(data.poolRakeback || 0); 
-                    t.update(userRef, { poolRakeback: 0 }); 
+                    updateData.poolRakeback = 0;
                 }
                 else if(type === 'daily') { 
                     let lastClaim = data.lastDailyClaim || 0;
-                    if(now - lastClaim < 24 * 60 * 60 * 1000) {
-                        throw "デイリーレーキバックは24時間経過するまで受け取れません。";
-                    }
+                    if(now - lastClaim < 24 * 60 * 60 * 1000) throw "デイリーレーキバックは24時間経過するまで受け取れません。";
                     claimAmt = Math.floor(data.poolDaily || 0); 
-                    t.update(userRef, { poolDaily: 0, lastDailyClaim: now }); 
+                    updateData.poolDaily = 0;
+                    updateData.lastDailyClaim = now;
                 }
-                else if(type === 'weekly') { claimAmt = Math.floor(data.poolWeekly || 0); t.update(userRef, { poolWeekly: 0 }); }
-                else if(type === 'monthly') { claimAmt = Math.floor(data.poolMonthly || 0); t.update(userRef, { poolMonthly: 0 }); }
+                else if(type === 'weekly') { 
+                    let lastClaim = data.lastWeeklyClaim || 0;
+                    if(now - lastClaim < 7 * 24 * 60 * 60 * 1000) throw "ウィークリーボーナスはまだ受け取れません。";
+                    claimAmt = Math.floor(data.poolWeekly || 0); 
+                    updateData.poolWeekly = 0;
+                    updateData.lastWeeklyClaim = now;
+                }
+                else if(type === 'monthly') { 
+                    let lastClaim = data.lastMonthlyClaim || 0;
+                    if(now - lastClaim < 30 * 24 * 60 * 60 * 1000) throw "マンスリーボーナスはまだ受け取れません。";
+                    claimAmt = Math.floor(data.poolMonthly || 0); 
+                    updateData.poolMonthly = 0;
+                    updateData.lastMonthlyClaim = now;
+                }
 
                 if(claimAmt <= 0) throw "受け取れるボーナスプールが空です。";
-                t.update(userRef, { balance: (data.balance || 0) + claimAmt });
+                updateData.balance = (data.balance || 0) + claimAmt;
+                t.update(userRef, updateData);
                 return claimAmt;
-            }).then((amt) => {
+            }).then(async (amt) => {
                 alert(`🎉 ボーナス ￥${amt.toLocaleString()} を回収し残高に加算しました！`);
+                await logTransaction(`ボーナス受取(${type})`, amt, "VIP報酬センターより回収");
             });
         } catch(err) {
             alert("⚠️ " + err);
         }
     }
 
-    // 👑 ランク5分割（1〜5）対応およびレベルアップ時のお金プレゼント分配関数
     async function processWagerVipMetrics(wagerAmount) {
         const userRef = db.collection('users').doc(currentUser);
         await db.runTransaction(async t => {
@@ -577,13 +656,10 @@
             let oldWagered = data.wagered || 0;
             let totalWagered = oldWagered + wagerAmount;
             
-            // 旧ランクインデックスの計算
             let oldRankIdx = 0;
             for(let i=0; i<rankRequirements.length; i++) {
                 if(oldWagered >= rankRequirements[i].required) oldRankIdx = i;
             }
-
-            // 新ランクインデックスの計算
             let newRankIdx = 0;
             for(let i=0; i<rankRequirements.length; i++) {
                 if(totalWagered >= rankRequirements[i].required) newRankIdx = i;
@@ -592,7 +668,6 @@
             let bonusRewardText = "";
             let balanceBonus = 0;
             
-            // 👑 レベルが上がった場合にお金をプレゼント支給するロジック
             if(newRankIdx > oldRankIdx) {
                 for(let k = oldRankIdx + 1; k <= newRankIdx; k++) {
                     balanceBonus += rankRequirements[k].reward;
@@ -602,8 +677,8 @@
 
             let poolRb = (data.poolRakeback || 0) + (wagerAmount * 0.005);
             let poolDl = (data.poolDaily || 0) + (wagerAmount * 0.003);
-            let poolWk = (data.poolWeekly || 0) + (wagerAmount * (0.004 + Math.random()*0.002));
-            let poolMn = (data.poolMonthly || 0) + (wagerAmount * (0.006 + Math.random()*0.003));
+            let poolWk = (data.poolWeekly || 0) + (wagerAmount * 0.005);
+            let poolMn = (data.poolMonthly || 0) + (wagerAmount * 0.008);
 
             t.update(userRef, {
                 wagered: totalWagered,
@@ -615,7 +690,10 @@
             });
 
             if(balanceBonus > 0) {
-                setTimeout(() => alert(bonusRewardText), 400);
+                setTimeout(async () => {
+                    alert(bonusRewardText);
+                    await logTransaction("👑 ランクアップ報酬支給", balanceBonus, `到達段階: ${rankRequirements[newRankIdx].name}`);
+                }, 400);
             }
         });
     }
@@ -623,11 +701,9 @@
     function updateVipDashboardUI(userData) {
         let wagered = userData.wagered || 0;
         let currentRankIdx = 0;
-        
         for(let i = 0; i < rankRequirements.length; i++) {
             if(wagered >= rankRequirements[i].required) { currentRankIdx = i; }
         }
-
         let nextRankIdx = Math.min(currentRankIdx + 1, rankRequirements.length - 1);
         
         let currentRankName = rankRequirements[currentRankIdx].name;
@@ -642,9 +718,7 @@
             progressPercent = ((wagered - startReq) / diffReq) * 100;
             if(progressPercent > 100) progressPercent = 100;
             if(progressPercent < 0) progressPercent = 0;
-        } else {
-            progressPercent = 100;
-        }
+        } else { progressPercent = 100; }
 
         document.getElementById('vip-current-name').innerText = currentRankName;
         document.getElementById('vip-next-name').innerText = nextRankName;
@@ -653,9 +727,13 @@
 
         document.getElementById('pool-rakeback').innerText = Math.floor(userData.poolRakeback || 0).toLocaleString();
         document.getElementById('pool-daily').innerText = Math.floor(userData.poolDaily || 0).toLocaleString();
+        document.getElementById('pool-weekly').innerText = Math.floor(userData.poolWeekly || 0).toLocaleString();
+        document.getElementById('pool-monthly').innerText = Math.floor(userData.poolMonthly || 0).toLocaleString();
         
         if(!localGameState) localGameState = {};
         localGameState.lastDailyClaim = userData.lastDailyClaim || 0;
+        localGameState.lastWeeklyClaim = userData.lastWeeklyClaim || 0;
+        localGameState.lastMonthlyClaim = userData.lastMonthlyClaim || 0;
     }
 
     async function handleVault(action) {
@@ -673,8 +751,9 @@
                 if(vault < amt) throw "保管庫の資金が足りません";
                 t.update(userRef, { balance: bal + amt, vaultBalance: vault - amt });
             }
-        }).then(() => {
+        }).then(async () => {
             alert("✨ 保管庫の処理が完了しました！");
+            await logTransaction(action === 'deposit' ? "保管庫へ預け入れ" : "保管庫から引出し", action === 'deposit' ? -amt : amt, "金庫内移動");
             document.getElementById('vault-amount').value = "";
             closeSubModal('vault');
         }).catch(err => alert("❌ エラー: " + err));
@@ -696,13 +775,13 @@
         const ref = db.collection('users').doc(u); const doc = await ref.get();
         if(isSignUpMode) { 
             if(doc.exists) return alert("❌ すでに登録されているIDです"); 
-            await ref.set({ password: p, balance: 1000, vaultBalance: 0, wagered: 0, poolRakeback: 0, poolDaily: 0, poolWeekly: 0, poolMonthly: 0, lastDailyClaim: 0 });
+            await ref.set({ password: p, balance: 1000, vaultBalance: 0, wagered: 0, poolRakeback: 0, poolDaily: 0, poolWeekly: 0, poolMonthly: 0, lastDailyClaim: 0, lastWeeklyClaim: 0, lastMonthlyClaim: 0 });
             alert("✨ 登録完了！");
         } else { 
             if(!doc.exists || doc.data().password !== p) return alert("❌ IDまたはパスワードが違います"); 
         }
         currentUser = u; 
-        sessionStorage.setItem('koyo_logged_user', currentUser); // 👑 セッションを保存してリロード戻りを防御
+        sessionStorage.setItem('koyo_logged_user', currentUser);
         loginSuccess();
     }
     
@@ -743,7 +822,7 @@
             select.innerHTML = `<option value="">-- 部屋に他のプレイヤーがいません --</option>`;
             return;
         }
-        select.innerHTML = `<option value="">-- 対戦相手を選択してください --</option>`;
+        select.innerHTML = `<option value="">-- 对戦相手を選択してください --</option>`;
         validTargets.forEach(id => { select.innerHTML += `<option value="${id}">${id}</option>`; });
     }
 
@@ -765,7 +844,7 @@
 
         currentRoom = r; 
         document.getElementById('current-room-id').innerText = currentRoom; 
-        document.getElementById('lobby-status-container').classList.add('hidden'); // ルーム内はインジケータ非表示
+        document.getElementById('lobby-status-container').classList.add('hidden');
         
         await db.runTransaction(async t => {
             const rSnap = await t.get(roomRef);
@@ -980,16 +1059,16 @@
         updateMainActionButtonState();
     }
 
-    // 👑 出目完全同期＆ブレのない絶対収束型ルーレットエンジン
+    // 🎡 ビジュアル完全準拠型ルーレットエンジン（止まった出目を結果とする方式）
     function runRouletteEngine(betAmt) {
         isRouletteSpinning = true;
         updateMainActionButtonState();
 
-        const winningNum = rouletteNumbers[Math.floor(Math.random() * rouletteNumbers.length)];
-        const targetIndex = rouletteNumbers.indexOf(winningNum);
-        
         let duration = 3000; 
         let startTime = Date.now();
+        
+        // ランダムな回転量（初速・摩擦のゆらぎ）を付与
+        const totalRotation = (Math.PI * 6) + (Math.random() * Math.PI * 2);
         const arcSize = (2 * Math.PI) / rouletteNumbers.length;
 
         function animateWheel() {
@@ -997,12 +1076,11 @@
             let progress = elapsed / duration;
             if(progress > 1) progress = 1;
 
-            // 終了時にガタつかない滑らかな3次イージング
             let easeOutPower = 1 - Math.pow(1 - progress, 3); 
-            let currentWheelAngle = easeOutPower * (Math.PI * 8); // 4回転
+            let currentWheelAngle = easeOutPower * totalRotation;
             
-            // 👑 内部出目と描画位置の絶対同期物理式
-            let currentBallAngle = - (currentWheelAngle + (targetIndex * arcSize) + (arcSize / 2)) + (Math.PI * 0.5);
+            // ボールは逆に滑らせて、最後に真上で静止する演出用の位置計算
+            let currentBallAngle = - currentWheelAngle + (Math.PI * 0.5);
 
             drawRouletteCanvas(currentWheelAngle, currentBallAngle);
 
@@ -1010,6 +1088,14 @@
                 requestAnimationFrame(animateWheel);
             } else {
                 isRouletteSpinning = false;
+                
+                // 👑 アニメーション停止位置（真上 12時方向）にあるポケットを正確に逆算抽出し、結果と同期
+                let normalizedAngle = currentWheelAngle % (Math.PI * 2);
+                let pointerAngle = (Math.PI * 2) - normalizedAngle;
+                let targetIndex = Math.floor(pointerAngle / arcSize) % rouletteNumbers.length;
+                if(targetIndex < 0) targetIndex += rouletteNumbers.length;
+                
+                const winningNum = rouletteNumbers[targetIndex];
                 let isWin = false; let payoutMultiplier = 0;
 
                 if (rouletteSelectedSpot === 'red' && isNumRed(winningNum)) { isWin = true; payoutMultiplier = 2; }
@@ -1057,18 +1143,20 @@
         ctx.beginPath(); ctx.arc(cx, cy, r - 45, 0, 2*Math.PI); ctx.fillStyle = '#10222e'; ctx.fill();
         ctx.beginPath(); ctx.arc(cx, cy, 10, 0, 2*Math.PI); ctx.fillStyle = '#f39c12'; ctx.fill();
 
+        // ボール
         let ballRadius = r - 28; let bx = cx + Math.cos(bAngle) * ballRadius; let by = cy + Math.sin(bAngle) * ballRadius;
         ctx.beginPath(); ctx.arc(bx, by, 5, 0, 2*Math.PI); ctx.fillStyle = '#ffffff'; ctx.fill();
         ctx.lineWidth = 1; ctx.strokeStyle = '#000'; ctx.stroke();
+
+        // 判定ポインター矢印（真上 12時方向）
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(cx, cy - r - 4); ctx.lineTo(cx - 6, cy - r + 8); ctx.lineTo(cx + 6, cy - r + 8); ctx.fill();
     }
 
-    // 👑 最終フレームで出目を完全にロックするサイコロエンジン
+    // 🎲 アニメーション最終停止の目を強制結果にするダイスエンジン
     function runDiceEngine(betAmt) {
         isDiceSpinning = true;
         updateMainActionButtonState();
 
-        const finalRoll = Math.floor(Math.random() * 6) + 1; 
-        
         const mode = document.getElementById('dice-bet-mode').value;
         const exactTarget = parseInt(document.getElementById('dice-exact-target').value);
         const rangeDir = document.getElementById('dice-range-direction').value;
@@ -1082,19 +1170,18 @@
             let progress = elapsed / duration;
             if(progress > 1) progress = 1;
 
+            // 👑 完全に出目の変動アニメーション枠から「最終フレームの出目」を最終確定値として同期
+            let finalRoll = Math.floor(Math.random() * 6) + 1;
+
             const cvs = document.getElementById('dice-canvas');
             if(cvs) {
                 const ctx = cvs.getContext('2d');
                 ctx.clearRect(0,0,220,120);
 
-                // 回転揺らぎ演出
                 let tx = 110 + (progress < 1 ? (Math.random() - 0.5) * 30 : 0);
                 let ty = 60 + (progress < 1 ? (Math.random() - 0.5) * 15 : 0);
                 let currentAngle = progress < 1 ? Math.random() * Math.PI * 2 : 0;
                 
-                // 👑 進行状況が1(終了)なら「100%確実に」内部の出目（finalRoll）を表示して描画バグを完全粉砕
-                let faceNum = progress < 1 ? Math.floor(Math.random() * 6) + 1 : finalRoll;
-
                 ctx.save();
                 ctx.translate(tx, ty);
                 ctx.rotate(currentAngle);
@@ -1105,14 +1192,14 @@
                 ctx.fill();
                 ctx.lineWidth = 3; ctx.strokeStyle = "#2f4553"; ctx.stroke();
 
-                ctx.fillStyle = faceNum === 1 ? "#fe2247" : "#000000";
-                let dotR = faceNum === 1 ? 6 : 4;
+                ctx.fillStyle = finalRoll === 1 ? "#fe2247" : "#000000";
+                let dotR = finalRoll === 1 ? 6 : 4;
                 
                 const drawDot = (dx, dy) => { ctx.beginPath(); ctx.arc(dx, dy, dotR, 0, 2*Math.PI); ctx.fill(); };
-                if([1,3,5].includes(faceNum)) drawDot(0, 0);
-                if([2,3,4,5,6].includes(faceNum)) { drawDot(-13, -13); drawDot(13, 13); }
-                if([4,5,6].includes(faceNum)) { drawDot(13, -13); drawDot(-13, 13); }
-                if(faceNum === 6) { drawDot(-13, 0); drawDot(13, 0); }
+                if([1,3,5].includes(finalRoll)) drawDot(0, 0);
+                if([2,3,4,5,6].includes(finalRoll)) { drawDot(-13, -13); drawDot(13, 13); }
+                if([4,5,6].includes(finalRoll)) { drawDot(13, -13); drawDot(-13, 13); }
+                if(finalRoll === 6) { drawDot(-13, 0); drawDot(13, 0); }
 
                 ctx.restore();
             }
@@ -1290,7 +1377,7 @@
 
         if(p.gameType === 'dice') {
             const diceWrapper = document.createElement('div'); diceWrapper.className = 'roulette-container';
-            diceWrapper.innerHTML = `<canvas id="dice-canvas" width="220" height="120" style="background:#0a1118; border-radius:8px; border:2px solid #2f4553;"></canvas>`;
+            diceWrapper.innerHTML = `<canvas id="dice-canvas" width="220" height="120" style="background:#0a1118; border-radius:8px; border:2px solid #2f4553 PapayaWhip;"></canvas>`;
             box.appendChild(diceWrapper);
             setTimeout(() => {
                 const cvs = document.getElementById('dice-canvas'); if(!cvs) return;
@@ -1444,6 +1531,7 @@
         if(d.exists && !d.data().used) {
             let amt = d.data().amount; await ref.update({ used: true }); await adjustBalance(currentUser, amt);
             await db.collection('promo_history').add({ username: currentUser, code: c, amount: amt, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+            await logTransaction("プロモチャージ", amt, `コード: ${c}`);
             alert(`🎉 ￥${amt.toLocaleString()} チャージ成功！`); document.getElementById('charge-code').value = "";
         } else alert("無効または使用済みです");
     }
