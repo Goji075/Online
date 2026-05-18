@@ -138,7 +138,7 @@
 <body>
 
 <div id="p2p-toast" class="p2p-toast-banner">
-    <div id="p2p-toast-text">⚔️ 对戦招待が届きました</div>
+    <div id="p2p-toast-text">⚔️ 対戦招待が届きました</div>
     <div class="p2p-btn-row">
         <button onclick="handleP2PResponse(true)" style="background:#00e701; color:#000; flex:1;">参戦</button>
         <button onclick="handleP2PResponse(false)" style="background:#fff; color:#000; flex:1;">拒否</button>
@@ -415,7 +415,7 @@
 
     let currentUser = null; let isAdminLoggedIn = false; let isSignUpMode = false;
     let selectedGameType = 'mines'; let currentRoom = 'lobby'; let roomUnsubscribe = null;
-    let localGameState = null; let isProcessingGameStart = false; // 重複・連打防止フラグ
+    let localGameState = null; let isProcessingGameStart = false; 
 
     let rouletteSelectedSpot = 'red'; 
     let isRouletteSpinning = false;
@@ -423,7 +423,6 @@
     const rouletteNumbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
     function isNumRed(n) { if(n===0)return false; const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]; return reds.includes(n); }
 
-    // ランクシステム定義
     const baseRanks = ["ブロンズ", "シルバー", "ゴールド", "プラチナ", "ジェイド", "サファイア", "ルビー", "ダイヤモンド"];
     const rankRequirements = [];
 
@@ -486,12 +485,10 @@
         setInterval(updateCountdowns, 1000);
     });
 
-    // タイマー管理およびボタンロック処理
     function updateCountdowns() {
         if(!localGameState) return;
         let now = Date.now();
         
-        // デイリー
         if(localGameState.lastDailyClaim) {
             let diffD = (localGameState.lastDailyClaim + (24 * 60 * 60 * 1000)) - now;
             let badge = document.getElementById('daily-timer-badge');
@@ -499,7 +496,6 @@
             if(diffD > 0) { badge.classList.remove('hidden'); badge.innerText = formatTimeLeft(diffD); if(btn) btn.disabled = true; }
             else { badge.classList.add('hidden'); if(btn) btn.disabled = false; }
         }
-        // ウィークリー
         if(localGameState.lastWeeklyClaim) {
             let diffW = (localGameState.lastWeeklyClaim + (7 * 24 * 60 * 60 * 1000)) - now;
             let badge = document.getElementById('weekly-timer-badge');
@@ -507,7 +503,6 @@
             if(diffW > 0) { badge.classList.remove('hidden'); badge.innerText = formatTimeLeft(diffW); if(btn) btn.disabled = true; }
             else { badge.classList.add('hidden'); if(btn) btn.disabled = false; }
         }
-        // マンスリー
         if(localGameState.lastMonthlyClaim) {
             let diffM = (localGameState.lastMonthlyClaim + (30 * 24 * 60 * 60 * 1000)) - now;
             let badge = document.getElementById('monthly-timer-badge');
@@ -544,7 +539,6 @@
         } catch(e) { console.error("Log error: ", e); }
     }
 
-    // 全プレイヤーの所持金ランキング取得機能
     async function fetchAndRenderLeaderboard() {
         const container = document.getElementById('leaderboard-container');
         if(!container) return;
@@ -555,10 +549,8 @@
                 let data = d.data();
                 users.push({ id: d.id, balance: data.balance || 0, wagered: data.wagered || 0 });
             });
-            // 所持金順にソート
             users.sort((a, b) => b.balance - a.balance);
             
-            // 上位10名枠切り出し
             let topUsers = users.slice(0, 10);
             container.innerHTML = "";
             
@@ -703,7 +695,6 @@
         }
     }
 
-    // ランクアップ時のお金特典支給処理を完全に撤廃
     async function processWagerVipMetrics(wagerAmount) {
         const userRef = db.collection('users').doc(currentUser);
         await db.runTransaction(async t => {
@@ -852,7 +843,7 @@
             select.innerHTML = `<option value="">-- 部屋に他のプレイヤーがいません --</option>`;
             return;
         }
-        select.innerHTML = `<option value="">-- 对戦相手を選択してください --</option>`;
+        select.innerHTML = `<option value="">-- 対戦相手を選択してください --</option>`;
         validTargets.forEach(id => { select.innerHTML += `<option value="${id}">${id}</option>`; });
     }
 
@@ -923,7 +914,7 @@
 
     function updateMainActionButtonState() {
         const btn = document.getElementById('btn-action-main');
-        if ((localGameState && localGameState.status === 'playing') || isRouletteSpinning || isDiceSpinning || isProcessingGameStart) {
+        if ((localGameState && localGameState.status === 'playing' && !localGameState.isP2PActiveGame) || isRouletteSpinning || isDiceSpinning || isProcessingGameStart) {
             btn.disabled = true; btn.innerText = "勝負進行中...";
         } else {
             btn.disabled = false; btn.innerText = "ベットして勝負開始";
@@ -983,6 +974,7 @@
         await processWagerVipMetrics(invite.bet);
 
         let roomData = snap.data();
+        // カード生成をホスト（親）側が一括で決定してFirestoreに保存することでズレを解消
         roomData.p2pGame = {
             host: invite.host, guest: currentUser, bet: invite.bet, status: 'playing',
             hostCards: [draw(), draw()], guestCards: [draw(), draw()],
@@ -999,12 +991,14 @@
         if(!g || g.status !== 'playing') return;
         let isHost = (currentUser === g.host);
         
+        // カード追加処理もすべて同期データベース（Firestore）主導で行う
         if(action === 'hit') {
+            const nextCard = draw();
             if(isHost) {
-                g.hostCards.push(draw());
+                g.hostCards.push(nextCard);
                 if(calcBJScore(g.hostCards) > 21) { g.hostStatus = 'busted'; g.turn = g.guest; }
             } else {
-                g.guestCards.push(draw());
+                g.guestCards.push(nextCard);
                 if(calcBJScore(g.guestCards) > 21) { g.guestStatus = 'busted'; }
             }
         } else if(action === 'stand') {
@@ -1032,7 +1026,7 @@
     }
 
     async function startIndividualGame() {
-        if(isProcessingGameStart) return; // ボタン連打対策ガード
+        if(isProcessingGameStart) return; 
         isProcessingGameStart = true;
         updateMainActionButtonState();
 
@@ -1091,7 +1085,7 @@
         roomData.players[currentUser] = myGame;
         await rRef.set(roomData);
         localGameState = myGame;
-        isProcessingGameStart = false; // 解除
+        isProcessingGameStart = false; 
         renderMyOwnBoard();
         updateMainActionButtonState();
     }
@@ -1273,10 +1267,12 @@
     }
 
     function syncStatusToRoom(statusStr, betAmt) {
+        if(currentRoom === 'lobby') return;
         const rRef = db.collection('rooms').doc(currentRoom);
         rRef.get().then(snap => {
             if(snap.exists) {
                 let d = snap.data(); if(!d.players) d.players = {};
+                // ルーレットやダイスのシングルプレイ結果が同期ボードの主データを壊さないように保護
                 d.players[currentUser] = { gameType: selectedGameType, status: statusStr, bet: betAmt, lastUpdated: Date.now() };
                 rRef.set(d);
             }
@@ -1491,7 +1487,7 @@
         } else { toast.classList.remove('show'); }
 
         if(data.p2pInvite && data.p2pInvite.status === 'rejected' && data.p2pInvite.host === currentUser) {
-            alert("❌ 対戦招待が拒否されました。");
+            alert("❌ 对戦招待が拒否されました。");
             db.collection('rooms').doc(currentRoom).update({ p2pInvite: null });
         }
 
@@ -1539,7 +1535,7 @@
                 document.getElementById('admin-login-section').classList.add('hidden'); 
                 document.getElementById('admin-dashboard').classList.remove('hidden'); 
                 renderAdminCodes(); 
-                fetchAndRenderAdminPlayerManager(); // 全ユーザー所持金操作マネージャーの展開
+                fetchAndRenderAdminPlayerManager(); 
             } 
             else { document.getElementById('admin-login-section').classList.remove('hidden'); document.getElementById('admin-dashboard').classList.add('hidden'); }
         }
@@ -1558,7 +1554,6 @@
         snap.forEach(d => div.innerHTML += `<div style="font-size:12px; background:#000; margin-top:2px; padding:6px; border-radius:4px;">${d.id} : ￥${d.data().amount}</div>`);
     }
 
-    // 管理者パネル内：全プレイヤー所持金管理リスト描画＆書き換え
     async function fetchAndRenderAdminPlayerManager() {
         const container = document.getElementById('admin-player-money-list');
         if(!container) return;
@@ -1586,7 +1581,6 @@
         }
     }
 
-    // 管理者権限による特定ユーザーの残高上書きコミット
     async function updatePlayerMoneyFromAdmin(targetUserId) {
         const inputEl = document.getElementById(`admin-bal-input-${targetUserId}`);
         if(!inputEl) return;
@@ -1596,7 +1590,6 @@
         try {
             await db.collection('users').doc(targetUserId).update({ balance: newAmount });
             alert(`✨ ${targetUserId} の所持金を ￥${newAmount.toLocaleString()} に更新しました！`);
-            // 管理者変更ログを対象ユーザーに挿入
             try {
                 await db.collection('transactions').add({
                     username: targetUserId,
@@ -1638,24 +1631,19 @@
         });
     }
 
-    // アカウントの完全削除処理機能
     async function deleteCurrentAccount() {
         if(!currentUser) return;
         const confirmDelete = confirm(`⚠️ 本当にアカウント「${currentUser}」を完全に削除しますか？\nこの操作は取り消せず、所持金やVIPランク、全てのデータが消去されます。`);
         if(!confirmDelete) return;
 
         try {
-            // Firestore から該当ユーザーのドキュメントを物理削除
             await db.collection('users').doc(currentUser).delete();
-            
             alert(`✨ アカウント「${currentUser}」の削除が完了しました。`);
             
-            // クライアント側セッション初期化と画面リセット
             currentUser = null;
             sessionStorage.removeItem('koyo_logged_user');
             toggleSidebar(false);
             
-            // 認証画面(ログイン)へ強制移行
             document.getElementById('main-content').classList.add('hidden');
             document.getElementById('app-nav').classList.add('hidden');
             document.getElementById('auth-screen').style.display = 'block';
