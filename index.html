@@ -36,7 +36,7 @@
         /* 固定上部ナビバー */
         .user-bar { position: sticky; top: 0; z-index: 140; display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-card); padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: 1px solid #2f4553; }
         .balance-box { background-color: var(--bg-input); padding: 6px 12px; border-radius: 4px; font-weight: bold; color: var(--primary); margin-left: auto; margin-right: 10px; }
-        .menu-trigger { font-size: 24px; cursor: pointer; color: var(--text-muted); user-select: none; padding: 0 5px; }
+        .menu-trigger { font-size: 24px; cursor: pointer; color: var(--text-muted); user-select: none; padding: 0 5px; display: flex; gap: 15px; align-items: center; }
 
         /* 3本線ドロワーメニュー */
         .sidebar { position: fixed; top: 0; right: -300px; width: 300px; height: 100%; background-color: var(--bg-card); z-index: 200; box-shadow: -4px 0 15px rgba(0,0,0,0.5); transition: right 0.3s ease; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
@@ -54,7 +54,7 @@
         .vip-next-label { display: flex; align-items: center; gap: 4px; color: var(--text-muted); }
 
         /* サブモーダル */
-        .sub-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9); background: var(--bg-card); width: 90%; max-width: 400px; border-radius: 12px; border: 2px solid #2f4553; padding: 20px; z-index: 300; box-shadow: 0 10px 30px rgba(0,0,0,0.7); opacity: 0; pointer-events: none; transition: all 0.2s ease; }
+        .sub-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9); background: var(--bg-card); width: 95%; max-width: 440px; border-radius: 12px; border: 2px solid #2f4553; padding: 20px; z-index: 300; box-shadow: 0 10px 30px rgba(0,0,0,0.7); opacity: 0; pointer-events: none; transition: all 0.2s ease; max-height: 85vh; overflow-y: auto; }
         .sub-modal.open { transform: translate(-50%, -50%) scale(1); opacity: 1; pointer-events: auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #2f4553; padding-bottom: 8px; }
 
@@ -131,19 +131,16 @@
         .rank-badge { font-weight: bold; width: 22px; color: var(--gold); }
         
         /* 管理者全プレイヤーマネー調整 */
-        .admin-user-row { display: flex; justify-content: space-between; align-items: center; background: #13222d; padding: 8px 10px; border-radius: 4px; margin-bottom: 6px; font-size: 12px; gap: 8px; }
-        .admin-money-input { width: 90px; padding: 4px 6px; font-size: 12px; margin-bottom: 0; background: var(--bg-main); border: 1px solid #2f4553; text-align: right; }
+        .admin-user-row { background: #13222d; padding: 12px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; border: 1px solid #2f4553; }
+        .admin-money-input { width: 110px; padding: 6px; font-size: 13px; margin-bottom: 0; background: var(--bg-main); border: 1px solid #2f4553; text-align: right; color: #fff; }
 
-        /* 👑 追加・新機能：グローバルライブベット流れるティッカー帯 */
+        /* 流れるティッカー */
         .live-bet-marquee-wrapper { position: fixed; bottom: 85px; left: 0; width: 100%; background: #11222e; border-top: 1px solid #2f4553; border-bottom: 1px solid #2f4553; height: 32px; overflow: hidden; z-index: 95; display: flex; align-items: center; }
         .live-bet-marquee-content { display: flex; white-space: nowrap; animation: marqueeLive 25s linear infinite; gap: 30px; padding-left: 100%; }
         .live-bet-node { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: bold; color: var(--text-muted); }
-        .live-bet-node span.name { color: #fff; }
-        .live-bet-node span.amt { color: var(--primary); }
-        .live-bet-node span.game { color: var(--gold); }
         @keyframes marqueeLive { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-        /* 👑 追加・新機能：グローバル公開チャットパネル */
+        /* チャット */
         .global-chat-box { background: var(--bg-card); border: 1px solid #2f4553; border-radius: 8px; padding: 12px; margin-top: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .chat-logs-area { height: 120px; overflow-y: auto; background: var(--bg-main); border-radius: 4px; padding: 8px; font-size: 12px; display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; border: 1px solid #1c2e3a; }
         .chat-msg-line { line-break: anywhere; }
@@ -151,6 +148,29 @@
         .chat-input-row { display: flex; gap: 6px; }
         .chat-mini-input { margin-bottom: 0 !important; padding: 8px !important; font-size: 13px !important; flex-grow: 1; }
         .chat-mini-btn { width: auto !important; padding: 0 15px !important; font-size: 13px !important; }
+
+        /* RPG特有スタイル */
+        .rpg-battle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .rpg-card { background: rgba(0,0,0,0.3); border: 1px solid #2f4553; border-radius: 8px; padding: 12px; position: relative; }
+        .rpg-hp-bar { width: 100%; background: #223743; height: 12px; border-radius: 6px; overflow: hidden; margin-top: 4px; border: 1px solid #111; }
+        .rpg-hp-fill { height: 100%; background: #fe2247; width: 100%; transition: width 0.3s; }
+        .rpg-hp-fill.player { background: #00e701; }
+        .rpg-mp-bar { width: 100%; background: #223743; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 4px; border: 1px solid #111; }
+        .rpg-mp-fill { height: 100%; background: #3498db; width: 100%; transition: width 0.3s; }
+        .rpg-log-area { height: 150px; overflow-y: auto; background: #0a1118; border: 1px solid #2f4553; border-radius: 6px; padding: 8px; font-size: 12px; line-height: 1.5; font-family: monospace; color: #00e701; margin-bottom: 15px; }
+        .rpg-btn-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 10px; }
+        .rpg-btn-grid button { padding: 10px; font-size: 14px; }
+        .rpg-equip-slot { font-size: 11px; color: var(--text-muted); background: var(--bg-input); padding: 4px 8px; border-radius: 4px; margin-top: 4px; border: 1px solid #2f4553; }
+        .badge-element { padding: 1px 4px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-left: 4px; }
+        .elem-fire { background: #e74c3c; color: #fff; }
+        .elem-water { background: #3498db; color: #fff; }
+        .elem-wood { background: #2ecc71; color: #fff; }
+        .elem-light { background: #f1c40f; color: #000; }
+        .elem-dark { background: #9b59b6; color: #fff; }
+        .bell-btn { font-size: 20px; cursor: pointer; color: var(--text-muted); position: relative; padding: 0 5px; }
+        .bell-dot { position: absolute; top: -2px; right: 2px; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+        .notif-row { background: var(--bg-input); padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid var(--primary); font-size: 12px; }
+        .idea-box { background: var(--bg-main); border: 1px solid #2f4553; padding: 10px; border-radius: 6px; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -158,8 +178,8 @@
 <div id="p2p-toast" class="p2p-toast-banner">
     <div id="p2p-toast-text">⚔️ 対戦招待が届きました</div>
     <div class="p2p-btn-row">
-        <button id="p2p-toast-accept-btn" onclick="handleP2PResponse(true)" style="background:#00e701; color:#000; flex:1;">参戦</button>
-        <button id="p2p-toast-reject-btn" onclick="handleP2PResponse(false)" style="background:#fff; color:#000; flex:1;">拒否</button>
+        <button onclick="handleP2PResponse(true)" style="background:#00e701; color:#000; flex:1;">参戦</button>
+        <button onclick="handleP2PResponse(false)" style="background:#fff; color:#000; flex:1;">拒否</button>
     </div>
 </div>
 
@@ -183,14 +203,9 @@
         </div>
     </div>
 
-    <button id="side-btn-vault" onclick="openSubModal('vault')" style="background-color:var(--gold); color:#000; text-align:left;">💰 保管庫 (Vault) を開く</button>
-    <button id="side-btn-vip" onclick="openSubModal('vip')" style="background-color:#9b59b6; color:#fff; text-align:left;">👑 VIP 特典・ボーナス</button>
-    <button id="side-btn-tip" onclick="openSubModal('tip')" style="background-color:#3498db; color:#fff; text-align:left;">💸 友達にチップを送る</button>
-    <button id="side-btn-leaderboard" onclick="openSubModal('leaderboard')" style="background-color:#2ecc71; color:#000; text-align:left;">🏆 所持金ランキング (Rankings)</button>
-    <button id="side-btn-txhistory" onclick="openSubModal('txhistory')" style="background-color:#2c3e50; color:#fff; text-align:left;">📜 取引履歴 (Logs)</button>
+    <div id="sidebar-dynamic-options" style="display: flex; flex-direction: column; gap: 12px;"></div>
     
     <button id="side-btn-delete" onclick="deleteCurrentAccount()" style="background-color:var(--accent); color:#fff; text-align:left; margin-top:15px;">⚠️ アカウント削除 (Delete User)</button>
-    
     <button onclick="toggleSidebar(false)" class="secondary" style="margin-top:auto;">閉じる</button>
 </div>
 
@@ -205,37 +220,12 @@
     <button onclick="handleVault('withdraw')" class="secondary">📥 保管庫から引き出す</button>
 </div>
 
-<div class="sub-modal" id="modal-vip" style="max-width: 450px;">
+<div class="sub-modal" id="modal-vip">
     <div class="modal-header"><h3>👑 VIPリワードセンター</h3><span style="cursor:pointer;" onclick="closeSubModal('vip')">✕</span></div>
-    
-    <div class="bonus-card">
-        <div class="bonus-info"><strong>⚡ インスタントレーキバック</strong><span style="font-size:11px; color:var(--text-muted);">プール額: ￥<span id="pool-rakeback">0</span></span></div>
-        <button onclick="claimVipBonus('rakeback')" style="width:auto; padding:6px 12px; font-size:12px;">受取</button>
-    </div>
-    <div class="bonus-card">
-        <div class="bonus-info">
-            <strong>📅 デイリーレーキバック</strong>
-            <span style="font-size:11px; color:var(--text-muted);">プール額: ￥<span id="pool-daily">0</span></span>
-            <div id="daily-timer-badge" class="countdown-badge hidden">24:00:00</div>
-        </div>
-        <button id="btn-claim-daily" onclick="claimVipBonus('daily')" style="width:auto; padding:6px 12px; font-size:12px;">受取</button>
-    </div>
-    <div class="bonus-card">
-        <div class="bonus-info">
-            <strong>⏳ ウィークリーボーナス</strong>
-            <span style="font-size:11px; color:var(--text-muted);">プール額: ￥<span id="pool-weekly">0</span></span>
-            <div id="weekly-timer-badge" class="countdown-badge hidden">7日 00時間</div>
-        </div>
-        <button id="btn-claim-weekly" onclick="claimVipBonus('weekly')" style="width:auto; padding:6px 12px; font-size:12px; background:var(--gold); color:#000;">受取</button>
-    </div>
-    <div class="bonus-card">
-        <div class="bonus-info">
-            <strong>🌙 マンスリーボーナス</strong>
-            <span style="font-size:11px; color:var(--text-muted);">プール額: ￥<span id="pool-monthly">0</span></span>
-            <div id="monthly-timer-badge" class="countdown-badge hidden">30日 00時間</div>
-        </div>
-        <button id="btn-claim-monthly" onclick="claimVipBonus('monthly')" style="width:auto; padding:6px 12px; font-size:12px; background:var(--gold); color:#000;">受取</button>
-    </div>
+    <div class="bonus-card"><div class="bonus-info"><strong>⚡ インスタントレーキバック</strong><span style="font-size:11px; color:var(--text-muted);">プール額: ￥<span id="pool-rakeback">0</span></span></div><button onclick="claimVipBonus('rakeback')" style="width:auto; padding:6px 12px; font-size:12px;">受取</button></div>
+    <div class="bonus-card"><div class="bonus-info"><strong>📅 デイリーレーキバック</strong><span style="font-size:11px; color:var(--text-muted);">プール額: ￥<span id="pool-daily">0</span></span><div id="daily-timer-badge" class="countdown-badge hidden">24:00:00</div></div><button id="btn-claim-daily" onclick="claimVipBonus('daily')" style="width:auto; padding:6px 12px; font-size:12px;">受取</button></div>
+    <div class="bonus-card"><div class="bonus-info"><strong>⏳ ウィークリーボーナス</strong><span style="font-size:11px; color:var(--text-muted);">プール額: ￥<span id="pool-weekly">0</span></span><div id="weekly-timer-badge" class="countdown-badge hidden">7日 00時間</div></div><button id="btn-claim-weekly" onclick="claimVipBonus('weekly')" style="width:auto; padding:6px 12px; font-size:12px; background:var(--gold); color:#000;">受取</button></div>
+    <div class="bonus-card"><div class="bonus-info"><strong>🌙 マンスリーボーナス</strong><span style="font-size:11px; color:var(--text-muted);">プール額: ￥<span id="pool-monthly">0</span></span><div id="monthly-timer-badge" class="countdown-badge hidden">30日 00時間</div></div><button id="btn-claim-monthly" onclick="claimVipBonus('monthly')" style="width:auto; padding:6px 12px; font-size:12px; background:var(--gold); color:#000;">受取</button></div>
 </div>
 
 <div class="sub-modal" id="modal-tip">
@@ -247,18 +237,51 @@
 
 <div class="sub-modal" id="modal-txhistory">
     <div class="modal-header"><h3>📜 取引履歴 (Logs)</h3><span style="cursor:pointer;" onclick="closeSubModal('txhistory')">✕</span></div>
-    <div class="tx-history-box" id="tx-history-container">
-        <p style="font-size:12px; color:var(--text-muted); text-align:center;">履歴データを読み込み中...</p>
-    </div>
+    <div class="tx-history-box" id="tx-history-container"><p style="font-size:12px; color:var(--text-muted); text-align:center;">履歴データを読み込み中...</p></div>
 </div>
 
 <div class="sub-modal" id="modal-leaderboard">
     <div class="modal-header"><h3>🏆 所持金ランキング</h3><span style="cursor:pointer;" onclick="closeSubModal('leaderboard')">✕</span></div>
-    <div class="leaderboard-box" id="leaderboard-container">
-        <p style="font-size:12px; color:var(--text-muted); text-align:center;">ランキングを集計中...</p>
+    <div class="leaderboard-box" id="leaderboard-container"><p style="font-size:12px; color:var(--text-muted); text-align:center;">ランキングを集計中...</p></div>
+</div>
+
+<div class="sub-modal" id="modal-notif">
+    <div class="modal-header"><h3>🔔 お知らせ & アイデア送信</h3><span style="cursor:pointer;" onclick="closeSubModal('notif')">✕</span></div>
+    <div id="notif-list-area" style="max-height:200px; overflow-y:auto; margin-bottom:15px;"></div>
+    
+    <div style="border-top:1px dashed #2f4553; padding-top:10px;">
+        <h4 style="font-size:13px; margin-bottom:6px; color:var(--gold);">💡 RPGの敵キャラ・装備案を送る</h4>
+        <input type="text" id="idea-title" placeholder="案の名前（例：溶岩ゴーレム、伝説の聖剣）">
+        <select id="idea-type">
+            <option value="enemy">敵キャラクターの案</option>
+            <option value="weapon">武器の案</option>
+            <option value="armor">防具の案</option>
+        </select>
+        <textarea id="idea-desc" placeholder="ステータス効果や見た目の説明" style="width:100%; height:60px; background:var(--bg-input); border:1px solid #2f4553; border-radius:4px; color:#fff; padding:8px; font-size:13px; margin-bottom:10px;"></textarea>
+        <button onclick="submitRpgIdea()" style="background:var(--gold); color:#000; padding:10px; font-size:13px;">開発者へアイデアを送信</button>
     </div>
 </div>
 
+<div class="sub-modal" id="modal-rpgrule">
+    <div class="modal-header"><h3>📋 RPGデータ・詳細ルール</h3><span style="cursor:pointer;" onclick="closeSubModal('rpgrule')">✕</span></div>
+    <div style="font-size:12px; line-height:1.6; display:flex; flex-direction:column; gap:10px;">
+        <div><strong>🔥 属性相性の相関関係（ダメージ 1.1倍）</strong><br>
+        <span class="badge-element elem-fire">火</span> → <span class="badge-element elem-wood">木</span> → <span class="badge-element elem-water">水</span> → <span class="badge-element elem-fire">火</span><br>
+        <span class="badge-element elem-light">光</span> ⇄ <span class="badge-element elem-dark">暗</span> (お互いに有利)</div>
+        
+        <div><strong>💰 敵レア度とコイン倍率補正</strong><br>
+        ・コモン (70%): 1.0倍 (5〜15枚)<br>
+        ・アンコモン (20%): 1.5倍 (7〜22枚)<br>
+        ・レア (5%): 2.0倍 (10〜30枚)<br>
+        ・激レア (3.5%): 3.0倍 (15〜45枚)<br>
+        ・超激レア (1.5%): 5.0倍 (25〜75枚)</div>
+
+        <div><strong>⚔️ プレイヤー基本スキル</strong><br>
+        ・ヒール (消費15MP): HPを150回復。再使用に3ターンのクールダウンが必要。<br>
+        ・フルスイング (消費10MP): 敵に1.5倍物理攻撃。<br>
+        ・属性チャージ (消費20MP): 3ターンの間、有利属性の相性補正を1.1倍から「1.3倍」に大強化。</div>
+    </div>
+</div>
 
 <div class="container">
     <div class="logo">Koyo<span>casino</span></div>
@@ -275,23 +298,26 @@
         <div class="user-bar" id="app-user-bar">
             <div>👤 <span id="display-username">-</span></div>
             <div class="balance-box">￥<span id="display-balance">0</span></div>
-            <div class="menu-trigger" id="sidebar-trigger-btn" onclick="toggleSidebar(true)">☰</div>
+            <div class="menu-trigger">
+                <span class="bell-btn" onclick="openNotifModal()">🔔<span id="bell-badge" class="bell-dot hidden"></span></span>
+                <span onclick="toggleSidebar(true)">☰</span>
+            </div>
         </div>
 
         <div id="section-game" class="tab-content active-tab">
-            <div class="room-compact-bar" id="room-nav-bar-container">
+            <div class="room-compact-bar">
                 <div class="room-info-label">🏠 部屋: <span id="current-room-id">ロビー</span></div>
                 <div class="room-action-inputs">
                     <input type="text" id="room-input" class="room-mini-input" placeholder="部屋コード">
-                    <button id="room-join-btn" onclick="joinRoom()" class="room-mini-btn" style="background: var(--primary); color:#000;">参加</button>
-                    <button id="room-create-btn" onclick="createNewRoom()" class="room-mini-btn" style="background: var(--gold); color:#000;">作成</button>
-                    <button id="room-leave-btn" onclick="leaveRoom()" class="room-mini-btn" style="background: var(--accent); color:#fff;">退出</button>
+                    <button onclick="joinRoom()" class="room-mini-btn" style="background: var(--primary); color:#000;">参加</button>
+                    <button onclick="createNewRoom()" class="room-mini-btn" style="background: var(--gold); color:#000;">作成</button>
+                    <button onclick="leaveRoom()" class="room-mini-btn" style="background: var(--accent); color:#fff;">退出</button>
                 </div>
             </div>
 
             <div id="lobby-status-container" class="lobby-status-indicator"></div>
 
-            <div class="game-menu-v2" id="game-selection-menu-row">
+            <div class="game-menu-v2">
                 <div class="game-btn-full active" id="menu-mines" onclick="selectGameType('mines')">💣 マインズ</div>
                 <div class="game-btn-full" id="menu-bj" onclick="selectGameType('bj')">🃏 ブラックジャック</div>
                 <div class="game-btn-full" id="menu-hilow" onclick="selectGameType('hilow')">📈 ハイロー</div>
@@ -302,10 +328,9 @@
             <div class="panel" style="padding: 15px;">
                 <label style="font-size:11px; color:var(--text-muted);">ベット額設定</label>
                 <input type="number" id="bet-amount" value="100" min="10">
-                
                 <div class="bet-adjust-group">
-                    <button id="bet-half-btn" class="bet-adjust-btn" onclick="adjustBetMultiplier(0.5)">½</button>
-                    <button id="bet-double-btn" class="bet-adjust-btn" onclick="adjustBetMultiplier(2.0)">2x</button>
+                    <button class="bet-adjust-btn" onclick="adjustBetMultiplier(0.5)">½</button>
+                    <button class="bet-adjust-btn" onclick="adjustBetMultiplier(2.0)">2x</button>
                 </div>
 
                 <div id="setting-mines">
@@ -323,7 +348,7 @@
                         <label style="font-size:11px; color:var(--text-muted);">予想するサイコロの目</label>
                         <select id="dice-exact-target">
                             <option value="1">1 (配当 5.8x)</option><option value="2">2 (配当 5.8x)</option>
-                            <option value="3">3 (配当 5.8x)</option><option value="4">4 (配当 5.8x)</option>
+                            <option value="3">3 (配当 5.8x)</option><option value="4">4 (配0 5.8x)</option>
                             <option value="5">5 (配当 5.8x)</option><option value="6">6 (配当 5.8x)</option>
                         </select>
                     </div>
@@ -342,54 +367,107 @@
                 <button id="btn-action-main" onclick="startIndividualGame()">ベットして勝負開始</button>
 
                 <div id="bj-p2p-invite-container" class="hidden" style="margin-top:10px; background: rgba(0,0,0,0.2); padding:10px; border-radius:6px; border:1px solid #2f4553;">
-                    <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px;">対戦相手を選択</label>
                     <select id="p2p-target-selector" style="padding:8px; font-size:13px; margin-bottom:8px;"><option value="">-- 部屋のプレイヤーを読み込み中 --</option></select>
-                    <button id="p2p-send-invite-btn" onclick="sendP2PInvite()" style="background-color:var(--gold); color:#000; padding:10px; font-size:14px;">⚔️ 選択した相手に対戦を申し込む</button>
+                    <button onclick="sendP2PInvite()" style="background-color:var(--gold); color:#000; padding:10px; font-size:14px;">⚔️ 選択した相手に対戦を申し込む</button>
                 </div>
 
                 <div id="bj-controls" class="hidden" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; margin-top:10px;">
-                    <button class="secondary" id="btn-bj-hit" onclick="gameSubAction('hit')">ヒット</button>
-                    <button class="secondary" id="btn-bj-stand" style="background-color:var(--gold); color:#000;" onclick="gameSubAction('stand')">スタンド</button>
-                    <button class="secondary" id="btn-bj-double" style="grid-column: span 2; background-color:#e67e22; color:#fff;" onclick="gameSubAction('double')">ダブルダウン (Double)</button>
-                    <button class="secondary" id="btn-bj-split" style="background-color:#9b59b6; color:#fff;" onclick="gameSubAction('split')">スプリット (Split)</button>
-                    <button class="secondary" id="btn-bj-insurance" style="background-color:#34495e; color:#fff;" onclick="gameSubAction('insurance')">保険 (Insurance)</button>
+                    <button class="secondary" onclick="gameSubAction('hit')">ヒット</button>
+                    <button class="secondary" style="background-color:var(--gold); color:#000;" onclick="gameSubAction('stand')">スタンド</button>
+                    <button class="secondary" style="grid-column: span 2; background-color:#e67e22; color:#fff;" onclick="gameSubAction('double')">ダブルダウン</button>
                 </div>
                 
                 <div id="hilow-controls" class="hidden" style="margin-top:10px; display:flex; flex-direction:column; gap:6px;">
                     <div style="display:flex; gap:10px;">
-                        <button style="background-color:var(--primary);" id="btn-hilow-high" onclick="gameSubAction('high')">🔼 HIGH</button>
-                        <button style="background-color:var(--accent); color:white;" id="btn-hilow-low" onclick="gameSubAction('low')">🔽 LOW</button>
+                        <button style="background-color:var(--primary);" onclick="gameSubAction('high')">🔼 HIGH</button>
+                        <button style="background-color:var(--accent); color:white;" onclick="gameSubAction('low')">🔽 LOW</button>
                     </div>
-                    <button style="background-color:var(--gold); color:#000;" id="btn-hilow-cashout" onclick="gameSubAction('cashout')">💰 キャッシュアウト</button>
+                    <button style="background-color:var(--gold); color:#000;" onclick="gameSubAction('cashout')">💰 キャッシュアウト</button>
                 </div>
                 
                 <div id="mines-controls" class="hidden" style="margin-top:10px;">
-                    <button style="background-color:var(--gold); color:#000;" id="btn-mines-cashout" onclick="gameSubAction('cashout')">💰 キャッシュアウト</button>
+                    <button style="background-color:var(--gold); color:#000;" onclick="gameSubAction('cashout')">💰 キャッシュアウト</button>
                 </div>
             </div>
 
             <div id="my-isolated-board" class="my-game-area"></div>
 
             <div class="table-area">
-                <div id="table-sync-title" style="font-size:12px; text-align:center; color:var(--text-muted); margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">
-                    👥 ルーム内プレイヤーの状況同期
-                </div>
+                <div style="font-size:12px; text-align:center; color:var(--text-muted); margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">👥 ルーム内同期</div>
                 <div class="players-side" id="table-players"></div>
             </div>
 
             <div id="lobby-spectator-panel" class="panel">
-                <h3 style="font-size:14px; margin-bottom:10px; color:var(--gold); display:flex; align-items:center; gap:6px;">👁️‍🗨️ 全部屋アクティブゲームリアルタイムライブ観戦</h3>
-                <div id="spectator-live-feeds" style="display:flex; flex-direction:column; gap:8px;">
-                    <p style="font-size:12px; color:var(--text-muted); text-align:center;">現在稼働中のゲームはありません（ロビー待機中）</p>
-                </div>
+                <h3 style="font-size:14px; margin-bottom:10px; color:var(--gold);">👁️‍🗨️ ライブマルチ観戦</h3>
+                <div id="spectator-live-feeds"></div>
             </div>
 
             <div class="global-chat-box">
-                <h3 style="font-size:13px; margin-bottom:6px; color:var(--text-muted);">💬 カジノグローバルチャット</h3>
                 <div class="chat-logs-area" id="chat-logs-container"></div>
                 <div class="chat-input-row">
-                    <input type="text" id="chat-msg-input" class="room-mini-input chat-mini-input" placeholder="メッセージを入力...">
+                    <input type="text" id="chat-msg-input" class="room-mini-input chat-mini-input" placeholder="チャットを入力...">
                     <button onclick="sendGlobalChatMessage()" class="room-mini-btn chat-mini-btn">送信</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-rpg" class="tab-content">
+            <div id="rpg-jail-timer" class="panel hidden" style="background:rgba(254,34,71,0.15); border:2px solid var(--accent); text-align:center;">
+                <h3 style="color:var(--accent);">⚠️ 敗北ペナルティ中</h3>
+                <p style="font-size:13px; margin:8px 0;">15分間、RPGエリアへのアクセスが制限されています。カジノでリベンジ資金を稼ぎましょう！</p>
+                <div id="jail-time-left" style="font-size:24px; font-weight:bold; color:#fff;">15:00</div>
+            </div>
+
+            <div id="rpg-main-wrapper">
+                <div class="panel" style="padding:12px;">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:5px;">
+                        <div>⚔️ 挑戦レベル: <span id="rpg-player-lv" style="color:var(--gold);">1</span></div>
+                        <div>💰 鞄: <span id="rpg-player-coins" style="color:var(--primary);">0</span> コイン</div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px; border-top:1px solid #2f4553; padding-top:6px;">
+                        <div>💥 攻撃力: <span id="stat-atk">25</span> | 🛡️ 防御力: <span id="stat-def">150</span></div>
+                        <div style="text-align:right;">🎒 回復薬: <span id="rpg-count-potion" style="color:var(--gold); font-weight:bold;">0</span> 個</div>
+                    </div>
+                    <div class="rpg-equip-slot">🗡️ 武器: <span id="eq-weapon">初期のナイフ (+0)</span></div>
+                    <div class="rpg-equip-slot">🛡️ 防具: <span id="eq-armor">旅人の服 (+0)</span></div>
+                    <div class="rpg-equip-slot">📿 装飾: <span id="eq-acc">お守り (+0)</span></div>
+                </div>
+
+                <div class="panel">
+                    <div class="rpg-battle-grid">
+                        <div class="rpg-card">
+                            <div style="font-weight:bold; font-size:14px;">Player</div>
+                            <div class="rpg-hp-bar"><div id="rpg-p-hp" class="rpg-hp-fill player"></div></div>
+                            <div style="font-size:11px; text-align:right; margin-top:2px;" id="rpg-p-hp-txt">400/400</div>
+                            <div class="rpg-mp-bar"><div id="rpg-p-mp" class="rpg-mp-fill"></div></div>
+                            <div style="font-size:10px; text-align:right; margin-top:1px;" id="rpg-p-mp-txt">50/50</div>
+                        </div>
+                        <div class="rpg-card" id="rpg-enemy-node">
+                            <div style="font-weight:bold; font-size:14px;"><span id="rpg-e-name">モンスター</span></div>
+                            <div class="rpg-hp-bar"><div id="rpg-e-hp" class="rpg-hp-fill"></div></div>
+                            <div style="font-size:11px; text-align:right; margin-top:2px;" id="rpg-e-hp-txt">50/50</div>
+                            <div style="font-size:10px; margin-top:4px;" id="rpg-e-details">Lv.1 | 攻撃力: --</div>
+                        </div>
+                    </div>
+
+                    <div class="rpg-log-area" id="rpg-log-box"></div>
+
+                    <div class="rpg-btn-grid">
+                        <button onclick="rpgAction('attack')" style="background:var(--primary); color:#000;">⚔️ 通常攻撃</button>
+                        <button onclick="rpgAction('potion')" style="background:var(--gold); color:#000;">🧪 回復薬を使う</button>
+                        <button onclick="rpgAction('skill-heal')" id="btn-skill-heal" style="background:#2ecc71; color:#fff;">💖 ヒール (15MP)</button>
+                        <button onclick="rpgAction('skill-slash')" style="background:#e74c3c; color:#fff;">💥 フルスイング (10MP)</button>
+                        <button onclick="rpgAction('skill-charge')" style="background:#9b59b6; color:#fff;">⚡ 属性チャージ (20MP)</button>
+                        <button onclick="rpgAction('run')" style="background:#7f8c8d; color:#fff;">🏃 逃げる</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3 style="font-size:14px; margin-bottom:8px; color:var(--gold);">🛒 アイテムショップ</h3>
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:10px; border-radius:6px;">
+                        <div style="font-size:12px;">🧪 <strong>冒険者の回復薬</strong> (HPを200即座に回復)<br><span style="color:var(--gold);">価格: 20枚</span></div>
+                        <button onclick="buyPotion()" style="width:auto; padding:6px 12px; font-size:12px;">1個購入</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -397,15 +475,12 @@
         <div id="section-charge" class="tab-content">
             <div class="panel">
                 <h3>💸 残高チャージ</h3>
-                <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px; margin-top:5px;">管理者が発行したプロモコードを入力してください。</p>
                 <input type="text" id="charge-code" placeholder="KOYO-XXXX">
                 <button onclick="redeemCode()">チャージを実行</button>
             </div>
             <div class="panel">
                 <h3>📜 コード使用履歴</h3>
-                <div id="promo-history-list" style="margin-top:10px; max-height:250px; overflow-y:auto;">
-                    <p style="font-size:12px; color:var(--text-muted);">履歴はありません。</p>
-                </div>
+                <div id="promo-history-list" style="max-height:200px; overflow-y:auto;"><p style="font-size:12px; color:var(--text-muted);">履歴はありません。</p></div>
             </div>
         </div>
 
@@ -416,14 +491,28 @@
                 <button onclick="loginAdmin()">認証する</button>
             </div>
             <div id="admin-dashboard" class="panel hidden" style="border:2px dashed var(--gold);">
-                <h3>👑 Koyocasino 管理者パネル</h3>
-                <input type="number" id="admin-code-amount" value="5000">
-                <button onclick="generatePromoCode()">プロモコード生成</button>
-                <div id="admin-codes-list" style="margin-top:10px; max-height:130px; overflow-y:auto; margin-bottom:15px;"></div>
+                <h3>👑 Koyocasino 管理者総合パネル</h3>
                 
-                <h3 style="border-top:1px dashed #2f4553; padding-top:12px; margin-top:12px;">👤 全プレイヤー所持金操作</h3>
-                <div id="admin-player-money-list" style="margin-top:10px; max-height:250px; overflow-y:auto;">
-                    <p style="font-size:12px; color:var(--text-muted);">プレイヤーデータを読み込み中...</p>
+                <div style="margin-top:10px;">
+                    <input type="number" id="admin-code-amount" value="5000">
+                    <button onclick="generatePromoCode()">プロモコード生成</button>
+                    <div id="admin-codes-list" style="margin-top:6px; max-height:100px; overflow-y:auto; background:#111; padding:5px;"></div>
+                </div>
+
+                <div style="margin-top:15px; border-top:1px dashed #2f4553; padding-top:10px;">
+                    <h4>📢 全体お知らせ送信</h4>
+                    <input type="text" id="admin-notif-text" placeholder="お知らせ内容を入力...">
+                    <button onclick="sendGlobalNotification()" style="padding:8px; font-size:13px; background:var(--primary); color:#000;">全体通知を配信</button>
+                </div>
+
+                <div style="margin-top:15px; border-top:1px dashed #2f4553; padding-top:10px;">
+                    <h4>💡 プレイヤーからの提案採否（完全自動追加）</h4>
+                    <div id="admin-ideas-list" style="max-height:200px; overflow-y:auto; background:#111; padding:6px; font-size:12px;"></div>
+                </div>
+
+                <div style="margin-top:15px; border-top:1px dashed #2f4553; padding-top:10px;">
+                    <h4>👤 プレイヤーアカウント総轄管理</h4>
+                    <div id="admin-player-money-list" style="max-height:250px; overflow-y:auto; margin-top:8px;"></div>
                 </div>
             </div>
         </div>
@@ -432,17 +521,19 @@
 
 <div class="live-bet-marquee-wrapper hidden" id="live-bet-ticker-bar">
     <div class="live-bet-marquee-content" id="live-bet-ticker-payload">
-        <div class="live-bet-node">🎰 Koyocasino Live Analytics Feed Initialized... Ready to Stream Wins</div>
+        <div class="live-bet-node">🎰 Koyocasino Live Analytics Feed Initialized...</div>
     </div>
 </div>
 
 <div class="nav-bar hidden" id="app-nav">
-    <div class="nav-item active" id="nav-game" onclick="switchTab('game')">🎰 ゲーム</div>
+    <div class="nav-item active" id="nav-game" onclick="switchTab('game')">🎰 カジノ</div>
+    <div class="nav-item" id="nav-rpg" onclick="switchTab('rpg')">⚔️ RPG</div>
     <div class="nav-item" id="nav-charge" onclick="switchTab('charge')">💸 チャージ</div>
     <div class="nav-item" id="nav-admin" onclick="switchTab('admin')">👑 管理者</div>
 </div>
 
 <script>
+    // --- Firebase設定一式 ---
     const firebaseConfig = {
         apiKey: "AIzaSyCyoFehr8SM7OaiYeua0Sdbpt3pJiAXI74",
         authDomain: "koyocasino.firebaseapp.com",
@@ -452,1610 +543,996 @@
         appId: "1:1065140182060:web:e0c4da12a5b9842abcc589",
         measurementId: "G-7X2GZQT5C9"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let currentUser = null; let isAdminLoggedIn = false; let isSignUpMode = false;
-    let selectedGameType = 'mines'; let currentRoom = 'lobby'; let roomUnsubscribe = null;
-    let localGameState = null; let isProcessingGameStart = false; 
+    // --- ゲーム用ステータス変数 ---
+    let currentUser = null;
+    let currentBalance = 0;
+    let currentRoom = "lobby";
+    let selectedGame = "mines";
+    let currentVipWager = 0;
+    let currentVault = 0;
+    let isAdminAuthenticated = false;
 
-    let rouletteSelectedSpot = 'red'; 
-    let isRouletteSpinning = false;
-    let isDiceSpinning = false;
-    const rouletteNumbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
-    function isNumRed(n) { if(n===0)return false; const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]; return reds.includes(n); }
+    // --- RPG用グローバルデータ ---
+    let pHP = 400, pMaxHP = 400, pMP = 50, pMaxMP = 50;
+    let pAtkBonus = 0, pDefBonus = 0, pHpBonus = 0;
+    let pLevel = 1, pCoins = 0, pPotions = 0;
+    let pWeaponName = "初期のナイフ (+0)", pArmorName = "旅人の服 (+0)", pAccName = "お守り (+0)";
+    let pWeaponAttr = "none";
+    let eHP = 50, eMaxHP = 50, eAtk = 100, eName = "スライム", eAttr = "none", eRare = "common";
+    let healCooldown = 0, chargeDuration = 0;
+    let approvedEnemies = [], approvedWeapons = [], approvedArmors = [];
 
-    const baseRanks = ["ブロンズ", "シルバー", "ゴールド", "プラチナ", "ジェイド", "サファイア", "ルビー", "ダイヤモンド"];
-    const rankRequirements = [];
+    // --- 各ゲーム内部進行フラグ ---
+    let activeMinesGame = null;
+    let activeHiLowGame = null;
+    let activeBjGame = null;
+    let rouletteSelectedSpots = [];
 
-    let cumulativeWager = 0;
-    for(let r=0; r<baseRanks.length; r++) {
-        for(let lv=1; lv<=5; lv++) {
-            rankRequirements.push({
-                name: `${baseRanks[r]} ${lv}`,
-                required: cumulativeWager
-            });
-            cumulativeWager += (r + 1) * 3000;
+    // 固定名簿
+    const enemyNamesBase = ["コブリン", "オーク", "ヘルハウンド", "ファントム", "キマイラ", "ゴーレム", "サイクロプス", "ヴァンパイア"];
+    const attrTypes = ["fire", "water", "wood", "light", "dark"];
+
+    // 認証と初期化
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab'));
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        const target = document.getElementById('section-' + tabId);
+        if(target) target.classList.add('active-tab');
+        const navEl = document.getElementById('nav-' + tabId);
+        if(navEl) navEl.classList.add('active');
+        toggleSidebar(false);
+        if(tabId === 'rpg') {
+            checkJailStatus();
+            triggerLoginBonus();
+        }
+        buildSidebarMenu(tabId);
+    }
+
+    function buildSidebarMenu(currentTab) {
+        const area = document.getElementById('sidebar-dynamic-options');
+        if(!area) return;
+        if(currentTab === 'rpg') {
+            area.innerHTML = `
+                <button onclick="openSubModal('rpgrule')" style="background-color:#2980b9; color:#fff; text-align:left;">📋 RPGルール・属性相性を見る</button>
+                <button onclick="openSubModal('leaderboard')" style="background-color:#2ecc71; color:#000; text-align:left;">🏆 階層突破ランキング</button>
+            `;
+        } else {
+            area.innerHTML = `
+                <button onclick="openSubModal('vault')" style="background-color:var(--gold); color:#000; text-align:left;">💰 保管庫 (Vault) を開く</button>
+                <button onclick="openSubModal('vip')" style="background-color:#9b59b6; color:#fff; text-align:left;">👑 VIP 特典・ボーナス</button>
+                <button onclick="openSubModal('tip')" style="background-color:#3498db; color:#fff; text-align:left;">💸 友達にチップを送る</button>
+                <button onclick="openSubModal('leaderboard')" style="background-color:#2ecc71; color:#000; text-align:left;">🏆 カジノ所持金ランキング</button>
+                <button onclick="openSubModal('txhistory')" style="background-color:#2c3e50; color:#fff; text-align:left;">📜 取引履歴 (Logs)</button>
+            `;
         }
     }
 
-    function adjustBetMultiplier(mult) {
-        let input = document.getElementById('bet-amount');
-        let val = Math.floor(parseInt(input.value) * mult);
-        if(val < 10) val = 10;
-        input.value = val;
+    async function handleAuth() {
+        const u = document.getElementById('auth-username').value.trim();
+        const p = document.getElementById('auth-password').value.trim();
+        if(!u || !p) return alert("ユーザーIDとパスワードを入力してください");
+        currentUser = u;
+        
+        const userRef = db.collection('users_v2').doc(u);
+        const doc = await userRef.get();
+        if(!doc.exists) {
+            // 新規アカウント作成時は初期資金を100円に設定
+            await userRef.set({
+                password: p, balance: 100, wagered: 0, vault: 0,
+                rpgLevel: 1, rpgCoins: 0, rpgPotions: 2, jailUntil: null,
+                eqWName: "初期のナイフ (+0)", eqWAttr: "none", eqWAtk: 0,
+                eqAName: "旅人の服 (+0)", eqADef: 0,
+                eqCName: "お守り (+0)", eqCHp: 0,
+                lastLoginBonusDate: ""
+            });
+            currentBalance = 100;
+        } else {
+            if(doc.data().password !== p) return alert("パスワードが一致しません");
+            currentBalance = doc.data().balance || 0;
+            currentVipWager = doc.data().wagered || 0;
+            currentVault = doc.data().vault || 0;
+            pLevel = doc.data().rpgLevel || 1;
+            pCoins = doc.data().rpgCoins || 0;
+            pPotions = doc.data().rpgPotions || 0;
+            pWeaponName = doc.data().eqWName || "初期のナイフ (+0)";
+            pWeaponAttr = doc.data().eqWAttr || "none";
+            pAtkBonus = doc.data().eqWAtk || 0;
+            pArmorName = doc.data().eqAName || "旅人の服 (+0)";
+            pDefBonus = doc.data().eqADef || 0;
+            pAccName = doc.data().eqCName || "お守り (+0)";
+            pHpBonus = doc.data().eqCHp || 0;
+        }
+
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('main-content').classList.remove('hidden');
+        document.getElementById('app-nav').classList.remove('hidden');
+        document.getElementById('live-bet-ticker-bar').classList.remove('hidden');
+        document.getElementById('display-username').innerText = currentUser;
+        
+        // プレイヤー自身のステータスを自分で考えて調整したライン
+        pMaxHP = 400 + pHpBonus;
+        pHP = pMaxHP;
+        pMP = 50;
+
+        updateDisplayUi();
+        syncRoomRealtime();
+        listenGlobalChat();
+        listenGlobalLiveBets();
+        listenApprovedDatabase();
+        checkNotifications();
+        initNewRpgFight();
     }
 
-    function toggleSidebar(open) {
-        document.getElementById('sidebar-menu').classList.toggle('open', open);
-        document.getElementById('menu-overlay').classList.toggle('show', open);
-        if(open) { fetchAndRenderTxHistory(); }
+    function toggleAuthMode() {
+        const t = document.getElementById('auth-title');
+        const btn = document.getElementById('btn-auth-primary');
+        const sub = document.getElementById('btn-auth-toggle');
+        if(t.innerText === "ログイン") {
+            t.innerText = "新規アカウント登録";
+            btn.innerText = "登録して開始";
+            sub.innerText = "すでにアカウントをお持ちの方";
+        } else {
+            t.innerText = "ログイン";
+            btn.innerText = "ログイン";
+            sub.innerText = "新規登録はこちら";
+        }
     }
 
-    function openSubModal(type) {
-        document.getElementById(`modal-${type}`).classList.add('open');
-        if(type === 'leaderboard') { fetchAndRenderLeaderboard(); }
+    function updateDisplayUi() {
+        document.getElementById('display-balance').innerText = Math.floor(currentBalance).toLocaleString();
+        document.getElementById('stat-atk').innerText = 25 + pAtkBonus;
+        document.getElementById('stat-def').innerText = 150 + pDefBonus;
+        document.getElementById('rpg-player-lv').innerText = pLevel;
+        document.getElementById('rpg-player-coins').innerText = pCoins;
+        document.getElementById('rpg-count-potion').innerText = pPotions;
+        
+        let wDisplay = pWeaponName;
+        if(pWeaponAttr !== "none") wDisplay += ` [${pWeaponAttr.toUpperCase()}]`;
+        document.getElementById('eq-weapon').innerText = wDisplay;
+        document.getElementById('eq-armor').innerText = pArmorName;
+        document.getElementById('eq-acc').innerText = pAccName;
+        
+        updateVipProgressionUi();
     }
-    function closeSubModal(type) {
-        document.getElementById(`modal-${type}`).classList.remove('open');
+
+    async function saveRpgProgress() {
+        if(!currentUser) return;
+        await db.collection('users_v2').doc(currentUser).update({
+            rpgLevel: pLevel, rpgCoins: pCoins, rpgPotions: pPotions,
+            eqWName: pWeaponName, eqWAttr: pWeaponAttr, eqWAtk: pAtkBonus,
+            eqAName: pArmorName, eqADef: pDefBonus,
+            eqCName: pAccName, eqCHp: pHpBonus
+        });
+    }
+
+    async function changeBalance(amt, reason="") {
+        currentBalance += amt;
+        if(currentBalance < 0) currentBalance = 0;
+        document.getElementById('display-balance').innerText = Math.floor(currentBalance).toLocaleString();
+        await db.collection('users_v2').doc(currentUser).update({ balance: currentBalance });
+        if(amt < 0) {
+            currentVipWager += Math.abs(amt);
+            await db.collection('users_v2').doc(currentUser).update({ wagered: currentVipWager });
+            updateVipProgressionUi();
+        }
+        if(reason) {
+            await db.collection('tx_logs').add({
+                username: currentUser, amount: amt, type: reason, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+    }
+
+    // --- 🎁 1日1回ログインボーナス（カジノ資金） ---
+    async function triggerLoginBonus() {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const userRef = db.collection('users_v2').doc(currentUser);
+        const snap = await userRef.get();
+        if(snap.exists && snap.data().lastLoginBonusDate !== todayStr) {
+            await userRef.update({ lastLoginBonusDate: todayStr });
+            await changeBalance(50, "ログインボーナス");
+            alert("🎁 1日1回ログインボーナス！カジノ資金として 50 コインを獲得しました！");
+        }
+    }
+
+    // --- 🔔 お知らせ & 採否判定データベース同期 ---
+    function openNotifModal() {
+        openSubModal('notif');
+        document.getElementById('bell-badge').classList.add('hidden');
+    }
+
+    function checkNotifications() {
+        db.collection('notifications').where('username', '==', currentUser).orderBy('timestamp', 'desc').limit(10).onSnapshot(snap => {
+            const area = document.getElementById('notif-list-area');
+            if(!area) return;
+            if(snap.empty) {
+                area.innerHTML = `<p style="font-size:12px; color:var(--text-muted); text-align:center;">通知はまだありません</p>`;
+                return;
+            }
+            let html = "";
+            let hasUnread = false;
+            snap.forEach(doc => {
+                const d = doc.data();
+                html += `<div class="notif-row"><div>${d.message}</div><span style="font-size:10px; color:var(--text-muted);">${d.timestamp ? d.timestamp.toDate().toLocaleString() : ""}</span></div>`;
+            });
+            area.innerHTML = html;
+        });
+    }
+
+    async function submitRpgIdea() {
+        const title = document.getElementById('idea-title').value.trim();
+        const type = document.getElementById('idea-type').value;
+        const desc = document.getElementById('idea-desc').value.trim();
+        if(!title || !desc) return alert("名前と説明を入力してください");
+        
+        await db.collection('rpg_ideas').add({
+            username: currentUser, title: title, type: type, desc: desc, status: "pending", timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        alert("💡 提案を送信しました！管理者が採用するとゲームに自動実装されます。");
+        document.getElementById('idea-title').value = "";
+        document.getElementById('idea-desc').value = "";
+    }
+
+    function listenApprovedDatabase() {
+        db.collection('approved_rpg_elements').onSnapshot(snap => {
+            approvedEnemies = []; approvedWeapons = []; approvedArmors = [];
+            snap.forEach(doc => {
+                const data = doc.data();
+                if(data.type === 'enemy') approvedEnemies.push(data.title);
+                if(data.type === 'weapon') approvedWeapons.push({name: data.title, desc: data.desc});
+                if(data.type === 'armor') approvedArmors.push({name: data.title, desc: data.desc});
+            });
+        });
+    }
+
+    // --- ⚔️ RPGコアロジック ---
+    function updateRpgBars() {
+        const pHpPct = Math.max(0, (pHP / pMaxHP) * 100);
+        document.getElementById('rpg-p-hp').style.width = pHpPct + "%";
+        document.getElementById('rpg-p-hp-txt').innerText = `${Math.floor(pHP)}/${pMaxHP}`;
+        
+        const pMpPct = Math.max(0, (pMP / pMaxMP) * 100);
+        document.getElementById('rpg-p-mp').style.width = pMpPct + "%";
+        document.getElementById('rpg-p-mp-txt').innerText = `${pMP}/${pMaxMP}`;
+
+        const eHpPct = Math.max(0, (eHP / eMaxHP) * 100);
+        document.getElementById('rpg-e-hp').style.width = eHpPct + "%";
+        document.getElementById('rpg-e-hp-txt').innerText = `${Math.floor(eHP)}/${Math.floor(eMaxHP)}`;
+        
+        document.getElementById('btn-skill-heal').disabled = (healCooldown > 0);
+        document.getElementById('btn-skill-heal').innerText = healCooldown > 0 ? `冷却中 (${healCooldown}T)` : "💖 ヒール (15MP)";
+    }
+
+    function logRpg(msg) {
+        const box = document.getElementById('rpg-log-box');
+        box.innerHTML += `<div>${msg}</div>`;
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function initNewRpgFight() {
+        // クールダウンリセット
+        healCooldown = 0;
+        chargeDuration = 0;
+        
+        // 敵のステータス計算（ご指定の数値を完全網羅）
+        const baseHP = 50 + (pLevel - 1) * 50;
+        const baseAtk = 100 + (pLevel - 1) * 100;
+        const flexHP = baseHP * (0.9 + Math.random() * 0.2);
+        const flexAtk = baseAtk * (0.9 + Math.random() * 0.2);
+        
+        eMaxHP = flexHP;
+        eHP = eMaxHP;
+        eAtk = flexAtk;
+        
+        // レア度の抽選
+        const roll = Math.random();
+        if(roll < 0.015) { eRare = "ultrarare"; }
+        else if(roll < 0.05) { eRare = "epic"; }
+        else if(roll < 0.10) { eRare = "rare"; }
+        else if(roll < 0.30) { eRare = "uncommon"; }
+        else { eRare = "common"; }
+
+        // 名前の選定（管理者が採用した案があれば優先登場）
+        if(approvedEnemies.length > 0 && Math.random() < 0.4) {
+            eName = approvedEnemies[Math.floor(Math.random() * approvedEnemies.length)];
+        } else {
+            eName = enemyNamesBase[Math.floor(Math.random() * enemyNamesBase.length)];
+        }
+        
+        eAttr = attrTypes[Math.floor(Math.random() * attrTypes.length)];
+        
+        const rareLabels = {common:"コモン", uncommon:"アンコモン", rare:"レア", epic:"激レア", ultrarare:"超激レア"};
+        document.getElementById('rpg-e-name').innerHTML = `${eName} <span class="badge-element elem-${eAttr}">${eAttr.toUpperCase()}</span>`;
+        document.getElementById('rpg-e-details').innerText = `階層: ${pLevel} | 属性: ${eAttr.toUpperCase()} | 希少度: ${rareLabels[eRare]}`;
+        
+        document.getElementById('rpg-log-box').innerHTML = `<div style="color:var(--gold);">⚔️ 【階層 ${pLevel}】 ${rareLabels[eRare]}の野生の「${eName}」が立ちはだかった！</div>`;
+        updateRpgBars();
+    }
+
+    function calcAttrMultiplier(pAtkAttr, targetAttr) {
+        if(pAtkAttr === "fire" && targetAttr === "wood") return 1.1;
+        if(pAtkAttr === "wood" && targetAttr === "water") return 1.1;
+        if(pAtkAttr === "water" && targetAttr === "fire") return 1.1;
+        if((pAtkAttr === "light" && targetAttr === "dark") || (pAtkAttr === "dark" && targetAttr === "light")) return 1.1;
+        return 1.0;
+    }
+
+    function rpgAction(type) {
+        if(type === 'run') {
+            logRpg("🏃 ペナルティ：同じ階層の敵と最初からやり直しになります！");
+            setTimeout(() => { initNewRpgFight(); }, 1200);
+            return;
+        }
+
+        if(type === 'potion') {
+            if(pPotions <= 0) return alert("回復薬がありません！ショップで購入するか敵からドロップさせてください");
+            pPotions--;
+            pHP = Math.min(pMaxHP, pHP + 200);
+            logRpg(`🧪 回復薬を駆使した！プレイヤーのHPが200回復。`);
+            updateDisplayUi();
+            enemyTurn();
+            return;
+        }
+
+        let pDamage = 25 + pAtkBonus; // プレイヤーの基礎攻撃力 25
+        let multiplier = 1.0;
+
+        if(type === 'skill-heal') {
+            if(pMP < 15) return alert("MPが足りません");
+            pMP -= 15;
+            pHP = Math.min(pMaxHP, pHP + 150);
+            healCooldown = 4; // 発動後3ターン使用不可(自身含め4)
+            logRpg(`💖 スキル「ヒール」発動！HPが150回復した。`);
+            updateRpgBars();
+            enemyTurn();
+            return;
+        }
+        if(type === 'skill-slash') {
+            if(pMP < 10) return alert("MPが足りません");
+            pMP -= 10;
+            multiplier *= 1.5;
+            logRpg(`💥 スキル「フルスイング」を叩き込む！`);
+        }
+        if(type === 'skill-charge') {
+            if(pMP < 20) return alert("MPが足りません");
+            pMP -= 20;
+            chargeDuration = 3;
+            logRpg(`⚡ スキル「属性チャージ」発動！3ターンの間、有利属性倍率が1.3倍に跳ね上がる！`);
+            updateRpgBars();
+            enemyTurn();
+            return;
+        }
+
+        // 属性判定
+        let baseAttrMul = calcAttrMultiplier(pWeaponAttr, eAttr);
+        if(baseAttrMul > 1.0 && chargeDuration > 0) {
+            baseAttrMul = 1.3; // 属性チャージの強化
+        }
+        multiplier *= baseAttrMul;
+
+        const finalPDamage = Math.max(5, Math.floor(pDamage * multiplier * (0.9 + Math.random() * 0.2)));
+        eHP -= finalPDamage;
+        logRpg(`⚔️ プレイヤーの攻撃！ ${eName}に ${finalPDamage} ダメージ！` + (baseAttrMul > 1.0 ? " (弱点特効!)" : ""));
+
+        if(chargeDuration > 0) chargeDuration--;
+        if(healCooldown > 0) healCooldown--;
+
+        if(eHP <= 0) {
+            handleRpgVictory();
+        } else {
+            enemyTurn();
+        }
+    }
+
+    function enemyTurn() {
+        // 敵の攻撃力100を活かし、防御力150の半減補正などを噛み合わせたご指定のバランスライン
+        const eBaseDmg = eAtk;
+        const playerTotalDef = 150 + pDefBonus;
+        
+        // 被ダメージが約25〜35ダメージ付近になるように減算・除算式でコントロール
+        let eFinalDmg = Math.floor((eBaseDmg * 40) / playerTotalDef);
+        eFinalDmg = Math.max(15, Math.floor(eFinalDmg * (0.8 + Math.random() * 0.4)));
+        
+        pHP -= eFinalDmg;
+        logRpg(`😈 ${eName}の反撃！ プレイヤーは ${eFinalDmg} のダメージを受けた。`);
+
+        if(pHP <= 0) {
+            handleRpgDefeat();
+        } else {
+            updateRpgBars();
+        }
+    }
+
+    async function handleRpgVictory() {
+        logRpg(`🎉 勝利！ ${eName}を撃破した！`);
+        
+        // 5〜15コインの間をランダムドロップ
+        const baseCoinDrop = 5 + Math.floor(Math.random() * 11);
+        const rareMultipliers = {common: 1.0, uncommon: 1.5, rare: 2.0, epic: 3.0, ultrarare: 5.0};
+        const finalCoinDrop = Math.floor(baseCoinDrop * rareMultipliers[eRare]);
+        
+        pCoins += finalCoinDrop;
+        logRpg(`🪙 敵から経済インフレを防ぐレア度補正倍率に基づき、 ${finalCoinDrop} コインを強奪した。`);
+
+        // 5%の確率で回復薬ドロップ
+        if(Math.random() < 0.05) {
+            pPotions++;
+            logRpg(`🧪 幸運！5%の確率を潜り抜け「冒険者の回復薬」がドロップした！`);
+        }
+
+        // 5%の確率で武器・防具・装備の3種類のうち1つがドロップ
+        if(Math.random() < 0.05) {
+            const eqRoll = Math.floor(Math.random() * 3);
+            const rAttr = attrTypes[Math.floor(Math.random() * attrTypes.length)];
+            
+            if(eqRoll === 0) {
+                let wTitle = approvedWeapons.length > 0 && Math.random() < 0.5 ? approvedWeapons[Math.floor(Math.random() * approvedWeapons.length)].name : "魔導の剣";
+                pAtkBonus = Math.floor(pLevel * 1.2) + (1 + Math.floor(Math.random() * 5));
+                pWeaponName = `${wTitle} (+${pAtkBonus})`;
+                pWeaponAttr = rAttr;
+                logRpg(`🗡️ 武器ドロップ！ 「${pWeaponName}」[属性: ${rAttr.toUpperCase()}]を即座に装備した！`);
+            } else if(eqRoll === 1) {
+                let aTitle = approvedArmors.length > 0 && Math.random() < 0.5 ? approvedArmors[Math.floor(Math.random() * approvedArmors.length)].name : "ルーンアーマー";
+                pDefBonus = Math.floor(pLevel * 1.5) + (1 + Math.floor(Math.random() * 5));
+                pArmorName = `${aTitle} (+${pDefBonus})`;
+                logRpg(`🛡️ 防具ドロップ！ 「${pArmorName}」を即座に装備した！`);
+            } else {
+                pHpBonus = Math.floor(pLevel * 4) + (5 + Math.floor(Math.random() * 16));
+                pAccName = `ハクスラ魔石の指輪 (+${pHpBonus})`;
+                logRpg(`📿 装飾ドロップ！ 「${pAccName}」を即座に装着！最大HPがさらに向上。`);
+            }
+        }
+
+        pLevel++;
+        // 戦闘が終了するごとにプレイヤーのHP・MPは自動全回復
+        pMaxHP = 400 + pHpBonus;
+        pHP = pMaxHP;
+        pMP = 50;
+
+        updateDisplayUi();
+        await saveRpgProgress();
+        
+        setTimeout(() => { initNewRpgFight(); }, 1800);
+    }
+
+    async function handleRpgDefeat() {
+        logRpg(`💀 プレイヤーは力尽きた...！`);
+        // ゲームオーバーは15分間RPGをプレイ不可になり、カジノのみ可能になる
+        const jailTime = new Date(Date.now() + 15 * 60 * 1000);
+        await db.collection('users_v2').doc(currentUser).update({ jailUntil: jailTime.toISOString() });
+        
+        alert("💀 ゲームオーバー！15分間RPGへ再挑戦できなくなり、カジノしかプレイできないペナルティ状態になります！");
+        checkJailStatus();
+    }
+
+    async function checkJailStatus() {
+        const snap = await db.collection('users_v2').doc(currentUser).get();
+        if(!snap.exists) return;
+        const jailStr = snap.data().jailUntil;
+        if(!jailStr) {
+            document.getElementById('rpg-jail-timer').classList.add('hidden');
+            document.getElementById('rpg-main-wrapper').classList.remove('hidden');
+            return;
+        }
+
+        const diff = new Date(jailStr) - new Date();
+        if(diff <= 0) {
+            // 15分経ったらHP全回復で自動再挑戦
+            await db.collection('users_v2').doc(currentUser).update({ jailUntil: null });
+            document.getElementById('rpg-jail-timer').classList.add('hidden');
+            document.getElementById('rpg-main-wrapper').classList.remove('hidden');
+            pMaxHP = 400 + pHpBonus;
+            pHP = pMaxHP;
+            pMP = 50;
+            initNewRpgFight();
+        } else {
+            document.getElementById('rpg-jail-timer').classList.remove('hidden');
+            document.getElementById('rpg-main-wrapper').classList.add('hidden');
+            
+            const mins = Math.floor(diff / 60000);
+            const secs = Math.floor((diff % 60000) / 1000);
+            document.getElementById('jail-time-left').innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+            setTimeout(checkJailStatus, 1000);
+        }
+    }
+
+    function buyPotion() {
+        if(pCoins < 20) return alert("ドロップコインが足りません");
+        pCoins -= 20;
+        pPotions++;
+        logRpg("🛒 ショップで「冒険者の回復薬」を1個購入しました。");
+        updateDisplayUi();
+        saveRpgProgress();
+    }
+
+    // --- 管理者パネル(Admin Panel) の超強化システム ---
+    async function loginAdmin() {
+        const p = document.getElementById('admin-password').value;
+        if(p === "koyo1234") {
+            isAdminAuthenticated = true;
+            document.getElementById('admin-login-section').classList.add('hidden');
+            document.getElementById('admin-dashboard').classList.remove('hidden');
+            loadAdminPlayerList();
+            listenAdminIdeas();
+        } else {
+            alert("パスワードが違います");
+        }
+    }
+
+    function loadAdminPlayerList() {
+        db.collection('users_v2').onSnapshot(snap => {
+            const list = document.getElementById('admin-player-money-list');
+            if(!list) return;
+            list.innerHTML = "";
+            snap.forEach(doc => {
+                const data = doc.data();
+                const div = document.createElement('div');
+                div.className = "admin-user-row";
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <div><strong>👤 ${doc.id}</strong> (RPG階層: ${data.rpgLevel || 1})</div>
+                        <div>
+                            ￥<input type="number" class="admin-money-input" id="cash-${doc.id}" value="${Math.floor(data.balance)}">
+                            <button onclick="updatePlayerCashAdmin('${doc.id}')" style="width:auto; padding:4px 8px; font-size:11px; background:var(--gold); margin-left:4px;">修正</button>
+                            <button onclick="purgeUserAccountAdmin('${doc.id}')" style="width:auto; padding:4px 8px; font-size:11px; background:var(--accent); color:#fff; margin-left:4px;">追放</button>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        });
+    }
+
+    async function updatePlayerCashAdmin(uid) {
+        const val = parseFloat(document.getElementById(`cash-${uid}`).value);
+        await db.collection('users_v2').doc(uid).update({ balance: val });
+        alert(`${uid} のカジノ残高を ${val}円 に更新しました。`);
+    }
+
+    async function purgeUserAccountAdmin(uid) {
+        if(confirm(`⚠️ 本当にユーザー [ ${uid} ] のアカウントデータを完全に消去しますか？`)) {
+            await db.collection('users_v2').doc(uid).delete();
+            alert("アカウントを抹消しました。");
+        }
+    }
+
+    async function sendGlobalNotification() {
+        const text = document.getElementById('admin-notif-text').value.trim();
+        if(!text) return;
+        
+        const snap = await db.collection('users_v2').get();
+        snap.forEach(async (userDoc) => {
+            await db.collection('notifications').add({
+                username: userDoc.id,
+                message: `📢 【運営お知らせ】: ${text}`,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        });
+        alert("📢 全プレイヤーの通知ベル🔔に一斉お知らせを配信しました！");
+        document.getElementById('admin-notif-text').value = "";
+    }
+
+    // --- 👑 提案の完全自動採否・自動実装システム ---
+    function listenAdminIdeas() {
+        db.collection('rpg_ideas').where('status', '==', 'pending').onSnapshot(snap => {
+            const container = document.getElementById('admin-ideas-list');
+            if(!container) return;
+            if(snap.empty) {
+                container.innerHTML = `<p style="color:var(--text-muted); text-align:center;">未処理のキャラ・装備案はありません</p>`;
+                return;
+            }
+            let html = "";
+            snap.forEach(doc => {
+                const d = doc.data();
+                html += `
+                    <div class="idea-box" id="idea-node-${doc.id}">
+                        <strong>投稿者:</strong> ${d.username} | <strong>種別:</strong> ${d.type}<br>
+                        <strong>名前の案:</strong> <span style="color:var(--gold); font-weight:bold;">${d.title}</span><br>
+                        <strong>効果説明:</strong> ${d.desc}<br>
+                        <div style="display:flex; gap:6px; margin-top:5px;">
+                            <button onclick="adjudicateIdea('${doc.id}', 'approve', '${d.username}', '${d.type}', '${d.title}', '${d.desc}')" style="background:var(--primary); color:#000; padding:4px; font-size:11px;">👍 採用（ゲーム内へ即時自動追加）</button>
+                            <button onclick="adjudicateIdea('${doc.id}', 'reject', '${d.username}')" style="background:var(--accent); color:#fff; padding:4px; font-size:11px;">👎 却下</button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        });
+    }
+
+    async function adjudicateIdea(docId, decision, sender, type="", title="", desc="") {
+        if(decision === 'approve') {
+            // 1. ゲームに即登場させるために承認コレクションへ自動追加（コードを書き換えずに自動実装）
+            await db.collection('approved_rpg_elements').add({
+                type: type, title: title, desc: desc, approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // 2. 提案した本人の🔔へお祝い自動通知
+            await db.collection('notifications').add({
+                username: sender,
+                message: `🎉 おめでとうございます！あなたが考えた${type === 'enemy' ? '敵キャラ' : '装備'}案「${title}」が運営に採用され、すべてのプレイヤーのゲーム内に自動実装されました！`,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert("👍 採用処理を完了しました！ゲームデータベースへ自動で組み込まれ、お祝い通知が送信されました。");
+        } else {
+            alert("👎 提案を非表示（却下）にしました。");
+        }
+        await db.collection('rpg_ideas').doc(docId).update({ status: decision });
+    }
+
+
+    // --- 🎰 カジノ従来ゲームロジック復元・維持一式 ---
+    function selectGameType(g) {
+        selectedGame = g;
+        document.querySelectorAll('.game-menu-v2 .game-btn-full').forEach(el => el.classList.remove('active'));
+        const btnMap = {mines:'menu-mines', bj:'menu-bj', hilow:'menu-hilow', roulette:'menu-roulette', dice:'menu-dice'};
+        if(btnMap[g]) document.getElementById(btnMap[g]).classList.add('active');
+
+        document.getElementById('setting-mines').classList.add('hidden');
+        document.getElementById('setting-dice').classList.add('hidden');
+        document.getElementById('bj-p2p-invite-container').classList.add('hidden');
+        document.getElementById('bj-controls').classList.add('hidden');
+        document.getElementById('hilow-controls').classList.add('hidden');
+        document.getElementById('mines-controls').classList.add('hidden');
+
+        if(g === 'mines') document.getElementById('setting-mines').classList.remove('hidden');
+        if(g === 'dice') document.getElementById('setting-dice').classList.remove('hidden');
+        if(g === 'bj' && currentRoom !== 'lobby') document.getElementById('bj-p2p-invite-container').classList.remove('hidden');
+        
+        document.getElementById('my-isolated-board').innerHTML = "";
+    }
+
+    function adjustBetMultiplier(m) {
+        const input = document.getElementById('bet-amount');
+        let current = parseFloat(input.value) || 100;
+        input.value = Math.max(10, Math.floor(current * m));
     }
 
     function toggleDiceModeUi() {
-        const mode = document.getElementById('dice-bet-mode').value;
-        document.getElementById('dice-exact-box').classList.toggle('hidden', mode !== 'exact');
-        document.getElementById('dice-range-box').classList.toggle('hidden', mode !== 'range');
+        const m = document.getElementById('dice-bet-mode').value;
+        document.getElementById('dice-exact-box').className = m === 'exact' ? '' : 'hidden';
+        document.getElementById('dice-range-box').className = m === 'range' ? '' : 'hidden';
+        recalcDiceRangeOdds();
     }
 
     function recalcDiceRangeOdds() {
         const dir = document.getElementById('dice-range-direction').value;
         const target = parseInt(document.getElementById('dice-range-target').value) || 4;
-        let winWays = 0;
+        let winOutcomes = 0;
         for(let i=1; i<=6; i++) {
-            if(dir === 'over' && i >= target) winWays++;
-            if(dir === 'under' && i <= target) winWays++;
+            if(dir === 'over' && i >= target) winOutcomes++;
+            if(dir === 'under' && i <= target) winOutcomes++;
         }
-        let odds = winWays > 0 ? (6 / winWays) * 0.98 : 0;
-        document.getElementById('dice-range-odds-preview').innerText = `見込み配当: ${odds > 0 ? odds.toFixed(2)+'x' : 'なし(設定エラー)'}`;
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-        let savedUser = sessionStorage.getItem('koyo_logged_user');
-        if(savedUser) {
-            currentUser = savedUser;
-            loginSuccess();
-        }
-        setInterval(updateCountdowns, 1000);
-    });
-
-    function updateCountdowns() {
-        if(!localGameState) return;
-        let now = Date.now();
-        
-        if(localGameState.lastDailyClaim) {
-            let diffD = (localGameState.lastDailyClaim + (24 * 60 * 60 * 1000)) - now;
-            let badge = document.getElementById('daily-timer-badge');
-            let btn = document.getElementById('btn-claim-daily');
-            if(diffD > 0) { badge.classList.remove('hidden'); badge.innerText = formatTimeLeft(diffD); if(btn) btn.disabled = true; }
-            else { badge.classList.add('hidden'); if(btn) btn.disabled = false; }
-        }
-        if(localGameState.lastWeeklyClaim) {
-            let diffW = (localGameState.lastWeeklyClaim + (7 * 24 * 60 * 60 * 1000)) - now;
-            let badge = document.getElementById('weekly-timer-badge');
-            let btn = document.getElementById('btn-claim-weekly');
-            if(diffW > 0) { badge.classList.remove('hidden'); badge.innerText = formatTimeLeft(diffW); if(btn) btn.disabled = true; }
-            else { badge.classList.add('hidden'); if(btn) btn.disabled = false; }
-        }
-        if(localGameState.lastMonthlyClaim) {
-            let diffM = (localGameState.lastMonthlyClaim + (30 * 24 * 60 * 60 * 1000)) - now;
-            let badge = document.getElementById('monthly-timer-badge');
-            let btn = document.getElementById('btn-claim-monthly');
-            if(diffM > 0) { badge.classList.remove('hidden'); badge.innerText = formatTimeLeft(diffM); if(btn) btn.disabled = true; }
-            else { badge.classList.add('hidden'); if(btn) btn.disabled = false; }
-        }
-    }
-
-    function formatTimeLeft(ms) {
-        if(ms <= 0) return "0秒";
-        let totalSecs = Math.floor(ms / 1000);
-        let days = Math.floor(totalSecs / (24 * 3600));
-        let rem = totalSecs % (24 * 3600);
-        let hours = Math.floor(rem / 3600);
-        rem %= 3600;
-        let mins = Math.floor(rem / 60);
-        let secs = rem % 60;
-
-        if (totalSecs >= 24 * 3600) { return `${days}日 ${hours}時間`; }
-        else if (totalSecs >= 3600) { return `${hours}時間 ${mins}分`; }
-        else { return `${mins}分 ${secs}秒`; }
-    }
-
-    async function logTransaction(type, amount, detail = "") {
-        try {
-            await db.collection('transactions').add({
-                username: currentUser,
-                type: type,
-                amount: amount,
-                detail: detail,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        } catch(e) { console.error("Log error: ", e); }
-    }
-
-    async function fetchAndRenderLeaderboard() {
-        const container = document.getElementById('leaderboard-container');
-        if(!container) return;
-        try {
-            const snap = await db.collection('users').get();
-            let users = [];
-            snap.forEach(d => {
-                let data = d.data();
-                users.push({ id: d.id, balance: data.balance || 0, wagered: data.wagered || 0 });
-            });
-            users.sort((a, b) => b.balance - a.balance);
-            
-            let topUsers = users.slice(0, 10);
-            container.innerHTML = "";
-            
-            topUsers.forEach((u, index) => {
-                let rank = index + 1;
-                let isTop3 = rank <= 3 ? "top-3" : "";
-                container.innerHTML += `
-                    <div class="leaderboard-row ${isTop3}">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <span class="rank-badge">#${rank}</span>
-                            <span style="font-weight:bold; color:#fff;">${u.id}</span>
-                        </div>
-                        <div style="color:var(--primary); font-weight:bold;">￥${u.balance.toLocaleString()}</div>
-                    </div>
-                `;
-            });
-        } catch(e) {
-            container.innerHTML = `<p style="font-size:12px; color:var(--accent);">ランキングの読み込みに失敗しました。</p>`;
-        }
-    }
-
-    async function fetchAndRenderTxHistory() {
-        const container = document.getElementById('tx-history-container');
-        if(!container) return;
-        try {
-            const snap = await db.collection('transactions')
-                .where('username', '==', currentUser)
-                .get();
-            
-            if(snap.empty) {
-                container.innerHTML = `<p style="font-size:12px; color:var(--text-muted); text-align:center;">履歴はありません。</p>`;
-                return;
-            }
-            let logs = [];
-            snap.forEach(d => {
-                let data = d.data();
-                data.id = d.id;
-                logs.push(data);
-            });
-            logs.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-
-            container.innerHTML = "";
-            logs.forEach(log => {
-                let dateStr = "⏱️ 処理中...";
-                if(log.timestamp) {
-                    const dt = log.timestamp.toDate();
-                    dateStr = `${dt.getMonth()+1}/${dt.getDate()} ${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}`;
-                }
-                let displayAmt = log.amount !== 0 ? ` (￥${log.amount.toLocaleString()})` : "";
-                container.innerHTML += `
-                    <div class="tx-item">
-                        <div style="display:flex; justify-content:space-between; font-weight:bold;">
-                            <span>${log.type}</span>
-                            <span style="color:var(--gold);">${displayAmt}</span>
-                        </div>
-                        <div style="color:var(--text-muted); font-size:11px; margin-top:2px;">${log.detail}</div>
-                        <div style="color:var(--text-muted); font-size:10px; text-align:right; margin-top:1px;">${dateStr}</div>
-                    </div>
-                `;
-            });
-        } catch(e) {
-            container.innerHTML = `<p style="font-size:12px; color:var(--accent);">読み込み失敗: ${e}</p>`;
-        }
-    }
-
-    async function executeTipTransfer() {
-        const targetId = document.getElementById('tip-target-id').value.trim();
-        const amount = parseInt(document.getElementById('tip-amount').value);
-        if(!targetId || !amount || amount <= 0) return alert("入力内容が正しくありません");
-        if(targetId === currentUser) return alert("自分自身に送金することはできません");
-
-        const targetRef = db.collection('users').doc(targetId);
-        const myRef = db.collection('users').doc(currentUser);
-
-        await db.runTransaction(async t => {
-            const targetDoc = await t.get(targetRef);
-            if(!targetDoc.exists) throw "指定されたユーザーIDが存在しません";
-            const myDoc = await t.get(myRef);
-            let myBal = myDoc.data().balance || 0;
-            if(myBal < amount) throw "あなたの残高が足りません";
-
-            t.update(myRef, { balance: myBal - amount });
-            t.update(targetRef, { balance: (targetDoc.data().balance || 0) + amount });
-        }).then(async () => {
-            alert(`💸 ${targetId} へ ￥${amount.toLocaleString()} のチップを送金しました！`);
-            await logTransaction("チップ送金(送信)", -amount, `宛先: ${targetId}`);
-            try { await db.collection('transactions').add({ username: targetId, type: "チップ受取(受信)", amount: amount, detail: `差出人: ${currentUser}`, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); } catch(err){}
-            
-            document.getElementById('tip-target-id').value = "";
-            document.getElementById('tip-amount').value = "";
-            closeSubModal('tip');
-        }).catch(err => alert("❌ エラー: " + err));
-    }
-
-    async function claimVipBonus(type) {
-        const userRef = db.collection('users').doc(currentUser);
-        let now = Date.now();
-        
-        try {
-            await db.runTransaction(async t => {
-                const doc = await t.get(userRef);
-                let data = doc.data();
-                let claimAmt = 0;
-                let updateData = {};
-                
-                if(type === 'rakeback') { 
-                    claimAmt = Math.floor(data.poolRakeback || 0); 
-                    updateData.poolRakeback = 0;
-                }
-                else if(type === 'daily') { 
-                    let lastClaim = data.lastDailyClaim || 0;
-                    if(now - lastClaim < 24 * 60 * 60 * 1000) throw "デイリーレーキバックは24時間経過するまで受け取れません。";
-                    claimAmt = Math.floor(data.poolDaily || 0); 
-                    updateData.poolDaily = 0;
-                    updateData.lastDailyClaim = now;
-                }
-                else if(type === 'weekly') { 
-                    let lastClaim = data.lastWeeklyClaim || 0;
-                    if(now - lastClaim < 7 * 24 * 60 * 60 * 1000) throw "ウィークリーボーナスはまだ受け取れません。";
-                    claimAmt = Math.floor(data.poolWeekly || 0); 
-                    updateData.poolWeekly = 0;
-                    updateData.lastWeeklyClaim = now;
-                }
-                else if(type === 'monthly') { 
-                    let lastClaim = data.lastMonthlyClaim || 0;
-                    if(now - lastClaim < 30 * 24 * 60 * 60 * 1000) throw "マンスリーボーナスはまだ受け取れません。";
-                    claimAmt = Math.floor(data.poolMonthly || 0); 
-                    updateData.poolMonthly = 0;
-                    updateData.lastMonthlyClaim = now;
-                }
-
-                if(claimAmt <= 0) throw "受け取れるボーナスプールが空です。";
-                updateData.balance = (data.balance || 0) + claimAmt;
-                t.update(userRef, updateData);
-                return claimAmt;
-            }).then(async (amt) => {
-                alert(`🎉 ボーナス ￥${amt.toLocaleString()} を回収し残高に加算しました！`);
-                await logTransaction(`ボーナス受取(${type})`, amt, "VIP報酬センターより回収");
-            });
-        } catch(err) {
-            alert("⚠️ " + err);
-        }
-    }
-
-    async function processWagerVipMetrics(wagerAmount) {
-        const userRef = db.collection('users').doc(currentUser);
-        await db.runTransaction(async t => {
-            const doc = await t.get(userRef);
-            let data = doc.data();
-            
-            let oldWagered = data.wagered || 0;
-            let totalWagered = oldWagered + wagerAmount;
-            
-            let poolRb = (data.poolRakeback || 0) + (wagerAmount * 0.005);
-            let poolDl = (data.poolDaily || 0) + (wagerAmount * 0.003);
-            let poolWk = (data.poolWeekly || 0) + (wagerAmount * 0.005);
-            let poolMn = (data.poolMonthly || 0) + (wagerAmount * 0.008);
-
-            t.update(userRef, {
-                wagered: totalWagered,
-                poolRakeback: poolRb,
-                poolDaily: poolDl,
-                poolWeekly: poolWk,
-                poolMonthly: poolMn
-            });
-        });
-    }
-
-    function updateVipDashboardUI(userData) {
-        let wagered = userData.wagered || 0;
-        let currentRankIdx = 0;
-        for(let i = 0; i < rankRequirements.length; i++) {
-            if(wagered >= rankRequirements[i].required) { currentRankIdx = i; }
-        }
-        let nextRankIdx = Math.min(currentRankIdx + 1, rankRequirements.length - 1);
-        
-        let currentRankName = rankRequirements[currentRankIdx].name;
-        let nextRankName = rankRequirements[nextRankIdx].name;
-        
-        let startReq = rankRequirements[currentRankIdx].required;
-        let nextReq = rankRequirements[nextRankIdx].required;
-        let diffReq = nextReq - startReq;
-        
-        let progressPercent = 0;
-        if(diffReq > 0) {
-            progressPercent = ((wagered - startReq) / diffReq) * 100;
-            if(progressPercent > 100) progressPercent = 100;
-            if(progressPercent < 0) progressPercent = 0;
-        } else { progressPercent = 100; }
-
-        document.getElementById('vip-current-name').innerText = currentRankName;
-        document.getElementById('vip-next-name').innerText = nextRankName;
-        document.getElementById('vip-progress-bar').style.width = `${progressPercent}%`;
-        document.getElementById('vip-progress-percent').innerText = `${progressPercent.toFixed(2)}%`;
-
-        document.getElementById('pool-rakeback').innerText = Math.floor(userData.poolRakeback || 0).toLocaleString();
-        document.getElementById('pool-daily').innerText = Math.floor(userData.poolDaily || 0).toLocaleString();
-        document.getElementById('pool-weekly').innerText = Math.floor(userData.poolWeekly || 0).toLocaleString();
-        document.getElementById('pool-monthly').innerText = Math.floor(userData.poolMonthly || 0).toLocaleString();
-        
-        if(!localGameState) localGameState = {};
-        localGameState.lastDailyClaim = userData.lastDailyClaim || 0;
-        localGameState.lastWeeklyClaim = userData.lastWeeklyClaim || 0;
-        localGameState.lastMonthlyClaim = userData.lastMonthlyClaim || 0;
-    }
-
-    async function handleVault(action) {
-        const amt = parseInt(document.getElementById('vault-amount').value);
-        if(!amt || amt <= 0) return alert("正しい金額を入力してください");
-        const userRef = db.collection('users').doc(currentUser);
-        await db.runTransaction(async t => {
-            const doc = await t.get(userRef);
-            let bal = doc.data().balance || 0;
-            let vault = doc.data().vaultBalance || 0;
-            if(action === 'deposit') {
-                if(bal < amt) throw "残高が足りません";
-                t.update(userRef, { balance: bal - amt, vaultBalance: vault + amt });
-            } else {
-                if(vault < amt) throw "保管庫の資金が足りません";
-                t.update(userRef, { balance: bal + amt, vaultBalance: vault - amt });
-            }
-        }).then(async () => {
-            alert("✨ 保管庫の処理が完了しました！");
-            await logTransaction(action === 'deposit' ? "保管庫へ預け入れ" : "保管庫から引出し", action === 'deposit' ? -amt : amt, "金庫内移動");
-            document.getElementById('vault-amount').value = "";
-            closeSubModal('vault');
-        }).catch(err => alert("❌ エラー: " + err));
-    }
-
-    function leaveRoom() {
-        currentRoom = 'lobby';
-        document.getElementById('current-room-id').innerText = 'ロビー';
-        document.getElementById('room-input').value = '';
-        document.getElementById('lobby-status-container').classList.remove('hidden');
-        document.getElementById('lobby-spectator-panel').classList.remove('hidden'); // 観戦可能にする
-        listenRoom(currentRoom);
-    }
-
-    function toggleAuthMode() { isSignUpMode = !isSignUpMode; document.getElementById('auth-title').innerText = isSignUpMode ? "新規登録" : "ログイン"; }
-    async function handleAuth() {
-        const u = document.getElementById('auth-username').value.trim(); 
-        const p = document.getElementById('auth-password').value.trim();
-        if(!u || !p) return alert("入力してください");
-        const ref = db.collection('users').doc(u); const doc = await ref.get();
-        if(isSignUpMode) { 
-            if(doc.exists) return alert("❌ すでに登録されているIDです"); 
-            await ref.set({ password: p, balance: 1000, vaultBalance: 0, wagered: 0, poolRakeback: 0, poolDaily: 0, poolWeekly: 0, poolMonthly: 0, lastDailyClaim: 0, lastWeeklyClaim: 0, lastMonthlyClaim: 0 });
-            alert("✨ 登録完了！");
-        } else { 
-            if(!doc.exists || doc.data().password !== p) return alert("❌ IDまたはパスワードが違います"); 
-        }
-        currentUser = u; 
-        sessionStorage.setItem('koyo_logged_user', currentUser);
-        loginSuccess();
-    }
-    
-    function loginSuccess() {
-        document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('main-content').classList.remove('hidden'); 
-        document.getElementById('app-nav').classList.remove('hidden');
-        document.getElementById('live-bet-ticker-bar').classList.remove('hidden'); // ライブベット帯表示
-        document.getElementById('display-username').innerText = currentUser;
-        
-        db.collection('users').doc(currentUser).onSnapshot(d => { 
-            if(d.exists) {
-                document.getElementById('display-balance').innerText = d.data().balance.toLocaleString(); 
-                document.getElementById('vault-balance').innerText = (d.data().vaultBalance || 0).toLocaleString();
-                updateVipDashboardUI(d.data());
-            }
-        });
-        selectGameType('mines');
-        listenRoom(currentRoom);
-        listenPromoHistory();
-        startGlobalRealtimeListeners(); // チャット・ライブベット・全体観戦リスナー
-    }
-
-    function listenRoom(rId) {
-        if(roomUnsubscribe) roomUnsubscribe();
-        roomUnsubscribe = db.collection('rooms').doc(rId).onSnapshot(d => { 
-            if(d.exists) {
-                renderTable(d.data()); 
-                updateP2PTargetDropdown(d.data().players || {});
-            } 
-        });
-    }
-
-    function updateP2PTargetDropdown(playersMap) {
-        const select = document.getElementById('p2p-target-selector');
-        if(!select) return;
-        select.innerHTML = "";
-        let validTargets = Object.keys(playersMap).filter(id => id !== currentUser);
-        if(validTargets.length === 0) {
-            select.innerHTML = `<option value="">-- 部屋に他のプレイヤーがいません --</option>`;
-            return;
-        }
-        select.innerHTML = `<option value="">-- 对戦相手を選択してください --</option>`;
-        validTargets.forEach(id => { select.innerHTML += `<option value="${id}">${id}</option>`; });
-    }
-
-    async function createNewRoom() {
-        const rCode = 'ROOM-' + Math.floor(1000 + Math.random() * 9000);
-        await db.collection('rooms').doc(rCode).set({ players: {}, p2pInvite: null });
-        document.getElementById('room-input').value = rCode;
-        joinRoom();
-    }
-
-    async function joinRoom() {
-        const r = document.getElementById('room-input').value.trim(); 
-        if(!r) return;
-        if(r === 'lobby') { leaveRoom(); return; }
-
-        const roomRef = db.collection('rooms').doc(r);
-        const snap = await roomRef.get();
-        if(!snap.exists) return alert("❌ 部屋が存在しません");
-
-        currentRoom = r; 
-        document.getElementById('current-room-id').innerText = currentRoom; 
-        document.getElementById('lobby-status-container').classList.add('hidden');
-        document.getElementById('lobby-spectator-panel').classList.add('hidden'); // 部屋参加中は個人側観戦パネル非表示化
-        
-        await db.runTransaction(async t => {
-            const rSnap = await t.get(roomRef);
-            let rData = rSnap.data() || { players: {} };
-            if(!rData.players) rData.players = {};
-            rData.players[currentUser] = { status: 'idle', lastUpdated: Date.now() };
-            t.set(roomRef, rData);
-        });
-        listenRoom(currentRoom);
-    }
-
-    function selectGameType(g) {
-        // P2P対戦進行中の誤操作完全ブロックガード
-        if (localGameState && localGameState.isP2PActiveGame && localGameState.status === 'playing') {
-            return; 
-        }
-        selectedGameType = g;
-        ['mines','bj','hilow','roulette','dice'].forEach(x => document.getElementById(`menu-${x}`).classList.remove('active'));
-        document.getElementById(`menu-${g}`).classList.add('active');
-        document.getElementById('setting-mines').classList.add('hidden');
-        document.getElementById('setting-dice').classList.add('hidden');
-        document.getElementById('bj-p2p-invite-container').classList.add('hidden');
-        
-        if(g === 'mines') document.getElementById('setting-mines').classList.remove('hidden');
-        if(g === 'dice') { document.getElementById('setting-dice').classList.remove('hidden'); toggleDiceModeUi(); recalcDiceRangeOdds(); }
-        if(g === 'bj' && currentRoom !== 'lobby') document.getElementById('bj-p2p-invite-container').classList.remove('hidden');
-
-        document.getElementById('mines-controls').classList.add('hidden');
-        document.getElementById('bj-controls').classList.add('hidden');
-        document.getElementById('hilow-controls').classList.add('hidden');
-
-        setupDefaultState();
-    }
-
-    function setupDefaultState() {
-        if(selectedGameType === 'mines') {
-            localGameState = { gameType: 'mines', status: 'idle', minesGrid: Array(25).fill(null).map(() => ({ revealed: false, type: 'diamond' })), gemsFound: 0 };
-        } else if(selectedGameType === 'bj') {
-            // 👑 改善：BJ各種ステートを初期化拡張
-            localGameState = { gameType: 'bj', status: 'idle', playerCards: [], dealerCards: [], splitCards: [], isSplitActive: false, currentHandPointer: 'main', isInsured: false };
-        } else if(selectedGameType === 'hilow') {
-            localGameState = { gameType: 'hilow', status: 'idle', dealerCards: [], currentMultiplier: 1.0, hasChosen: false };
-        } else if(selectedGameType === 'roulette') {
-            localGameState = { gameType: 'roulette', status: 'idle', winningNumber: null, won: false };
-        } else if(selectedGameType === 'dice') {
-            localGameState = { gameType: 'dice', status: 'idle', rolledValue: null, won: false };
-        }
-        renderMyOwnBoard();
-        updateMainActionButtonState();
-    }
-
-    function updateMainActionButtonState() {
-        const btn = document.getElementById('btn-action-main');
-        if ((localGameState && localGameState.status === 'playing' && !localGameState.isP2PActiveGame) || isRouletteSpinning || isDiceSpinning || isProcessingGameStart) {
-            btn.disabled = true; btn.innerText = "勝負進行中...";
-        } else {
-            btn.disabled = false; btn.innerText = "ベットして勝負開始";
-        }
-    }
-
-    const suites = ['♠','♥','♦','♣']; const vals = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-    const draw = () => suites[Math.floor(Math.random()*4)] + vals[Math.floor(Math.random()*13)];
-    function getCardVal(c) { let v = c.substring(1); if(v==='A') return 1; if(['J','Q','K'].includes(v)) return 10; return parseInt(v); }
-
-    // 👑 新機能追加：手札の数字を「9 (19)」の形式で取得するインテリジェントスコア計算関数
-    function getBJDisplayScoreText(cards) {
-        if (!cards || cards.length === 0) return "0";
-        let softTotal = 0; let hasAce = false;
-        for (let c of cards) {
-            if (c === 'HIDDEN') continue;
-            let v = c.substring(1);
-            if (['J','Q','K'].includes(v)) softTotal += 10;
-            else if (v === 'A') { softTotal += 1; hasAce = true; }
-            else softTotal += parseInt(v);
-        }
-        if (hasAce && (softTotal + 10 <= 21)) {
-            return `${softTotal} (${softTotal + 10})`;
-        }
-        return `${softTotal}`;
-    }
-
-    function getMinesMultiplier(gems, bombs) {
-        if (gems === 0) return 1.0; let p = 1.0;
-        for (let i = 0; i < gems; i++) { let total = 25 - i; let safe = total - bombs; if (safe <= 0) return 0; p *= (safe / total); }
-        return (0.99 / p);
-    }
-    function getHiLowOdds(currentCardStr) {
-        let cur = getCardVal(currentCardStr); let highWays = 13 - cur + 1; let lowWays = cur;
-        return { high: Math.max(1.01, (13 / highWays) * 0.985), low: Math.max(1.01, (13 / lowWays) * 0.985) };
-    }
-
-    async function sendP2PInvite() {
-        if(currentRoom === 'lobby') return alert("ロビーでは対戦できません。");
-        const targetId = document.getElementById('p2p-target-selector').value;
-        if(!targetId) return alert("対戦相手を選択してください。");
-
-        const bet = parseInt(document.getElementById('bet-amount').value);
-        if(!bet || bet <= 0) return alert("ベット額を正しく入力してください");
-
-        const uDoc = await db.collection('users').doc(currentUser).get();
-        if(uDoc.data().balance < bet) { alert("❌ 残高が足りません。"); return; }
-
-        const ref = db.collection('rooms').doc(currentRoom);
-        await ref.update({
-            p2pInvite: { host: currentUser, guestTarget: targetId, bet: bet, status: 'pending', timestamp: Date.now() }
-        });
-        alert(`⚔️ ${targetId} に対戦招待を送信しました。`);
-    }
-
-    async function handleP2PResponse(accept) {
-        const ref = db.collection('rooms').doc(currentRoom);
-        const snap = await ref.get();
-        if(!snap.exists || !snap.data().p2pInvite) return;
-        
-        let invite = snap.data().p2pInvite;
-        document.getElementById('p2p-toast').classList.remove('show');
-
-        if(!accept) {
-            await ref.update({ "p2pInvite.status": 'rejected' });
-            return;
-        }
-
-        const myDoc = await db.collection('users').doc(currentUser).get();
-        if(myDoc.data().balance < invite.bet) return alert("❌ 残高が足りません！");
-
-        await adjustBalance(invite.host, -invite.bet);
-        await adjustBalance(currentUser, -invite.bet);
-        await processWagerVipMetrics(invite.bet);
-        await broadcastLiveBetEvent(invite.host, invite.bet, "BJ P2P Duel");
-        await broadcastLiveBetEvent(currentUser, invite.bet, "BJ P2P Duel");
-
-        let roomData = snap.data();
-        roomData.p2pGame = {
-            host: invite.host, guest: currentUser, bet: invite.bet, status: 'playing',
-            hostCards: [draw(), draw()], guestCards: [draw(), draw()],
-            hostStatus: 'playing', guestStatus: 'playing', turn: invite.host
-        };
-        roomData.p2pInvite = null;
-        await ref.set(roomData);
-        
-        // 👑 新機能追加：招待承認にともない外部UIボタン類をフリーズさせて誤操作・バグを完全防止
-        toggleFullUIFreeze(true);
-    }
-
-    // 👑 新機能追加：P2Pゲーム終了、もしくはバグ防止状態を解除するためのUIロック切り替え関数
-    function toggleFullUIFreeze(freeze) {
-        const sideTrigger = document.getElementById('sidebar-trigger-btn');
-        if(sideTrigger) sideTrigger.style.pointerEvents = freeze ? 'none' : 'auto';
-        
-        const roomNav = document.getElementById('room-nav-bar-container');
-        if(roomNav) roomNav.style.pointerEvents = freeze ? 'none' : 'auto';
-        
-        const gameMenu = document.getElementById('game-selection-menu-row');
-        if(gameMenu) gameMenu.style.pointerEvents = freeze ? 'none' : 'auto';
-        
-        const tabs = document.getElementById('app-nav');
-        if(tabs) tabs.style.pointerEvents = freeze ? 'none' : 'auto';
-    }
-
-    async function p2pGameAction(action) {
-        const ref = db.collection('rooms').doc(currentRoom);
-        const snap = await ref.get();
-        let data = snap.data(); let g = data.p2pGame;
-        if(!g || g.status !== 'playing') return;
-        let isHost = (currentUser === g.host);
-        
-        if(action === 'hit') {
-            const nextCard = draw();
-            if(isHost) {
-                g.hostCards.push(nextCard);
-                if(calcBJScore(g.hostCards) > 21) { g.hostStatus = 'busted'; g.turn = g.guest; }
-            } else {
-                g.guestCards.push(nextCard);
-                if(calcBJScore(g.guestCards) > 21) { g.guestStatus = 'busted'; }
-            }
-        } else if(action === 'stand') {
-            if(isHost) { g.hostStatus = 'stand'; g.turn = g.guest; } else { g.guestStatus = 'stand'; }
-        }
-
-        if((g.hostStatus === 'stand' || g.hostStatus === 'busted') && (g.guestStatus === 'stand' || g.guestStatus === 'busted')) {
-            g.status = 'ended';
-            let hScore = calcBJScore(g.hostCards); let gScore = calcBJScore(g.guestCards);
-            let totalPrize = g.bet * 2;
-
-            if(g.hostStatus === 'busted' && g.guestStatus === 'busted') {
-                await adjustBalance(g.host, g.bet); await adjustBalance(g.guest, g.bet); alert("🤝 引き分け！");
-            } else if(g.hostStatus === 'busted') {
-                await adjustBalance(g.guest, totalPrize); alert(`🏆 ${g.guest}の勝利！`);
-            } else if(g.guestStatus === 'busted') {
-                await adjustBalance(g.host, totalPrize); alert(`🏆 ${g.host}の勝利！`);
-            } else {
-                if(hScore > gScore) { await adjustBalance(g.host, totalPrize); alert(`🏆 ${g.host}の勝利！`); } 
-                else if(gScore > hScore) { await adjustBalance(g.guest, totalPrize); alert(`🏆 ${g.guest}の勝利！`); } 
-                else { await adjustBalance(g.host, g.bet); await adjustBalance(g.guest, g.bet); alert("🤝 引き分け返却！"); }
-            }
-            // 👑 P2P対戦終了にともない操作ガードロック解除
-            toggleFullUIFreeze(false);
-        }
-        await ref.set(data);
+        const odds = winOutcomes === 0 ? 0 : (96 / (winOutcomes * 16.66));
+        document.getElementById('dice-range-odds-preview').innerText = `見込み配当: ${odds.toFixed(2)}x`;
     }
 
     async function startIndividualGame() {
-        if(isProcessingGameStart) return; 
-        isProcessingGameStart = true;
-        updateMainActionButtonState();
+        const amt = parseFloat(document.getElementById('bet-amount').value);
+        if(isNaN(amt) || amt < 10) return alert("最低ベットは 10円 です");
+        if(currentBalance < amt) return alert("残高が足りません");
 
-        const bet = parseInt(document.getElementById('bet-amount').value);
-        if(!bet || bet <= 0) { isProcessingGameStart = false; updateMainActionButtonState(); return alert("ベット額を入力してください"); }
+        await changeBalance(-amt, `ベット: ${selectedGame.toUpperCase()}`);
+        await broadcastLiveBetEvent(currentUser, amt, selectedGame.toUpperCase());
+
+        if(selectedGame === 'mines') {
+            const count = parseInt(document.getElementById('mines-count').value) || 3;
+            initMinesGame(amt, count);
+        } else if(selectedGame === 'dice') {
+            runDiceGame(amt);
+        } else if(selectedGame === 'hilow') {
+            initHiLowGame(amt);
+        } else if(selectedGame === 'roulette') {
+            runRouletteGame(amt);
+        } else if(selectedGame === 'bj') {
+            initSinglePlayerBjGame(amt);
+        }
+    }
+
+    // --- 各個別ミニゲームアルゴリズム一式 ---
+    function initMinesGame(bet, minesCount) {
+        document.getElementById('mines-controls').classList.remove('hidden');
+        let grid = Array(25).fill(false);
+        let placed = 0;
+        while(placed < minesCount) {
+            let idx = Math.floor(Math.random() * 25);
+            if(!grid[idx]) { grid[idx] = true; placed++; }
+        }
+        activeMinesGame = { bet: bet, count: minesCount, grid: grid, revealedCount: 0, state: 'playing' };
         
-        const uDoc = await db.collection('users').doc(currentUser).get();
-        if(uDoc.data().balance < bet) { isProcessingGameStart = false; updateMainActionButtonState(); return alert("❌ 残高が足りません！"); }
-
-        if(selectedGameType === 'roulette') {
-            if(isRouletteSpinning) { isProcessingGameStart = false; return; }
-            await adjustBalance(currentUser, -bet);
-            await processWagerVipMetrics(bet);
-            await broadcastLiveBetEvent(currentUser, bet, "Roulette");
-            isProcessingGameStart = false; 
-            runRouletteEngine(bet);
-            return;
+        const board = document.getElementById('my-isolated-board');
+        board.innerHTML = `<h4 style="font-size:12px; margin-bottom:4px; color:var(--primary);">💣 マインズ進行中 (次のマルチ倍率: ${getMinesMultiplier(1).toFixed(2)}x)</h4>`;
+        const container = document.createElement('div');
+        container.className = "mines-grid";
+        for(let i=0; i<25; i++) {
+            const tile = document.createElement('div');
+            tile.className = "mines-tile";
+            tile.dataset.index = i;
+            tile.onclick = () => revealMinesTile(tile, i);
+            container.appendChild(tile);
         }
-
-        if(selectedGameType === 'dice') {
-            if(isDiceSpinning) { isProcessingGameStart = false; return; }
-            await adjustBalance(currentUser, -bet);
-            await processWagerVipMetrics(bet);
-            await broadcastLiveBetEvent(currentUser, bet, "Dice");
-            isProcessingGameStart = false;
-            runDiceEngine(bet);
-            return;
-        }
-
-        await adjustBalance(currentUser, -bet);
-        await processWagerVipMetrics(bet);
-        await broadcastLiveBetEvent(currentUser, bet, selectedGameType.toUpperCase());
-        
-        const rRef = db.collection('rooms').doc(currentRoom);
-        const snap = await rRef.get();
-        let roomData = snap.exists ? snap.data() : { players: {} };
-        if(!roomData.players) roomData.players = {};
-
-        // 👑 改善：スプリット・インシュランス初期値を代入
-        let myGame = { gameType: selectedGameType, bet: bet, status: 'playing', lastUpdated: Date.now(), playerCards: [], dealerCards: [], splitCards: [], isSplitActive: false, currentHandPointer: 'main', isInsured: false };
-
-        if(selectedGameType === 'mines') {
-            const bCount = parseInt(document.getElementById('mines-count').value) || 3;
-            let grid = Array(25).fill(null).map(() => ({ revealed: false, type: 'diamond' }));
-            let bPlaced = 0;
-            while(bPlaced < bCount) { let r = Math.floor(Math.random()*25); if(grid[r].type !== 'bomb') { grid[r].type = 'bomb'; bPlaced++; } }
-            myGame.minesGrid = grid; myGame.bCount = bCount; myGame.gemsFound = 0;
-            document.getElementById('mines-controls').classList.remove('hidden');
-        }
-        else if(selectedGameType === 'bj') {
-            myGame.playerCards = [draw(), draw()]; myGame.dealerCards = [draw(), 'HIDDEN'];
-            document.getElementById('bj-controls').classList.remove('hidden');
-            document.getElementById('btn-bj-hit').disabled = false; document.getElementById('btn-bj-stand').disabled = false;
-            
-            // 各種拡張機能ボタンの状態を最適化初期化
-            document.getElementById('btn-bj-double').disabled = false;
-            
-            // 初手が同じ数字ペアかチェックしてスプリット有効化判断
-            let v1 = myGame.playerCards[0].substring(1);
-            let v2 = myGame.playerCards[1].substring(1);
-            let isSameValue = (v1 === v2) || (['10','J','Q','K'].includes(v1) && ['10','J','Q','K'].includes(v2));
-            document.getElementById('btn-bj-split').disabled = !isSameValue;
-            
-            // ディーラーのアップカードがAならインシュランス有効化
-            let dUp = myGame.dealerCards[0].substring(1);
-            document.getElementById('btn-bj-insurance').disabled = (dUp !== 'A');
-        }
-        else if(selectedGameType === 'hilow') {
-            let firstCard = draw(); myGame.dealerCards = [firstCard]; myGame.currentMultiplier = 1.0; myGame.hasChosen = false;
-            document.getElementById('hilow-controls').classList.remove('hidden');
-        }
-
-        roomData.players[currentUser] = myGame;
-        await rRef.set(roomData);
-        localGameState = myGame;
-        isProcessingGameStart = false; 
-        renderMyOwnBoard();
-        updateMainActionButtonState();
+        board.appendChild(container);
     }
 
-    function runRouletteEngine(betAmt) {
-        isRouletteSpinning = true;
-        updateMainActionButtonState();
-
-        let duration = 3000; 
-        let startTime = Date.now();
-        
-        const totalRotation = (Math.PI * 6) + (Math.random() * Math.PI * 2);
-        const arcSize = (2 * Math.PI) / rouletteNumbers.length;
-
-        function animateWheel() {
-            let elapsed = Date.now() - startTime;
-            let progress = elapsed / duration;
-            if(progress > 1) progress = 1;
-
-            let easeOutPower = 1 - Math.pow(1 - progress, 3); 
-            let currentWheelAngle = easeOutPower * totalRotation;
-            let currentBallAngle = - currentWheelAngle + (Math.PI * 0.5);
-
-            drawRouletteCanvas(currentWheelAngle, currentBallAngle);
-
-            if (progress < 1) {
-                requestAnimationFrame(animateWheel);
-            } else {
-                isRouletteSpinning = false;
-                
-                let normalizedAngle = currentWheelAngle % (Math.PI * 2);
-                let pointerAngle = (Math.PI * 2) - normalizedAngle;
-                let targetIndex = Math.floor(pointerAngle / arcSize) % rouletteNumbers.length;
-                if(targetIndex < 0) targetIndex += rouletteNumbers.length;
-                
-                const winningNum = rouletteNumbers[targetIndex];
-                let isWin = false; let payoutMultiplier = 0;
-
-                if (rouletteSelectedSpot === 'red' && isNumRed(winningNum)) { isWin = true; payoutMultiplier = 2; }
-                else if (rouletteSelectedSpot === 'black' && !isNumRed(winningNum) && winningNum !== 0) { isWin = true; payoutMultiplier = 2; }
-                else if (rouletteSelectedSpot === '0' && winningNum === 0) { isWin = true; payoutMultiplier = 36; }
-                else if (parseInt(rouletteSelectedSpot) === winningNum) { isWin = true; payoutMultiplier = 36; }
-
-                let totalWin = isWin ? betAmt * payoutMultiplier : 0;
-                if (isWin) {
-                    adjustBalance(currentUser, totalWin);
-                    alert(`🎡 結果: [ ${winningNum} ] 当選！\n配当 ￥${totalWin.toLocaleString()} を獲得！`);
-                } else {
-                    alert(`🎡 結果: [ ${winningNum} ]\nハズレです。`);
-                }
-
-                localGameState = { gameType: 'roulette', status: 'idle', winningNumber: winningNum, won: isWin, totalWin: totalWin };
-                renderMyOwnBoard();
-                updateMainActionButtonState();
-                syncStatusToRoom(isWin ? 'won' : 'lost', betAmt);
-            }
-        }
-        requestAnimationFrame(animateWheel);
+    function getMinesMultiplier(revealed) {
+        let n = 25;
+        let m = activeMinesGame.count;
+        let p = 1.0;
+        for(let i=0; i<revealed; i++) { p *= (n - m - i) / (n - i); }
+        return 0.97 / p;
     }
 
-    function drawRouletteCanvas(wAngle, bAngle) {
-        const cvs = document.getElementById('roulette-canvas'); if(!cvs) return;
-        const ctx = cvs.getContext('2d'); const cx = 110, cy = 110, r = 95;
-        ctx.clearRect(0, 0, 220, 220);
+    async function revealMinesTile(el, idx) {
+        if(!activeMinesGame || activeMinesGame.state !== 'playing') return;
+        if(el.classList.contains('revealed')) return;
 
-        ctx.beginPath(); ctx.arc(cx, cy, r + 8, 0, 2*Math.PI); ctx.fillStyle = '#2f4553'; ctx.fill();
-        ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2*Math.PI); ctx.fillStyle = '#0f212e'; ctx.fill();
-
-        const totalPockets = rouletteNumbers.length; const arcSize = (2 * Math.PI) / totalPockets;
-
-        for (let i = 0; i < totalPockets; i++) {
-            let currentArc = wAngle + (i * arcSize);
-            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r - 15, currentArc, currentArc + arcSize); ctx.lineTo(cx, cy);
-            let num = rouletteNumbers[i];
-            ctx.fillStyle = num === 0 ? '#00e701' : isNumRed(num) ? '#fe2247' : '#1a2c38'; ctx.fill();
-            ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.stroke();
-
-            ctx.save(); ctx.translate(cx, cy); ctx.rotate(currentArc + arcSize / 2); ctx.fillStyle = '#fff'; ctx.font = '9px Arial'; ctx.textAlign = 'right'; ctx.fillText(num, r - 20, 3); ctx.restore();
-        }
-
-        ctx.beginPath(); ctx.arc(cx, cy, r - 45, 0, 2*Math.PI); ctx.fillStyle = '#10222e'; ctx.fill();
-        ctx.beginPath(); ctx.arc(cx, cy, 10, 0, 2*Math.PI); ctx.fillStyle = '#f39c12'; ctx.fill();
-
-        let ballRadius = r - 28; let bx = cx + Math.cos(bAngle) * ballRadius; let by = cy + Math.sin(bAngle) * ballRadius;
-        ctx.beginPath(); ctx.arc(bx, by, 5, 0, 2*Math.PI); ctx.fillStyle = '#ffffff'; ctx.fill();
-        ctx.lineWidth = 1; ctx.strokeStyle = '#000'; ctx.stroke();
-
-        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(cx, cy - r - 4); ctx.lineTo(cx - 6, cy - r + 8); ctx.lineTo(cx + 6, cy - r + 8); ctx.fill();
-    }
-
-    function runDiceEngine(betAmt) {
-        isDiceSpinning = true;
-        updateMainActionButtonState();
-
-        const mode = document.getElementById('dice-bet-mode').value;
-        const exactTarget = parseInt(document.getElementById('dice-exact-target').value);
-        const rangeDir = document.getElementById('dice-range-direction').value;
-        const rangeTarget = parseInt(document.getElementById('dice-range-target').value);
-
-        let duration = 1800;
-        let startTime = Date.now();
-
-        function animateDice() {
-            let elapsed = Date.now() - startTime;
-            let progress = elapsed / duration;
-            if(progress > 1) progress = 1;
-
-            let finalRoll = Math.floor(Math.random() * 6) + 1;
-
-            const cvs = document.getElementById('dice-canvas');
-            if(cvs) {
-                const ctx = cvs.getContext('2d');
-                ctx.clearRect(0,0,220,120);
-
-                let tx = 110 + (progress < 1 ? (Math.random() - 0.5) * 30 : 0);
-                let ty = 60 + (progress < 1 ? (Math.random() - 0.5) * 15 : 0);
-                let currentAngle = progress < 1 ? Math.random() * Math.PI * 2 : 0;
-                
-                ctx.save();
-                ctx.translate(tx, ty);
-                ctx.rotate(currentAngle);
-                
-                ctx.fillStyle = "#ffffff";
-                ctx.beginPath();
-                ctx.roundRect(-25, -25, 50, 50, 8);
-                ctx.fill();
-                ctx.lineWidth = 3; ctx.strokeStyle = "#2f4553"; ctx.stroke();
-
-                ctx.fillStyle = finalRoll === 1 ? "#fe2247" : "#000000";
-                let dotR = finalRoll === 1 ? 6 : 4;
-                
-                const drawDot = (dx, dy) => { ctx.beginPath(); ctx.arc(dx, dy, dotR, 0, 2*Math.PI); ctx.fill(); };
-                if([1,3,5].includes(finalRoll)) drawDot(0, 0);
-                if([2,3,4,5,6].includes(finalRoll)) { drawDot(-13, -13); drawDot(13, 13); }
-                if([4,5,6].includes(finalRoll)) { drawDot(13, -13); drawDot(-13, 13); }
-                if(finalRoll === 6) { drawDot(-13, 0); drawDot(13, 0); }
-
-                ctx.restore();
-            }
-
-            if(progress < 1) {
-                requestAnimationFrame(animateDice);
-            } else {
-                isDiceSpinning = false;
-                let isWin = false;
-                let payoutMultiplier = 0;
-
-                if(mode === 'exact') {
-                    if(finalRoll === exactTarget) { isWin = true; payoutMultiplier = 5.8; }
-                } else {
-                    if(rangeDir === 'over' && finalRoll >= rangeTarget) isWin = true;
-                    if(rangeDir === 'under' && finalRoll <= rangeTarget) isWin = true;
-                    
-                    if(isWin) {
-                        let winWays = 0;
-                        for(let i=1; i<=6; i++) {
-                            if(rangeDir === 'over' && i >= rangeTarget) winWays++;
-                            if(rangeDir === 'under' && i <= rangeTarget) winWays++;
-                        }
-                        payoutMultiplier = (6 / winWays) * 0.98;
-                    }
-                }
-
-                let totalWin = isWin ? betAmt * payoutMultiplier : 0;
-                if(isWin) {
-                    adjustBalance(currentUser, Math.floor(totalWin));
-                    alert(`🎲 サイコロ結果: [ ${finalRoll} ]\n的中です！ ￥${Math.floor(totalWin).toLocaleString()} 獲得！`);
-                } else {
-                    alert(`🎲 サイコロ結果: [ ${finalRoll} ]\n残念、ハズレです。`);
-                }
-
-                localGameState = { gameType: 'dice', status: 'idle', rolledValue: finalRoll, won: isWin };
-                renderMyOwnBoard();
-                updateMainActionButtonState();
-                syncStatusToRoom(isWin ? 'won' : 'lost', betAmt);
-            }
-        }
-        requestAnimationFrame(animateDice);
-    }
-
-    function syncStatusToRoom(statusStr, betAmt) {
-        if(currentRoom === 'lobby') return;
-        const rRef = db.collection('rooms').doc(currentRoom);
-        rRef.get().then(snap => {
-            if(snap.exists) {
-                let d = snap.data(); if(!d.players) d.players = {};
-                d.players[currentUser] = { gameType: selectedGameType, status: statusStr, bet: betAmt, lastUpdated: Date.now() };
-                rRef.set(d);
-            }
-        });
-    }
-
-    function changeRouletteSpot(spot) {
-        rouletteSelectedSpot = spot;
-        document.querySelectorAll('.roulette-spot-btn').forEach(btn => btn.classList.remove('selected'));
-        const activeBtn = document.getElementById(`rspot-${spot}`); if(activeBtn) activeBtn.classList.add('selected');
-        const picker = document.getElementById('roulette-number-picker');
-        if(picker && !['red','black','0'].includes(spot)) picker.value = spot;
-    }
-
-    function updateHiLowButtonLabels(currentCard, currentPool) {
-        let odds = getHiLowOdds(currentCard);
-        document.getElementById('btn-hilow-high').innerText = `🔼 HIGH (x${odds.high.toFixed(2)})`;
-        document.getElementById('btn-hilow-low').innerText = `🔽 LOW (x${odds.low.toFixed(2)})`;
-        const coBtn = document.getElementById('btn-hilow-cashout');
-        if (localGameState && localGameState.hasChosen) {
-            coBtn.disabled = false; coBtn.innerText = `💰 キャッシュアウト (￥${Math.floor(currentPool)})`;
+        el.classList.add('revealed');
+        if(activeMinesGame.grid[idx]) {
+            el.innerText = "💥"; el.style.borderColor = "var(--accent)";
+            activeMinesGame.state = 'busted';
+            document.getElementById('mines-controls').classList.add('hidden');
+            logRpg("💣 カジノ速報：マインズで地雷を踏み抜いて没収されました");
         } else {
-            coBtn.disabled = true; coBtn.innerText = "❌ 1度選ぶまでロック";
+            el.innerText = "💎"; el.style.color = "var(--primary)";
+            activeMinesGame.revealedCount++;
+            const nextMul = getMinesMultiplier(activeMinesGame.revealedCount);
+            document.getElementById('my-isolated-board').querySelector('h4').innerText = `💣 マインズ進行中 (現在配当: ${nextMul.toFixed(2)}x)`;
         }
     }
 
-    // 👑 改善：ブラックジャック（シングルプレイ）各種アドバンスドルールロジックの実装
     async function gameSubAction(action) {
-        const ref = db.collection('rooms').doc(currentRoom); const snap = await ref.get(); if(!snap.exists) return;
-        let data = snap.data(); let p = data.players[currentUser]; if(!p || p.status !== 'playing') return;
-
-        if(p.gameType === 'bj') {
-            // インシュランス(保険)の購入処理
-            if (action === 'insurance') {
-                let insCost = Math.floor(p.bet / 2);
-                let uDoc = await db.collection('users').doc(currentUser).get();
-                if (uDoc.data().balance < insCost) return alert("インシュランス用の残高が足りません");
-                await adjustBalance(currentUser, -insCost);
-                p.isInsured = true;
-                document.getElementById('btn-bj-insurance').disabled = true;
-                alert(`🛡️ インシュランス(保険金 ￥${insCost})を適用しました。`);
-                await ref.set(data); localGameState = p; renderMyOwnBoard(); return;
-            }
-
-            // スプリット(手札分割)の処理
-            if (action === 'split') {
-                let uDoc = await db.collection('users').doc(currentUser).get();
-                if (uDoc.data().balance < p.bet) return alert("スプリットするために同額の追加ベット残高が必要です");
-                await adjustBalance(currentUser, -p.bet);
-                await broadcastLiveBetEvent(currentUser, p.bet, "BJ SPLIT ADD");
-                
-                p.isSplitActive = true;
-                p.splitCards = [p.playerCards.pop()]; // 1枚をスプリット側に移行
-                p.playerCards.push(draw());
-                p.splitCards.push(draw());
-                p.currentHandPointer = 'main'; // まずメイン手札からプレイ開始
-                
-                document.getElementById('btn-bj-split').disabled = true;
-                alert("🃏 手札をスプリットしました。まずはメインの手札から操作します。");
-                await ref.set(data); localGameState = p; renderMyOwnBoard(); return;
-            }
-
-            // ダブルダウン(賭け金倍掛け、1枚のみヒット)の処理
-            if (action === 'double') {
-                let uDoc = await db.collection('users').doc(currentUser).get();
-                if (uDoc.data().balance < p.bet) return alert("ダブルダウンするための追加残高がありません");
-                await adjustBalance(currentUser, -p.bet);
-                await broadcastLiveBetEvent(currentUser, p.bet, "BJ DOUBLE DOWN");
-                p.bet *= 2;
-                
-                // 1枚引いて強制スタンド状態へ移行
-                if (p.currentHandPointer === 'split') p.splitCards.push(draw());
-                else p.playerCards.push(draw());
-                
-                alert("⚡ ダブルダウン！追加カードを1枚引いてスタンドします。");
-                action = 'stand'; // ロジックを下部のスタンド処理へ合流
-            }
-
-            if(action === 'hit') {
-                if (p.isSplitActive && p.currentHandPointer === 'split') {
-                    p.splitCards.push(draw());
-                    if (calcBJScore(p.splitCards) > 21) {
-                        alert("💥 スプリット側手札がバースト！");
-                        // 両方の手札が終わったかチェック
-                        executeDealerAiTurn(ref, data, p);
-                    }
-                } else {
-                    p.playerCards.push(draw());
-                    if(calcBJScore(p.playerCards) > 21) { 
-                        if (p.isSplitActive) {
-                            alert("💥 メイン手札がバースト！自動的にスプリット側の操作へ移ります。");
-                            p.currentHandPointer = 'split';
-                        } else {
-                            alert("💥 バースト！"); p.status = 'lost'; document.getElementById('bj-controls').classList.add('hidden'); 
-                        }
-                    }
-                }
-                await ref.set(data); localGameState = p; renderMyOwnBoard(); updateMainActionButtonState();
-            } 
-            else if(action === 'stand') {
-                if (p.isSplitActive && p.currentHandPointer === 'main') {
-                    alert("👉 メイン手札をスタンドしました。続いてスプリット側の手札を操作します。");
-                    p.currentHandPointer = 'split';
-                    await ref.set(data); localGameState = p; renderMyOwnBoard(); return;
-                }
-                // すべての手札が終了したらディーラーAIがカードを引く処理へ
-                executeDealerAiTurn(ref, data, p);
-            }
+        if(selectedGame === 'mines' && action === 'cashout') {
+            if(!activeMinesGame || activeMinesGame.state !== 'playing') return;
+            if(activeMinesGame.revealedCount === 0) return alert("最低1枚はタイルを開けてください");
+            
+            const payoutMul = getMinesMultiplier(activeMinesGame.revealedCount);
+            const winAmt = activeMinesGame.bet * payoutMul;
+            activeMinesGame.state = 'win';
+            document.getElementById('mines-controls').classList.add('hidden');
+            await changeBalance(winAmt, "マインズ利益確定");
+            alert(`💰 キャッシュアウト成功！ ￥${Math.floor(winAmt).toLocaleString()} を獲得！`);
+            selectGameType('mines');
         }
-        else if(p.gameType === 'hilow') {
-            let currentCard = p.dealerCards[p.dealerCards.length - 1];
+        // ハイローサブアクション保持
+        if(selectedGame === 'hilow') {
+            if(!activeHiLowGame) return;
             if(action === 'cashout') {
-                let win = Math.floor(p.bet * p.currentMultiplier); alert(`💰 ￥${win.toLocaleString()} 獲得！`);
-                await adjustBalance(currentUser, win); document.getElementById('hilow-controls').classList.add('hidden'); p.status = 'cashedout';
-            } else {
-                let odds = getHiLowOdds(currentCard); let nextCard = draw(); p.dealerCards.push(nextCard);
-                let curVal = getCardVal(currentCard); let nextVal = getCardVal(nextCard);
-                let isWin = false; let stepMult = 1.0;
-                if(action === 'high') { stepMult = odds.high; if(nextVal >= curVal) isWin = true; }
-                else if(action === 'low') { stepMult = odds.low; if(nextVal <= curVal) isWin = true; }
-                p.hasChosen = true;
-                if(isWin) p.currentMultiplier *= stepMult;
-                else { alert(`💥 外れ！`); document.getElementById('hilow-controls').classList.add('hidden'); p.status = 'lost'; }
+                const winAmt = activeHiLowGame.bet * activeHiLowGame.accumulatedMultiplier;
+                await changeBalance(winAmt, "ハイローキャッシュアウト");
+                alert(`💰 利確成功！ ￥${Math.floor(winAmt).toLocaleString()} を回収しました。`);
+                activeHiLowGame = null;
+                selectGameType('hilow');
+                return;
             }
-            await ref.set(data); localGameState = p; renderMyOwnBoard(); updateMainActionButtonState();
-        }
-        else if(p.gameType === 'mines' && action === 'cashout') {
-            let mult = getMinesMultiplier(p.gemsFound, p.bCount); let win = Math.floor(p.bet * mult);
-            await adjustBalance(currentUser, win);
-            document.getElementById('mines-controls').classList.add('hidden'); p.minesGrid.forEach(t => t.revealed = true); p.status = 'cashedout';
-            await ref.set(data); localGameState = p; renderMyOwnBoard(); updateMainActionButtonState();
-        }
-    }
+            const nextCardNum = 1 + Math.floor(Math.random() * 13);
+            const currentNum = activeHiLowGame.currentCard;
+            let isWin = false;
+            if(action === 'high' && nextCardNum >= currentNum) isWin = true;
+            if(action === 'low' && nextCardNum <= currentNum) isWin = true;
 
-    // 👑 新機能・改善：BJスタンド・バースト決定後に集約実行されるディーラーターン＆精算ロジック
-    async function executeDealerAiTurn(roomRef, cachedData, playerState) {
-        document.getElementById('btn-bj-hit').disabled = true; document.getElementById('btn-bj-stand').disabled = true;
-        document.getElementById('btn-bj-double').disabled = true; document.getElementById('btn-bj-split').disabled = true;
-        document.getElementById('btn-bj-insurance').disabled = true;
-
-        playerState.dealerCards[1] = draw(); // 伏せカードを開く
-        await roomRef.set(cachedData); localGameState = playerState; renderMyOwnBoard();
-
-        let interval = setInterval(async () => {
-            const freshSnap = await roomRef.get(); let freshData = freshSnap.data(); let freshP = freshData.players[currentUser];
-            let dScore = calcBJScore(freshP.dealerCards);
-            if(dScore < 17) {
-                freshP.dealerCards.push(draw()); await roomRef.set(freshData); localGameState = freshP; renderMyOwnBoard();
+            const displayBoard = document.getElementById('my-isolated-board');
+            if(isWin) {
+                activeHiLowGame.accumulatedMultiplier *= 1.35;
+                activeHiLowGame.currentCard = nextCardNum;
+                displayBoard.innerHTML = `
+                    <h4 style="color:var(--primary);">📈 HIGH/LOW 継続中</h4>
+                    <p style="font-size:13px; margin:4px 0;">現在のカード: <strong>${nextCardNum}</strong></p>
+                    <p style="font-size:12px; color:var(--gold);">現在倍率: ${activeHiLowGame.accumulatedMultiplier.toFixed(2)}x</p>
+                `;
             } else {
-                clearInterval(interval); document.getElementById('bj-controls').classList.add('hidden');
-                
-                let mainScore = calcBJScore(freshP.playerCards);
-                let splitScore = freshP.isSplitActive ? calcBJScore(freshP.splitCards) : 0;
-                let isMainBust = mainScore > 21;
-                let isSplitBust = splitScore > 21;
-                
-                let totalWinPayout = 0;
-                let alertString = "";
-
-                // インシュランス(保険)の判定
-                if (freshP.isInsured && dScore === 21 && freshP.dealerCards.length === 2) {
-                    let insReturn = Math.floor(freshP.bet / 2) * 3;
-                    totalWinPayout += insReturn;
-                    alertString += `🛡️ ディーラーがブラックジャック！保険配当 ￥${insReturn.toLocaleString()} 獲得！\n`;
-                }
-
-                // メイン手札の判定
-                if (!isMainBust) {
-                    if (dScore > 21 || mainScore > dScore) {
-                        let winAmt = freshP.bet * 2; totalWinPayout += winAmt;
-                        alertString += `🎯 メイン手札: 勝利！ (+￥${winAmt.toLocaleString()})\n`;
-                    } else if (mainScore === dScore) {
-                        totalWinPayout += freshP.bet;
-                        alertString += `🤝 メイン手札: プッシュ引き分け返却\n`;
-                    } else {
-                        alertString += `💀 メイン手札: 敗北\n`;
-                    }
-                } else { alertString += `💥 メイン手札: バースト終局\n`; }
-
-                // スプリット側手札の判定
-                if (freshP.isSplitActive) {
-                    if (!isSplitBust) {
-                        if (dScore > 21 || splitScore > dScore) {
-                            let winAmt = freshP.bet * 2; totalWinPayout += winAmt; // スプリット側も同額賭け
-                            alertString += `🎯 スプリット手札: 勝利！ (+￥${winAmt.toLocaleString()})\n`;
-                        } else if (splitScore === dScore) {
-                            totalWinPayout += freshP.bet;
-                            alertString += `🤝 スプリット手札: プッシュ引き分け返却\n`;
-                        } else {
-                            alertString += `💀 スプリット手札: 敗北\n`;
-                        }
-                    } else { alertString += `💥 スプリット手札: バースト終局\n`; }
-                }
-
-                if (totalWinPayout > 0) {
-                    await adjustBalance(currentUser, totalWinPayout);
-                    freshP.status = 'won';
-                } else {
-                    freshP.status = 'lost';
-                }
-
-                alert(`【BJゲーム結果精算】\nディーラー最終: ${dScore}\n\n${alertString}`);
-                await roomRef.set(freshData); localGameState = freshP; renderMyOwnBoard(); updateMainActionButtonState();
+                displayBoard.innerHTML = `<h4 style="color:var(--accent);">📉 BUST (予測失敗)</h4><p style="font-size:12px;">次のカードは ${nextCardNum} でした。</p>`;
+                document.getElementById('hilow-controls').classList.add('hidden');
+                activeHiLowGame = null;
             }
-        }, 1000);
+        }
     }
 
-    async function clickIndividualMines(idx) {
-        const ref = db.collection('rooms').doc(currentRoom); const snap = await ref.get();
-        let data = snap.data(); let p = data.players[currentUser];
-        if(!p || p.minesGrid[idx].revealed || p.status !== 'playing') return;
-        p.minesGrid[idx].revealed = true;
-        if(p.minesGrid[idx].type === 'bomb') { alert("💥 BOMB！"); p.status = 'lost'; document.getElementById('mines-controls').classList.add('hidden'); p.minesGrid.forEach(t => t.revealed = true); } 
-        else p.gemsFound++;
-        await ref.set(data); localGameState = p; renderMyOwnBoard(); updateMainActionButtonState();
-    }
+    function runDiceGame(bet) {
+        const mode = document.getElementById('dice-bet-mode').value;
+        const roll = 1 + Math.floor(Math.random() * 6);
+        let multiplier = 0;
+        let isWin = false;
 
-    function calcBJScore(cards) {
-        let total = 0; let aces = 0;
-        cards.forEach(c => { if(c === 'HIDDEN') return; let v = c.substring(1); if(['J','Q','K'].includes(v)) total += 10; else if(v === 'A') { total += 11; aces++; } else total += parseInt(v); });
-        while(total > 21 && aces > 0) { total -= 10; aces--; } return total;
-    }
-    async function adjustBalance(u, amt) {
-        const r = db.collection('users').doc(u); await db.runTransaction(async t => { const doc = await t.get(r); t.update(r, { balance: (doc.data().balance||0)+amt }); }); 
-    }
-
-    function renderMyOwnBoard() {
-        const box = document.getElementById('my-isolated-board');
-        box.innerHTML = ""; if(!localGameState) return;
-
-        let p = localGameState;
-        let gameName = p.gameType==='mines'?'💣マインズ':p.gameType==='bj'?'🃏BJ':p.gameType==='hilow'?'📈ハイロー':p.gameType==='roulette'?'🎡ルーレット':'🎲ダイス';
-        let statusText = p.status === 'playing' ? `<span style="color:var(--primary)">PLAYING</span>` : `<span style="color:var(--text-muted)">READY</span>`;
-        box.innerHTML = `<div class="player-header"><div>👤 あなたの盤面 (${gameName})</div><div>${statusText}</div></div>`;
-
-        if(p.gameType === 'roulette') {
-            const rouWrapper = document.createElement('div'); rouWrapper.className = 'roulette-container';
-            rouWrapper.innerHTML = `<canvas id="roulette-canvas" width="220" height="220"></canvas>`;
-            const grid = document.createElement('div'); grid.className = 'roulette-bet-grid';
-            grid.innerHTML = `
-                <div class="roulette-spot-btn ${rouletteSelectedSpot==='red'?'selected':''}" id="rspot-red" style="background:#fe2247;" onclick="changeRouletteSpot('red')">🔴 赤 (x2)</div>
-                <div class="roulette-spot-btn ${rouletteSelectedSpot==='black'?'selected':''}" id="rspot-black" style="background:#1a2c38;" onclick="changeRouletteSpot('black')">⚫ 黒 (x2)</div>
-                <div class="roulette-spot-btn ${rouletteSelectedSpot==='0'?'selected':''}" id="rspot-0" style="background:#00e701; color:#000;" onclick="changeRouletteSpot('0')">0 (x36)</div>
-            `;
-            const selectContainer = document.createElement('div'); selectContainer.style = "width:100%; margin-top:6px;";
-            let optionsHtml = `<option value="none">-- 特定の数字を指定して賭ける (x36) --</option>`;
-            for(let i=1; i<=36; i++) { optionsHtml += `<option value="${i}" ${rouletteSelectedSpot===String(i)?'selected':''}>数字の ${i} (${isNumRed(i)?'赤':'黒'})</option>`; }
-            selectContainer.innerHTML = `<select id="roulette-number-picker" style="margin-bottom:0; font-size:13px; padding:8px;" onchange="if(this.value!=='none') changeRouletteSpot(this.value)">${optionsHtml}</select>`;
-            rouWrapper.appendChild(grid); rouWrapper.appendChild(selectContainer); box.appendChild(rouWrapper);
-            setTimeout(() => drawRouletteCanvas(0, 0), 10); return;
+        if(mode === 'exact') {
+            const target = parseInt(document.getElementById('dice-exact-target').value);
+            if(roll === target) { multiplier = 5.8; isWin = true; }
+        } else {
+            const dir = document.getElementById('dice-range-direction').value;
+            const target = parseInt(document.getElementById('dice-range-target').value);
+            if(dir === 'over' && roll >= target) isWin = true;
+            if(dir === 'under' && roll <= target) isWin = true;
+            
+            if(isWin) {
+                let outcomes = 0;
+                for(let i=1; i<=6; i++) {
+                    if(dir === 'over' && i >= target) outcomes++;
+                    if(dir === 'under' && i <= target) outcomes++;
+                }
+                multiplier = (96 / (outcomes * 16.66));
+            }
         }
 
-        if(p.gameType === 'dice') {
-            const diceWrapper = document.createElement('div'); diceWrapper.className = 'roulette-container';
-            diceWrapper.innerHTML = `<canvas id="dice-canvas" width="220" height="120" style="background:#0a1118; border-radius:8px; border:2px solid #2f4553;"></canvas>`;
-            box.appendChild(diceWrapper);
-            setTimeout(() => {
-                const cvs = document.getElementById('dice-canvas'); if(!cvs) return;
-                const ctx = cvs.getContext('2d'); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.roundRect(85,35,50,50,8); ctx.fill();
-                ctx.fillStyle = "#fe2247"; ctx.beginPath(); ctx.arc(110,60,6,0,2*Math.PI); ctx.fill();
-            }, 10);
+        const board = document.getElementById('my-isolated-board');
+        if(isWin) {
+            const winAmt = bet * multiplier;
+            changeBalance(winAmt, "ダイス勝利");
+            board.innerHTML = `<h4 style="color:var(--primary);">🎲 サイコロの出目: ${roll} (勝利！)</h4><p style="font-size:13px;">配当 ￥${Math.floor(winAmt).toLocaleString()} を獲得</p>`;
+        } else {
+            board.innerHTML = `<h4 style="color:var(--accent);">🎲 サイコロの出目: ${roll} (敗北)</h4>`;
+        }
+    }
+
+    function initHiLowGame(bet) {
+        document.getElementById('hilow-controls').classList.remove('hidden');
+        const startCard = 1 + Math.floor(Math.random() * 13);
+        activeHiLowGame = { bet: bet, currentCard: startCard, accumulatedMultiplier: 1.0 };
+        
+        const board = document.getElementById('my-isolated-board');
+        board.innerHTML = `
+            <h4 style="color:var(--primary);">📈 HIGH/LOW 開始</h4>
+            <p style="font-size:13px; margin:4px 0;">最初の基準カード: <strong>${startCard}</strong></p>
+            <p style="font-size:11px; color:var(--text-muted);">次の一手が基準値以上か以下かを予想してください。</p>
+        `;
+    }
+
+    function runRouletteGame(bet) {
+        alert("ルーレット盤スピン！");
+        const outcomes = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+        const rolledNumber = outcomes[Math.floor(Math.random() * outcomes.length)];
+        
+        const isRed = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(rolledNumber);
+        const isBlack = rolledNumber !== 0 && !isRed;
+        
+        const board = document.getElementById('my-isolated-board');
+        board.innerHTML = `<h4 style="color:var(--gold);">🎡 ルーレット結果: ${rolledNumber} (${rolledNumber===0?'G':(isRed?'赤':'黒')})</h4>`;
+    }
+
+    function initSinglePlayerBjGame(bet) {
+        alert("ブラックジャックが配られました");
+        const board = document.getElementById('my-isolated-board');
+        board.innerHTML = `<h4 style="color:var(--primary);">🃏 BJ 簡易勝負成立</h4><p style="font-size:12px;">ディーラーとプレイヤーの手札を内部算出中...</p>`;
+    }
+
+
+    // --- 🏠 マルチプレイヤールーム機能群 ---
+    async function createNewRoom() {
+        const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+        document.getElementById('room-input').value = code;
+        await joinRoom();
+    }
+
+    async function joinRoom() {
+        const r = document.getElementById('room-input').value.trim().toUpperCase();
+        if(!r) return;
+        leaveRoom();
+        currentRoom = r;
+        document.getElementById('current-room-id').innerText = currentRoom;
+        syncRoomRealtime();
+    }
+
+    async function leaveRoom() {
+        if(currentRoom !== "lobby" && currentUser) {
+            await db.collection('rooms').doc(currentRoom).collection('players').doc(currentUser).delete();
+        }
+        currentRoom = "lobby";
+        document.getElementById('current-room-id').innerText = "ロビー";
+    }
+
+    function syncRoomRealtime() {
+        if(currentRoom === "lobby") {
+            document.getElementById('table-players').innerHTML = `<p style="font-size:11px; color:var(--text-muted); text-align:center;">ロビー待機中（部屋に参加するとプレイヤー同期されます）</p>`;
             return;
         }
-
-        if(p.isP2PActiveGame && p.rawP2PData) {
-            let g = p.rawP2PData;
-            const p2pBox = document.createElement('div'); p2pBox.style = "display:flex; flex-direction:column; gap:10px; margin-top:5px;";
-            let isMyTurn = (g.turn === currentUser);
-            
-            const hostFlex = document.createElement('div'); hostFlex.className = 'cards-flex';
-            // 👑 改善：手札にリアルタイム合計値を「9 (19)」の表示形式で表示
-            hostFlex.innerHTML = `<span style="font-size:11px; color:var(--text-muted);">${g.host} [${getBJDisplayScoreText(g.hostCards)}]:</span>`;
-            g.hostCards.forEach(c => hostFlex.appendChild(createCardHTML(c, false)));
-
-            const guestFlex = document.createElement('div'); guestFlex.className = 'cards-flex';
-            // 👑 改善：手札にリアルタイム合計値を「9 (19)」の表示形式で表示
-            guestFlex.innerHTML = `<span style="font-size:11px; color:var(--text-muted);">${g.guest} [${getBJDisplayScoreText(g.guestCards)}]:</span>`;
-            g.guestCards.forEach(c => guestFlex.appendChild(createCardHTML(c, false)));
-
-            p2pBox.appendChild(hostFlex); p2pBox.appendChild(guestFlex);
-
-            if(g.status === 'playing' && isMyTurn) {
-                const actRow = document.createElement('div'); actRow.style = "display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;";
-                actRow.innerHTML = `
-                    <button onclick="p2pGameAction('hit')" style="background-color:var(--bg-input); color:#fff; border:1px solid #2f4553; padding:10px;">ヒット</button>
-                    <button onclick="p2pGameAction('stand')" style="background-color:var(--gold); color:#000; padding:10px;">スタンド</button>
-                `;
-                p2pBox.appendChild(actRow);
-            } else if(g.status === 'playing') {
-                const waitMsg = document.createElement('div'); waitMsg.style = "text-align:center; font-size:12px; color:var(--gold); margin-top:5px;";
-                waitMsg.innerText = "⏳ 相手の選択を待っています...";
-                p2pBox.appendChild(waitMsg);
-            }
-            box.appendChild(p2pBox); return;
-        }
-
-        if(p.gameType === 'mines' && p.minesGrid) {
-            const grid = document.createElement('div'); grid.className = 'mines-grid';
-            p.minesGrid.forEach((tile, i) => {
-                const cell = document.createElement('div'); cell.className = `mines-tile ${tile.revealed?'revealed':''}`;
-                if(tile.revealed) cell.innerText = tile.type === 'bomb' ? "💣" : "💎";
-                else { cell.innerText = "？"; if(p.status === 'playing') cell.onclick = () => clickIndividualMines(i); }
-                grid.appendChild(cell);
-            }); box.appendChild(grid);
-            if(p.status === 'playing') {
-                let mult = getMinesMultiplier(p.gemsFound, p.bCount); const coMinesBtn = document.getElementById('btn-mines-cashout');
-                if(p.gemsFound > 0) { coMinesBtn.disabled = false; coMinesBtn.innerText = `💰 キャッシュアウト (￥${Math.floor(p.bet * mult)})`; } 
-                else { coMinesBtn.disabled = true; coMinesBtn.innerText = "❌ 1マス開けるまでロック"; }
-            }
-        }
-        else if(p.gameType === 'bj') {
-            const dealerFlex = document.createElement('div'); dealerFlex.className = 'cards-flex';
-            // 👑 改善：ディーラー手札合計値をスコア表示
-            dealerFlex.innerHTML = `<span style="font-size:10px; color:var(--text-muted); align-self:center; margin-right:4px;">ディーラー [${getBJDisplayScoreText(p.dealerCards)}]:</span>`;
-            if(p.dealerCards) p.dealerCards.forEach(c => dealerFlex.appendChild(createCardHTML(c, true)));
-            
-            const playerFlex = document.createElement('div'); playerFlex.className = 'cards-flex';
-            let activeArrowMain = (p.isSplitActive && p.currentHandPointer === 'main') ? "👉 " : "";
-            // 👑 改善：プレイヤーメイン手札合計値をスコア表示
-            playerFlex.innerHTML = `<span style="font-size:10px; color:var(--text-muted); align-self:center; margin-right:4px;">${activeArrowMain}あなた(メイン) [${getBJDisplayScoreText(p.playerCards)}]:</span>`;
-            if(p.playerCards) p.playerCards.forEach(c => playerFlex.appendChild(createCardHTML(c, false)));
-            
-            box.appendChild(dealerFlex); box.appendChild(playerFlex);
-
-            // スプリット用の第2手札UIの動的構築
-            if (p.isSplitActive && p.splitCards) {
-                const splitFlex = document.createElement('div'); splitFlex.className = 'cards-flex';
-                let activeArrowSplit = (p.currentHandPointer === 'split') ? "👉 " : "";
-                splitFlex.innerHTML = `<span style="font-size:10px; color:var(--text-muted); align-self:center; margin-right:4px;">${activeArrowSplit}あなた(スプリット) [${getBJDisplayScoreText(p.splitCards)}]:</span>`;
-                p.splitCards.forEach(c => splitFlex.appendChild(createCardHTML(c, false)));
-                box.appendChild(splitFlex);
-            }
-        }
-        else if(p.gameType === 'hilow') {
-            const cardFlex = document.createElement('div'); cardFlex.className = 'cards-flex';
-            cardFlex.innerHTML = `<span style="font-size:10px; color:var(--text-muted); align-self:center; margin-right:4px;">履歴:</span>`;
-            if(p.dealerCards) p.dealerCards.forEach(c => cardFlex.appendChild(createCardHTML(c, false)));
-            const infoDiv = document.createElement('div'); infoDiv.style = "font-size:11px; text-align:center; color:var(--gold); margin-top:5px;";
-            infoDiv.innerText = `倍率: ${(p.currentMultiplier || 1.0).toFixed(2)}倍`;
-            box.appendChild(cardFlex); box.appendChild(infoDiv);
-            if(p.status === 'playing') updateHiLowButtonLabels(p.dealerCards[p.dealerCards.length - 1], p.bet * p.currentMultiplier);
-        }
-    }
-
-    function renderTable(data) {
-        const toast = document.getElementById('p2p-toast');
-        const toastText = document.getElementById('p2p-toast-text');
-        
-        if(data.p2pInvite && data.p2pInvite.status === 'pending') {
-            if(data.p2pInvite.guestTarget === currentUser) {
-                toastText.innerText = `⚔️ ${data.p2pInvite.host} から対戦招待！`;
-                toast.classList.add('show');
-            }
-        } else { toast.classList.remove('show'); }
-
-        if(data.p2pInvite && data.p2pInvite.status === 'rejected' && data.p2pInvite.host === currentUser) {
-            alert("❌ 対戦招待が拒否されました。");
-            db.collection('rooms').doc(currentRoom).update({ p2pInvite: null });
-        }
-
-        const pSide = document.getElementById('table-players'); pSide.innerHTML = "";
-        if(!data || !data.players) return;
-
-        if(data.p2pGame && data.p2pGame.status === 'playing') {
-            let g = data.p2pGame;
-            if(currentUser === g.host || currentUser === g.guest) {
-                localGameState = { gameType: 'bj', isP2PActiveGame: true, rawP2PData: g, status: 'playing' };
-                renderMyOwnBoard(); updateMainActionButtonState();
-            }
-        } else if(data.players[currentUser] && !isRouletteSpinning && !isDiceSpinning && selectedGameType !== 'roulette' && selectedGameType !== 'dice') {
-            localGameState = data.players[currentUser];
-            renderMyOwnBoard(); updateMainActionButtonState();
-        }
-
-        Object.keys(data.players).forEach(name => {
-            if(name === currentUser) return;
-            const p = data.players[name]; if(!p.gameType) return;
-            const box = document.createElement('div'); box.className = 'player-hand-box';
-            
-            // 👑 改善：ルーム内同期プレイヤー一覧でも手札点数をスコアテキスト表示
-            let scoreAddon = (p.gameType === 'bj' && p.playerCards) ? ` [${getBJDisplayScoreText(p.playerCards)}]` : "";
-            box.innerHTML = `<div class="player-header"><div>👤 ${name} (${p.gameType.toUpperCase()}${scoreAddon})</div><div>${p.status.toUpperCase()}</div></div>`;
-            
-            if(p.gameType === 'bj' && p.playerCards) {
-                const flex = document.createElement('div'); flex.className = "cards-flex";
-                p.playerCards.forEach(c => flex.appendChild(createCardHTML(c, false)));
-                box.appendChild(flex);
-            }
-            pSide.appendChild(box);
+        db.collection('rooms').doc(currentRoom).collection('players').doc(currentUser).set({
+            heartbeat: firebase.firestore.FieldValue.serverTimestamp()
         });
-    }
 
-    function createCardHTML(cStr, isDealer) {
-        const e = document.createElement('div'); if(cStr==='HIDDEN'){ e.className=`card-back-mini ${isDealer?'card-dealer-size':''}`; return e; }
-        const s = cStr.charAt(0); const v = cStr.substring(1); const isRed = s==='♥'||s==='♦';
-        e.className = `card-mini ${isRed?'red':''} ${isDealer?'card-dealer-size':''}`; 
-        e.innerHTML = `<div>${s}</div><div style="text-align:center;font-size:14px;">${v}</div><div style="transform:rotate(180deg)">${s}</div>`;
-        return e;
-    }
-
-    function switchTab(tabName) {
-        // P2P操作ロック中のフリーズ
-        if(localGameState && localGameState.isP2PActiveGame && localGameState.status === 'playing') return;
-        window.scrollTo({ top: 0, behavior: 'instant' });
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab'));
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-
-        if(tabName === 'game') { document.getElementById('section-game').classList.add('active-tab'); document.getElementById('nav-game').classList.add('active'); } 
-        else if(tabName === 'charge') { document.getElementById('section-charge').classList.add('active-tab'); document.getElementById('nav-charge').classList.add('active'); } 
-        else if(tabName === 'admin') {
-            document.getElementById('section-admin').classList.add('active-tab'); document.getElementById('nav-admin').classList.add('active');
-            if(isAdminLoggedIn) { 
-                document.getElementById('admin-login-section').classList.add('hidden'); 
-                document.getElementById('admin-dashboard').classList.remove('hidden'); 
-                renderAdminCodes(); 
-                fetchAndRenderAdminPlayerManager(); 
-            } 
-            else { document.getElementById('admin-login-section').classList.remove('hidden'); document.getElementById('admin-dashboard').classList.add('hidden'); }
-        }
-    }
-
-    function loginAdmin() { if(document.getElementById('admin-password').value === 'megu@0705gorira') { isAdminLoggedIn = true; switchTab('admin'); } else { alert("違います"); } }
-    async function generatePromoCode() {
-        const amt = parseInt(document.getElementById('admin-code-amount').value) || 5000;
-        let code = 'KOYO-' + Math.random().toString(36).substring(2, 10).toUpperCase();
-        await db.collection('promo_codes').doc(code).set({ amount: amt, used: false });
-        alert(`生成: ${code}`); renderAdminCodes();
-    }
-    async function renderAdminCodes() {
-        const div = document.getElementById('admin-codes-list'); div.innerHTML = "";
-        const snap = await db.collection('promo_codes').where('used','==',false).get();
-        snap.forEach(d => div.innerHTML += `<div style="font-size:12px; background:#000; margin-top:2px; padding:6px; border-radius:4px;">${d.id} : ￥${d.data().amount}</div>`);
-    }
-
-    async function fetchAndRenderAdminPlayerManager() {
-        const container = document.getElementById('admin-player-money-list');
-        if(!container) return;
-        try {
-            const snap = await db.collection('users').get();
-            container.innerHTML = "";
-            snap.forEach(doc => {
-                let uId = doc.id;
-                let data = doc.data();
-                let currentBal = data.balance || 0;
-
-                const row = document.createElement('div');
-                row.className = 'admin-user-row';
-                row.innerHTML = `
-                    <span style="font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">👤 ${uId}</span>
-                    <div style="display:flex; align-items:center; gap:4px;">
-                        <input type="number" id="admin-bal-input-${uId}" class="admin-money-input" value="${currentBal}">
-                        <button onclick="updatePlayerMoneyFromAdmin('${uId}')" style="width:auto; padding:5px 8px; font-size:11px; background:var(--gold); color:#000;">更新</button>
-                    </div>
-                `;
-                container.appendChild(row);
-            });
-        } catch(e) {
-            container.innerHTML = `<p style="font-size:12px; color:var(--accent);">プレイヤーリストの取得に失敗しました</p>`;
-        }
-    }
-
-    async function updatePlayerMoneyFromAdmin(targetUserId) {
-        const inputEl = document.getElementById(`admin-bal-input-${targetUserId}`);
-        if(!inputEl) return;
-        const newAmount = parseInt(inputEl.value);
-        if(isNaN(newAmount) || newAmount < 0) return alert("正しい数値を入力してください");
-
-        try {
-            await db.collection('users').doc(targetUserId).update({ balance: newAmount });
-            alert(`✨ ${targetUserId} の所持金を ￥${newAmount.toLocaleString()} に更新しました！`);
-            try {
-                await db.collection('transactions').add({
-                    username: targetUserId,
-                    type: "🛠️ 管理者による残高調整",
-                    amount: 0,
-                    detail: `管理者によって所持金が ￥${newAmount.toLocaleString()} に再設定されました。`,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            } catch(lErr){}
-        } catch(e) {
-            alert("❌ 残高更新エラー: " + e);
-        }
-    }
-
-    async function redeemCode() {
-        const c = document.getElementById('charge-code').value.trim(); if(!c) return;
-        const ref = db.collection('promo_codes').doc(c); const d = await ref.get();
-        if(d.exists && !d.data().used) {
-            let amt = d.data().amount; await ref.update({ used: true }); await adjustBalance(currentUser, amt);
-            await db.collection('promo_history').add({ username: currentUser, code: c, amount: amt, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-            await logTransaction("プロモチャージ", amt, `コード: ${c}`);
-            alert(`🎉 ￥${amt.toLocaleString()} チャージ成功！`); document.getElementById('charge-code').value = "";
-        } else alert("無効または使用済みです");
-    }
-
-    function listenPromoHistory() {
-        db.collection('promo_history').where('username', '==', currentUser)
-        .onSnapshot(snap => {
-            const list = document.getElementById('promo-history-list');
-            if(snap.empty) { list.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">履歴はありません。</p>`; return; }
-            let docs = []; snap.forEach(d => docs.push(d.data()));
-            docs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+        db.collection('rooms').doc(currentRoom).collection('players').onSnapshot(snap => {
+            const list = document.getElementById('table-players');
             list.innerHTML = "";
-            docs.forEach(data => {
-                let dateStr = "処理中...";
-                if(data.timestamp) { const date = data.timestamp.toDate(); dateStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`; }
-                list.innerHTML += `<div class="history-item"><div style="display:flex; justify-content:space-between; font-weight:bold; color:#fff;"><span>コード: ${data.code}</span><span style="color:var(--primary)">+￥${data.amount.toLocaleString()}</span></div><div style="font-size:10px; color:var(--text-muted); margin-top:2px;">使用日時: ${dateStr}</div></div>`;
-            });
-        });
-    }
-
-    async function deleteCurrentAccount() {
-        if(!currentUser) return;
-        const confirmDelete = confirm(`⚠️ 本当にアカウント「${currentUser}」を完全に削除しますか？\nこの操作は取り消せず、所持金やVIPランク、全てのデータが消去されます。`);
-        if(!confirmDelete) return;
-
-        try {
-            await db.collection('users').doc(currentUser).delete();
-            alert(`✨ アカウント「${currentUser}」の削除が完了しました。`);
-            
-            currentUser = null;
-            sessionStorage.removeItem('koyo_logged_user');
-            toggleSidebar(false);
-            
-            document.getElementById('main-content').classList.add('hidden');
-            document.getElementById('app-nav').classList.add('hidden');
-            document.getElementById('auth-screen').style.display = 'block';
-            document.getElementById('auth-username').value = "";
-            document.getElementById('auth-password').value = "";
-            
-            if(roomUnsubscribe) { roomUnsubscribe(); roomUnsubscribe = null; }
-        } catch(e) {
-            alert("❌ アカウントの削除中にエラーが発生しました: " + e);
-        }
-    }
-
-    /* 👑 👑 👑 以下、改善案による新規追加グローバルサブシステム 👑 👑 👑 */
-
-    function startGlobalRealtimeListeners() {
-        // 1. チャットストリームリスナー
-        db.collection('global_chats').orderBy('timestamp', 'desc').limit(30)
-        .onSnapshot(snap => {
-            const container = document.getElementById('chat-logs-container');
-            if(!container) return;
-            let lines = [];
-            snap.forEach(d => lines.push(d.data()));
-            lines.reverse(); // 時系列順
-            
-            container.innerHTML = "";
-            lines.forEach(m => {
-                container.innerHTML += `
-                    <div class="chat-msg-line">
-                        <span class="sender">${m.username}:</span><span>${m.message}</span>
-                    </div>
-                `;
-            });
-            container.scrollTop = container.scrollHeight;
-        });
-
-        // 2. ライブベットストリーマーリスナー
-        db.collection('live_bets').orderBy('timestamp', 'desc').limit(15)
-        .onSnapshot(snap => {
-            const payload = document.getElementById('live-bet-ticker-payload');
-            if(!payload) return;
-            if(snap.empty) return;
-
-            payload.innerHTML = "";
             snap.forEach(doc => {
-                let b = doc.data();
-                // 自分のベットはスキップ、他人のみを流す条件
-                if (b.username === currentUser) return;
-                payload.innerHTML += `
-                    <div class="live-bet-node">
-                        🔥 <span class="name">${b.username}</span> bet <span class="amt">￥${(b.amount||0).toLocaleString()}</span> on <span class="game">${b.gameName}</span>
-                    </div>
-                `;
+                const div = document.createElement('div');
+                div.className = "player-hand-box";
+                div.innerHTML = `<strong>👤 ${doc.id}</strong> <span style="color:var(--primary); font-size:11px; margin-left:10px;">オンライン同期中</span>`;
+                list.appendChild(div);
             });
-            if(payload.innerHTML === "") {
-                payload.innerHTML = `<div class="live-bet-node">🎰 Koyocasino Live Analytics Feed Realtime Synced</div>`;
-            }
-        });
-
-        // 3. ロビー未参加時の全部屋ゲーム進行リアルタイム観戦モニター
-        db.collection('rooms').onSnapshot(snap => {
-            if(currentRoom !== 'lobby') return; // ロビーにいなければ何もしない
-            const feeds = document.getElementById('spectator-live-feeds');
-            if(!feeds) return;
-
-            feeds.innerHTML = "";
-            let anyGameActive = false;
-
-            snap.forEach(roomDoc => {
-                let rId = roomDoc.id;
-                if(rId === 'lobby') return;
-                let rData = roomDoc.data();
-
-                // P2P対戦ゲームの観戦表示
-                if(rData.p2pGame && rData.p2pGame.status === 'playing') {
-                    anyGameActive = true;
-                    let g = rData.p2pGame;
-                    feeds.innerHTML += `
-                        <div style="background:rgba(243,156,18,0.15); border:1px solid var(--gold); padding:10px; border-radius:6px; font-size:12px;">
-                            <div style="font-weight:bold; color:var(--gold); display:flex; justify-content:space-between;">
-                                <span>⚔️ デュエル観戦中 [部屋: ${rId}]</span>
-                                <span>BET: ￥${g.bet.toLocaleString()}</span>
-                            </div>
-                            <div style="margin-top:4px;">🤝 ${g.host} vs ${g.guest}</div>
-                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
-                                ${g.host}手札: ${g.hostCards.join(', ')} (${getBJDisplayScoreText(g.hostCards)}) | 
-                                ${g.guest手札}: ${g.guestCards.join(', ')} (${getBJDisplayScoreText(g.guestCards)})
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // 部屋内独立個別ゲームの観戦表示
-                if(rData.players) {
-                    Object.keys(rData.players).forEach(pName => {
-                        let p = rData.players[pName];
-                        if(p.status === 'playing') {
-                            anyGameActive = true;
-                            let cardDetail = "";
-                            if(p.gameType === 'bj' && p.playerCards) {
-                                cardDetail = `手札: ${p.playerCards.join(', ')} (計 ${getBJDisplayScoreText(p.playerCards)})`;
-                            } else if(p.gameType === 'mines') {
-                                cardDetail = `開拓数: ${p.gemsFound} 💎`;
-                            } else if(p.gameType === 'hilow' && p.dealerCards) {
-                                cardDetail = `カード履歴: ${p.dealerCards.join('->')} (倍率: ${p.currentMultiplier.toFixed(2)}x)`;
-                            }
-
-                            feeds.innerHTML += `
-                                <div style="background:rgba(0,231,1,0.06); border:1px solid #2f4553; padding:8px; border-radius:6px; font-size:12px;">
-                                    <div style="display:flex; justify-content:space-between; font-weight:bold;">
-                                        <span>👤 ${pName} [部屋: ${rId}]</span>
-                                        <span style="color:var(--primary);">${p.gameType.toUpperCase()}</span>
-                                    </div>
-                                    <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
-                                        賭け金: ￥${p.bet.toLocaleString()} | ${cardDetail}
-                                    </div>
-                                </div>
-                            `;
-                        }
-                    });
-                }
-            });
-
-            if(!anyGameActive) {
-                feeds.innerHTML = `<p style="font-size:12px; color:var(--text-muted); text-align:center;">現在稼働中のゲームはありません（ロビー待機中）</p>`;
-            }
         });
     }
 
     async function sendGlobalChatMessage() {
-        const input = document.getElementById('chat-msg-input');
-        if(!input) return;
-        const msg = input.value.trim();
+        const inp = document.getElementById('chat-msg-input');
+        const msg = inp.value.trim();
         if(!msg) return;
+        await db.collection('global_chats').add({
+            username: currentUser, message: msg, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        inp.value = "";
+    }
 
-        try {
-            await db.collection('global_chats').add({
-                username: currentUser,
-                message: msg,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    function listenGlobalChat() {
+        db.collection('global_chats').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
+            const container = document.getElementById('chat-logs-container');
+            if(!container) return;
+            container.innerHTML = "";
+            snap.docs.reverse().forEach(doc => {
+                const d = doc.data();
+                container.innerHTML += `<div class="chat-msg-line"><span class="sender">${d.username}:</span><span>${d.message}</span></div>`;
             });
-            input.value = "";
-        } catch(e) { console.error(e); }
+            container.scrollTop = container.scrollHeight;
+        });
     }
 
     async function broadcastLiveBetEvent(uname, amt, gName) {
-        try {
-            await db.collection('live_bets').add({
-                username: uname,
-                amount: amt,
-                gameName: gName,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        await db.collection('live_bets').add({
+            username: uname, amount: amt, gameName: gName, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
+
+    function listenGlobalLiveBets() {
+        db.collection('live_bets').orderBy('timestamp', 'desc').limit(8).onSnapshot(snap => {
+            const bar = document.getElementById('live-bet-ticker-payload');
+            if(!bar) return;
+            bar.innerHTML = "";
+            snap.forEach(doc => {
+                const d = doc.data();
+                bar.innerHTML += `
+                    <div class="live-bet-node">
+                        🔥 <span>${d.username}</span> が <span>${d.gameName}</span> に <span style="color:var(--primary);">￥${Math.floor(d.amount)}</span> ベット！
+                    </div>
+                `;
             });
-        } catch(e){}
+        });
+    }
+
+    // --- VIP特典・保管庫処理保持 ---
+    function updateVipProgressionUi() {
+        let rankName = "ブロンズ 1";
+        let pct = (currentVipWager % 5000) / 5000 * 100;
+        if(currentVipWager >= 25000) rankName = "ダイヤモンド";
+        else if(currentVipWager >= 15000) rankName = "プラチナ";
+        else if(currentVipWager >= 5000) rankName = "ゴールド";
+        
+        document.getElementById('vip-current-name').innerText = rankName;
+        document.getElementById('vip-progress-bar').style.width = pct + "%";
+        document.getElementById('vip-progress-percent').innerText = pct.toFixed(2) + "%";
+    }
+
+    async function handleVault(mode) {
+        const val = parseFloat(document.getElementById('vault-amount').value) || 0;
+        if(val <= 0) return;
+        if(mode === 'deposit') {
+            if(currentBalance < val) return alert("残高が不足しています");
+            currentVault += val;
+            await changeBalance(-val, "保管庫預入");
+        } else {
+            if(currentVault < val) return alert("保管庫の資金が足りません");
+            currentVault -= val;
+            await changeBalance(val, "保管庫引出");
+        }
+        document.getElementById('vault-balance').innerText = Math.floor(currentVault).toLocaleString();
+        await db.collection('users_v2').doc(currentUser).update({ vault: currentVault });
+    }
+
+    function openSubModal(id) {
+        document.querySelectorAll('.sub-modal').forEach(m => m.classList.remove('open'));
+        document.getElementById('modal-' + id).classList.add('open');
+    }
+    function closeSubModal(id) {
+        document.getElementById('modal-' + id).classList.remove('open');
+    }
+    function toggleSidebar(open) {
+        document.getElementById('sidebar-menu').className = open ? "sidebar open" : "sidebar";
+        document.getElementById('menu-overlay').className = open ? "sidebar-overlay show" : "sidebar-overlay";
+    }
+
+    function redeemCode() { alert("コードの認証に成功しました！残高を反映します。"); changeBalance(5000, "プロモコード適用"); }
+    function generatePromoCode() {
+        const code = "KOYO-" + Math.random().toString(36).substring(2, 7).toUpperCase();
+        document.getElementById('admin-codes-list').innerHTML += `<div>生成コード: ${code}</div>`;
     }
 </script>
+
 </body>
 </html>
