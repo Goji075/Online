@@ -333,19 +333,38 @@
                     <button class="bet-adjust-btn" onclick="adjustBetMultiplier(2.0)">2x</button>
                 </div>
 
-                <div id="setting-mines" class="game-setting-block">
-                    <label style="font-size:11px; color:var(--text-muted);">地雷の数 (1〜24)</label>
+                <div id="setting-mines">
+                    <label style="font-size:11px; color:var(--text-muted);">爆弾の数 (1〜24)</label>
                     <input type="number" id="mines-count" value="3" min="1" max="24">
                 </div>
-                <div id="setting-dice" class="game-setting-block hidden">
-                    <label style="font-size:11px; color:var(--text-muted);">予測方向と基準出目 (0.01〜99.99)</label>
-                    <div style="display:flex; gap:6px; margin-bottom:8px;">
-                        <select id="dice-direction" style="margin-bottom:0; flex:1;"><option value="over">以上 (Over)</option><option value="under">以下 (Under)</option></select>
-                        <input type="number" id="dice-target" value="50.00" step="0.01" style="margin-bottom:0; flex:1;">
+
+                <div id="setting-dice" class="hidden">
+                    <label style="font-size:11px; color:var(--text-muted);">賭け方モードを選択</label>
+                    <select id="dice-bet-mode" onchange="toggleDiceModeUi()">
+                        <option value="exact">出目をピンポイントで予想 (1〜6)</option>
+                        <option value="range">設定値以上(Over) / 以下(Under) を狙う</option>
+                    </select>
+                    <div id="dice-exact-box">
+                        <label style="font-size:11px; color:var(--text-muted);">予想するサイコロの目</label>
+                        <select id="dice-exact-target">
+                            <option value="1">1 (配当 5.8x)</option><option value="2">2 (配当 5.8x)</option>
+                            <option value="3">3 (配当 5.8x)</option><option value="4">4 (配0 5.8x)</option>
+                            <option value="5">5 (配当 5.8x)</option><option value="6">6 (配当 5.8x)</option>
+                        </select>
+                    </div>
+                    <div id="dice-range-box" class="hidden">
+                        <div style="display:flex; gap:5px; margin-bottom:5px;">
+                            <select id="dice-range-direction" style="margin-bottom:0;" onchange="recalcDiceRangeOdds()">
+                                <option value="over">以上 (Over)</option>
+                                <option value="under">以下 (Under)</option>
+                            </select>
+                            <input type="number" id="dice-range-target" value="4" min="1" max="6" style="margin-bottom:0;" oninput="recalcDiceRangeOdds()">
+                        </div>
+                        <div id="dice-range-odds-preview" style="font-size:11px; color:var(--gold); text-align:right;">見込み配当: 1.94x</div>
                     </div>
                 </div>
 
-                <button onclick="playCasinoGame()" style="background-color:var(--primary); color:#000; margin-top:5px; font-size:17px; height:50px;">🎮 ゲームを開始する</button>
+                <button id="btn-action-main" onclick="startIndividualGame()">ベットして勝負開始</button>
 
                 <div id="bj-p2p-invite-container" class="hidden" style="margin-top:10px; background: rgba(0,0,0,0.2); padding:10px; border-radius:6px; border:1px solid #2f4553;">
                     <select id="p2p-target-selector" style="padding:8px; font-size:13px; margin-bottom:8px;"><option value="">-- 部屋のプレイヤーを読み込み中 --</option></select>
@@ -357,6 +376,7 @@
                     <button class="secondary" style="background-color:var(--gold); color:#000;" onclick="gameSubAction('stand')">スタンド</button>
                     <button class="secondary" style="grid-column: span 2; background-color:#e67e22; color:#fff;" onclick="gameSubAction('double')">ダブルダウン</button>
                 </div>
+                
                 <div id="hilow-controls" class="hidden" style="margin-top:10px; display:flex; flex-direction:column; gap:6px;">
                     <div style="display:flex; gap:10px;">
                         <button style="background-color:var(--primary);" onclick="gameSubAction('high')">🔼 HIGH</button>
@@ -364,6 +384,7 @@
                     </div>
                     <button style="background-color:var(--gold); color:#000;" onclick="gameSubAction('cashout')">💰 キャッシュアウト</button>
                 </div>
+                
                 <div id="mines-controls" class="hidden" style="margin-top:10px;">
                     <button style="background-color:var(--gold); color:#000;" onclick="gameSubAction('cashout')">💰 キャッシュアウト</button>
                 </div>
@@ -377,88 +398,81 @@
             </div>
 
             <div id="lobby-spectator-panel" class="panel">
-                <h3 style="font-size:14px; margin-bottom:10px; color:var(--gold);">👁️‍局 ライブマルチ観戦</h3>
-                <div id="lobby-spectator-feeds" style="display:flex; flex-direction:column; gap:6px;"></div>
+                <h3 style="font-size:14px; margin-bottom:10px; color:var(--gold);">👁️‍🗨️ ライブマルチ観戦</h3>
+                <div id="spectator-live-feeds"></div>
             </div>
 
             <div class="global-chat-box">
                 <div class="chat-logs-area" id="chat-logs-container"></div>
                 <div class="chat-input-row">
-                    <input type="text" id="chat-msg-input" class="chat-mini-input" placeholder="チャットメッセージを入力...">
-                    <button onclick="sendGlobalChatMessage()" class="chat-mini-btn">送信</button>
+                    <input type="text" id="chat-msg-input" class="room-mini-input chat-mini-input" placeholder="チャットを入力...">
+                    <button onclick="sendGlobalChatMessage()" class="room-mini-btn chat-mini-btn">送信</button>
                 </div>
             </div>
         </div>
 
         <div id="section-rpg" class="tab-content">
-            <div id="rpg-jail-timer" class="panel hidden" style="text-align:center; border:2px solid var(--accent);">
-                <h3 style="color:var(--accent);">💀 プレイヤー死亡 (刑務所収監中)</h3>
-                <p style="font-size:13px; margin:8px 0; color:var(--text-muted);">重傷を負ったため、自動治療ドロワーが作動しています。</p>
-                <div style="font-size:28px; font-weight:bold; color:#fff;" id="jail-time-left">15:00</div>
-                <p style="font-size:11px; color:var(--accent); margin-top:5px;">※15分経過するか、カジノで遊んでいると徐々に自動釈放されます。</p>
+            <div id="rpg-jail-timer" class="panel hidden" style="background:rgba(254,34,71,0.15); border:2px solid var(--accent); text-align:center;">
+                <h3 style="color:var(--accent);">⚠️ 敗北ペナルティ中</h3>
+                <p style="font-size:13px; margin:8px 0;">15分間、RPGエリアへのアクセスが制限されています。カジノでリベンジ資金を稼ぎましょう！</p>
+                <div id="jail-time-left" style="font-size:24px; font-weight:bold; color:#fff;">15:00</div>
             </div>
 
             <div id="rpg-main-wrapper">
-                <div class="panel" style="padding:12px; display:flex; justify-content:space-between; align-items:center; background:#13222d;">
-                    <div>🛡️ 等級: <span id="rpg-display-level" style="font-weight:bold; color:var(--primary);">1</span></div>
-                    <div style="font-size:12px; color:var(--text-muted);">
-                        回復薬: <span id="rpg-display-potions" style="color:#fff; font-weight:bold;">0</span>個
+                <div class="panel" style="padding:12px;">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:5px;">
+                        <div>⚔️ 挑戦レベル: <span id="rpg-player-lv" style="color:var(--gold);">1</span></div>
+                        <div>💰 鞄: <span id="rpg-player-coins" style="color:var(--primary);">0</span> コイン</div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px; border-top:1px solid #2f4553; padding-top:6px;">
+                        <div>💥 攻撃力: <span id="stat-atk">25</span> | 🛡️ 防御力: <span id="stat-def">150</span></div>
+                        <div style="text-align:right;">🎒 回復薬: <span id="rpg-count-potion" style="color:var(--gold); font-weight:bold;">0</span> 個</div>
+                    </div>
+                    <div class="rpg-equip-slot">🗡️ 武器: <span id="eq-weapon">初期のナイフ (+0)</span></div>
+                    <div class="rpg-equip-slot">🛡️ 防具: <span id="eq-armor">旅人の服 (+0)</span></div>
+                    <div class="rpg-equip-slot">📿 装飾: <span id="eq-acc">お守り (+0)</span></div>
+                </div>
+
+                <div class="panel">
+                    <div class="rpg-battle-grid">
+                        <div class="rpg-card">
+                            <div style="font-weight:bold; font-size:14px;">Player</div>
+                            <div class="rpg-hp-bar"><div id="rpg-p-hp" class="rpg-hp-fill player"></div></div>
+                            <div style="font-size:11px; text-align:right; margin-top:2px;" id="rpg-p-hp-txt">400/400</div>
+                            <div class="rpg-mp-bar"><div id="rpg-p-mp" class="rpg-mp-fill"></div></div>
+                            <div style="font-size:10px; text-align:right; margin-top:1px;" id="rpg-p-mp-txt">50/50</div>
+                        </div>
+                        <div class="rpg-card" id="rpg-enemy-node">
+                            <div style="font-weight:bold; font-size:14px;"><span id="rpg-e-name">モンスター</span></div>
+                            <div class="rpg-hp-bar"><div id="rpg-e-hp" class="rpg-hp-fill"></div></div>
+                            <div style="font-size:11px; text-align:right; margin-top:2px;" id="rpg-e-hp-txt">50/50</div>
+                            <div style="font-size:10px; margin-top:4px;" id="rpg-e-details">Lv.1 | 攻撃力: --</div>
+                        </div>
+                    </div>
+
+                    <div class="rpg-log-area" id="rpg-log-box"></div>
+
+                    <div class="rpg-btn-grid">
+                        <button onclick="rpgAction('attack')" style="background:var(--primary); color:#000;">⚔️ 通常攻撃</button>
+                        <button onclick="rpgAction('potion')" style="background:var(--gold); color:#000;">🧪 回復薬を使う</button>
+                        <button onclick="rpgAction('skill-heal')" id="btn-skill-heal" style="background:#2ecc71; color:#fff;">💖 ヒール (15MP)</button>
+                        <button onclick="rpgAction('skill-slash')" style="background:#e74c3c; color:#fff;">💥 フルスイング (10MP)</button>
+                        <button onclick="rpgAction('skill-charge')" style="background:#9b59b6; color:#fff;">⚡ 属性チャージ (20MP)</button>
+                        <button onclick="rpgAction('run')" style="background:#7f8c8d; color:#fff;">🏃 逃げる</button>
                     </div>
                 </div>
 
-                <div id="rpg-run-cooldown-banner" class="panel hidden" style="text-align:center; border:1px dashed var(--accent); padding:10px; background:rgba(254,34,71,0.05); margin-bottom:15px;">
-                    <span style="color:var(--accent); font-weight:bold; font-size:14px;">🏃 逃亡ペナルティ：次の敵と遭遇するまで残り <span id="run-cooldown-left">90</span> 秒</span>
-                </div>
-
-                <div class="rpg-battle-grid">
-                    <div class="rpg-card">
-                        <div style="font-size:13px; font-weight:bold;">👤 プレイヤー</div>
-                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
-                            HP: <span id="rpg-p-hp">400</span>/<span id="rpg-p-maxhp">400</span>
-                        </div>
-                        <div class="rpg-hp-bar"><div class="rpg-hp-fill player" id="rpg-p-hp-bar"></div></div>
-                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
-                            MP: <span id="rpg-p-mp">50</span>/50
-                        </div>
-                        <div class="rpg-mp-bar"><div class="rpg-mp-fill" id="rpg-p-mp-bar"></div></div>
-                        <div class="rpg-equip-slot">⚔️ <span id="eq-weapon">初期の短剣 (無)</span></div>
-                        <div class="rpg-equip-slot">🛡️ <span id="eq-armor">布の服 (+0)</span></div>
-                    </div>
-                    <div class="rpg-card" style="border-color:var(--accent);">
-                        <div style="font-size:13px; font-weight:bold;" id="rpg-e-name">モンスター</div>
-                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
-                            HP: <span id="rpg-e-hp">0</span>/<span id="rpg-e-maxhp">0</span>
-                        </div>
-                        <div class="rpg-hp-bar"><div class="rpg-hp-fill" id="rpg-e-hp-bar"></div></div>
-                        <div id="rpg-e-details" style="font-size:11px; color:var(--text-muted); margin-top:6px;"></div>
-                    </div>
-                </div>
-
-                <div class="rpg-log-area" id="rpg-log-box"></div>
-
-                <div class="rpg-btn-grid">
-                    <button id="rpg-btn-attack" onclick="executeRpgAction('attack')" style="background-color:var(--accent); color:#fff;">⚔️ 通常攻撃</button>
-                    <button id="rpg-btn-skill1" onclick="executeRpgAction('skill1')" style="background-color:#3498db; color:#fff;">💖 ヒール (15MP)</button>
-                    <button id="rpg-btn-skill2" onclick="executeRpgAction('skill2')" style="background-color:#e67e22; color:#fff;">💥 フルスイング</button>
-                    <button id="rpg-btn-skill3" onclick="executeRpgAction('skill3')" style="background-color:#9b59b6; color:#fff;">🔥 属性チャージ</button>
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
-                    <button id="rpg-btn-potion" onclick="executeRpgAction('potion')" style="background:var(--primary); color:#000; padding:10px; font-size:13px;">🧪 回復薬を使う (+150HP)</button>
-                    <button id="rpg-btn-run" onclick="executeRpgAction('run')" class="secondary" style="margin-top:0; padding:10px; font-size:13px;">🏃 逃げる</button>
-                </div>
-
-                <div class="panel" style="margin-top:15px; padding:15px;">
-                    <h3 style="font-size:14px; margin-bottom:8px; color:var(--gold);">🛒 闇の行商人ドロップショップ</h3>
+                <div class="panel">
+                    <h3 style="font-size:14px; margin-bottom:8px; color:var(--gold);">🛒 アイテムショップ</h3>
                     <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:10px; border-radius:6px;">
-                        <div style="font-size:12px;"><strong>冒険者の回復薬</strong><br><span style="color:var(--text-muted);">価格: 20 コイン</span></div>
-                        <button onclick="buyPotion()" style="width:auto; padding:6px 12px; font-size:12px;">購入</button>
+                        <div style="font-size:12px;">🧪 <strong>冒険者の回復薬</strong> (HPを200即座に回復)<br><span style="color:var(--gold);">価格: 20枚</span></div>
+                        <button onclick="buyPotion()" style="width:auto; padding:6px 12px; font-size:12px;">1個購入</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="section-promo" class="tab-content">
+        <div id="section-charge" class="tab-content">
             <div class="panel">
                 <h3>💸 残高チャージ</h3>
                 <input type="text" id="charge-code" placeholder="KOYO-XXXX">
@@ -478,95 +492,93 @@
             </div>
             <div id="admin-dashboard" class="panel hidden" style="border:2px dashed var(--gold);">
                 <h3>👑 Koyocasino 管理者総合パネル</h3>
+                
                 <div style="margin-top:10px;">
                     <input type="number" id="admin-code-amount" value="5000">
                     <button onclick="generatePromoCode()">プロモコード生成</button>
                     <div id="admin-codes-list" style="margin-top:6px; max-height:100px; overflow-y:auto; background:#111; padding:5px;"></div>
                 </div>
+
                 <div style="margin-top:15px; border-top:1px dashed #2f4553; padding-top:10px;">
                     <h4>📢 全体お知らせ送信</h4>
                     <input type="text" id="admin-notif-text" placeholder="お知らせ内容を入力...">
                     <button onclick="sendGlobalNotification()" style="padding:8px; font-size:13px; background:var(--primary); color:#000;">全体通知を配信</button>
                 </div>
+
                 <div style="margin-top:15px; border-top:1px dashed #2f4553; padding-top:10px;">
                     <h4>💡 プレイヤーからの提案採否（完全自動追加）</h4>
                     <div id="admin-ideas-list" style="max-height:200px; overflow-y:auto; background:#111; padding:6px; font-size:12px;"></div>
                 </div>
+
                 <div style="margin-top:15px; border-top:1px dashed #2f4553; padding-top:10px;">
                     <h4>👤 プレイヤーアカウント総轄管理</h4>
-                    <div id="admin-player-money-list" style="max-height:250px; overflow-y:auto; background:#111; padding:6px; font-size:12px;"></div>
+                    <div id="admin-player-money-list" style="max-height:250px; overflow-y:auto; margin-top:8px;"></div>
                 </div>
             </div>
-        </div>
-
-        <div class="live-bet-marquee-wrapper">
-            <div class="live-bet-marquee-content" id="live-bet-ticker-payload"></div>
-        </div>
-
-        <div class="nav-bar">
-            <div class="nav-item active" id="nav-game" onclick="switchTab('game')">🎰 カジノ</div>
-            <div class="nav-item" id="nav-rpg" onclick="switchTab('rpg')">⚔️ 階層RPG</div>
-            <div class="nav-item" id="nav-promo" onclick="switchTab('promo')">🎁 特典コード</div>
-            <div class="nav-item" id="nav-admin" onclick="switchTab('admin')">👑 管理用</div>
         </div>
     </div>
 </div>
 
+<div class="live-bet-marquee-wrapper hidden" id="live-bet-ticker-bar">
+    <div class="live-bet-marquee-content" id="live-bet-ticker-payload">
+        <div class="live-bet-node">🎰 Koyocasino Live Analytics Feed Initialized...</div>
+    </div>
+</div>
+
+<div class="nav-bar hidden" id="app-nav">
+    <div class="nav-item active" id="nav-game" onclick="switchTab('game')">🎰 カジノ</div>
+    <div class="nav-item" id="nav-rpg" onclick="switchTab('rpg')">⚔️ RPG</div>
+    <div class="nav-item" id="nav-charge" onclick="switchTab('charge')">💸 チャージ</div>
+    <div class="nav-item" id="nav-admin" onclick="switchTab('admin')">👑 管理者</div>
+</div>
+
 <script>
-    // Firebase構成設定
+    // --- Firebase設定一式 ---
     const firebaseConfig = {
-        apiKey: "AIzaSyAsFakeKey_KoyoCasinoElite3G_Evolution",
-        authDomain: "koyocasino-e3g.firebaseapp.com",
-        projectId: "koyocasino-e3g",
-        storageBucket: "koyocasino-e3g.appspot.com",
-        messagingSenderId: "999888777666",
-        appId: "1:999888777666:web:abcdef123456789"
+        apiKey: "AIzaSyCyoFehr8SM7OaiYeua0Sdbpt3pJiAXI74",
+        authDomain: "koyocasino.firebaseapp.com",
+        projectId: "koyocasino",
+        storageBucket: "koyocasino.firebasestorage.app",
+        messagingSenderId: "1065140182060",
+        appId: "1:1065140182060:web:e0c4da12a5b9842abcc589",
+        measurementId: "G-7X2GZQT5C9"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let currentUser = "";
+    // --- ゲーム用ステータス変数 ---
+    let currentUser = null;
     let currentBalance = 0;
-    let currentVault = 0;
-    let currentVipWager = 0;
     let currentRoom = "lobby";
-
-    // RPGステータス
-    let pLevel = 1;
-    let pPotions = 0;
-    let pHP = 400, pMaxHP = 400, pMP = 50;
-    let pWeaponName = "初期の短剣", pWeaponAttr = "none", pAtkBonus = 0;
-    let pArmorName = "布の服", pDefBonus = 0;
-    let pAccName = "なし", pHpBonus = 0;
-
-    let eName = "", eAttr = "none", eRare = "common";
-    let eHP = 0, eMaxHP = 0, eAtk = 0;
-    let healCooldown = 0, chargeDuration = 0;
-
     let selectedGame = "mines";
-    let activeMinesGame = null;
-    let activeHiLowGame = null;
+    let currentVipWager = 0;
+    let currentVault = 0;
     let isAdminAuthenticated = false;
 
+    // --- RPG用グローバルデータ ---
+    let pHP = 400, pMaxHP = 400, pMP = 50, pMaxMP = 50;
+    let pAtkBonus = 0, pDefBonus = 0, pHpBonus = 0;
+    let pLevel = 1, pCoins = 0, pPotions = 0;
+    let pWeaponName = "初期のナイフ (+0)", pArmorName = "旅人の服 (+0)", pAccName = "お守り (+0)";
+    let pWeaponAttr = "none";
+    let eHP = 50, eMaxHP = 50, eAtk = 100, eName = "スライム", eAttr = "none", eRare = "common";
+    let healCooldown = 0, chargeDuration = 0;
+    let approvedEnemies = [], approvedWeapons = [], approvedArmors = [];
+
+    // --- 各ゲーム内部進行フラグ ---
+    let activeMinesGame = null;
+    let activeHiLowGame = null;
+    let activeBjGame = null;
+    let rouletteSelectedSpots = [];
+
+    // 固定名簿
+    const enemyNamesBase = ["コブリン", "オーク", "ヘルハウンド", "ファントム", "キマイラ", "ゴーレム", "サイクロプス", "ヴァンパイア"];
     const attrTypes = ["fire", "water", "wood", "light", "dark"];
-    const enemyNamesBase = ["ゴブリンスパイダー", "スケルトンナイト", "深淵のスライム", "シャドウウルフ", "ヘルハウンド", "迷宮のハーピー"];
-    let approvedEnemies = [];
 
-    async function deleteCurrentAccount() {
-        if(!currentUser) return;
-        if(!confirm("⚠️ 本当にアカウントを削除しますか？この操作は取り消せません。")) return;
-        try {
-            await db.collection('users_v2').doc(currentUser).delete();
-            alert("アカウントを完全に削除しました。");
-            location.reload();
-        } catch(e) {
-            alert("アカウント削除中にエラーが発生しました: " + e.message);
-        }
-    }
-
+    // 認証と初期化
     function switchTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab'));
-        document.querySelectorAll('.nav-bar .nav-item').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         const target = document.getElementById('section-' + tabId);
         if(target) target.classList.add('active-tab');
         const navEl = document.getElementById('nav-' + tabId);
@@ -574,7 +586,6 @@
         toggleSidebar(false);
         if(tabId === 'rpg') {
             checkJailStatus();
-            checkRunCooldownStatus();
             triggerLoginBonus();
         }
         buildSidebarMenu(tabId);
@@ -604,93 +615,194 @@
         const p = document.getElementById('auth-password').value.trim();
         if(!u || !p) return alert("ユーザーIDとパスワードを入力してください");
         currentUser = u;
+        
         const userRef = db.collection('users_v2').doc(u);
         const doc = await userRef.get();
         if(!doc.exists) {
+            // 新規アカウント作成時は初期資金を100円に設定
             await userRef.set({
-                password: p,
-                balance: 100,
-                wagered: 0,
-                vault: 0,
-                rpgLevel: 1,
-                rpgPotions: 0,
-                eqWName: "初期の短剣", eqWAttr: "none", eqWAtk: 0,
-                eqAName: "布の服", eqADef: 0,
-                eqCName: "なし", eqCHp: 0
+                password: p, balance: 100, wagered: 0, vault: 0,
+                rpgLevel: 1, rpgCoins: 0, rpgPotions: 2, jailUntil: null,
+                eqWName: "初期のナイフ (+0)", eqWAttr: "none", eqWAtk: 0,
+                eqAName: "旅人の服 (+0)", eqADef: 0,
+                eqCName: "お守り (+0)", eqCHp: 0,
+                lastLoginBonusDate: ""
             });
-            alert("✨ 新規アカウントを作成し、自動ログインしました！初期資金: ￥100");
+            currentBalance = 100;
         } else {
             if(doc.data().password !== p) return alert("パスワードが一致しません");
+            currentBalance = doc.data().balance || 0;
+            currentVipWager = doc.data().wagered || 0;
+            currentVault = doc.data().vault || 0;
+            pLevel = doc.data().rpgLevel || 1;
+            pCoins = doc.data().rpgCoins || 0;
+            pPotions = doc.data().rpgPotions || 0;
+            pWeaponName = doc.data().eqWName || "初期のナイフ (+0)";
+            pWeaponAttr = doc.data().eqWAttr || "none";
+            pAtkBonus = doc.data().eqWAtk || 0;
+            pArmorName = doc.data().eqAName || "旅人の服 (+0)";
+            pDefBonus = doc.data().eqADef || 0;
+            pAccName = doc.data().eqCName || "お守り (+0)";
+            pHpBonus = doc.data().eqCHp || 0;
         }
+
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('main-content').classList.remove('hidden');
-        document.getElementById('display-username').innerText = u;
+        document.getElementById('app-nav').classList.remove('hidden');
+        document.getElementById('live-bet-ticker-bar').classList.remove('hidden');
+        document.getElementById('display-username').innerText = currentUser;
         
-        userRef.onSnapshot(snap => {
-            if(!snap.exists) return;
-            const d = snap.data();
-            currentBalance = d.balance || 0;
-            currentVault = d.vault || 0;
-            currentVipWager = d.wagered || 0;
-            pLevel = d.rpgLevel || 1;
-            pPotions = d.rpgPotions || 0;
-            pWeaponName = d.eqWName || "初期の短剣";
-            pWeaponAttr = d.eqWAttr || "none";
-            pAtkBonus = d.eqWAtk || 0;
-            pArmorName = d.eqAName || "布の服";
-            pDefBonus = d.eqADef || 0;
-            pAccName = d.eqCName || "なし";
-            pHpBonus = d.eqCHp || 0;
+        // プレイヤー自身のステータスを自分で考えて調整したライン
+        pMaxHP = 400 + pHpBonus;
+        pHP = pMaxHP;
+        pMP = 50;
 
-            document.getElementById('display-balance').innerText = Math.floor(currentBalance).toLocaleString();
-            updateDisplayUi();
-        });
-
+        updateDisplayUi();
+        syncRoomRealtime();
         listenGlobalChat();
         listenGlobalLiveBets();
+        listenApprovedDatabase();
         checkNotifications();
-        loadApprovedRpgElements();
         initNewRpgFight();
     }
 
     function toggleAuthMode() {
-        const title = document.getElementById('auth-title');
+        const t = document.getElementById('auth-title');
         const btn = document.getElementById('btn-auth-primary');
-        const toggle = document.getElementById('btn-auth-toggle');
-        if(title.innerText === "ログイン") {
-            title.innerText = "新規アカウント登録";
-            btn.innerText = "登録してログイン";
-            toggle.innerText = "既にアカウントをお持ちの方はこちら";
+        const sub = document.getElementById('btn-auth-toggle');
+        if(t.innerText === "ログイン") {
+            t.innerText = "新規アカウント登録";
+            btn.innerText = "登録して開始";
+            sub.innerText = "すでにアカウントをお持ちの方";
         } else {
-            title.innerText = "ログイン";
+            t.innerText = "ログイン";
             btn.innerText = "ログイン";
-            toggle.innerText = "新規登録はこちら";
+            sub.innerText = "新規登録はこちら";
         }
     }
 
     function updateDisplayUi() {
-        pMaxHP = 400 + pHpBonus;
-        document.getElementById('rpg-display-level').innerText = pLevel;
-        document.getElementById('rpg-display-potions').innerText = pPotions;
-        document.getElementById('rpg-p-maxhp').innerText = pMaxHP;
-        document.getElementById('rpg-p-hp').innerText = pHP;
-        document.getElementById('rpg-p-mp').innerText = pMP;
-        updateRpgBars();
+        document.getElementById('display-balance').innerText = Math.floor(currentBalance).toLocaleString();
+        document.getElementById('stat-atk').innerText = 25 + pAtkBonus;
+        document.getElementById('stat-def').innerText = 150 + pDefBonus;
+        document.getElementById('rpg-player-lv').innerText = pLevel;
+        document.getElementById('rpg-player-coins').innerText = pCoins;
+        document.getElementById('rpg-count-potion').innerText = pPotions;
+        
+        let wDisplay = pWeaponName;
+        if(pWeaponAttr !== "none") wDisplay += ` [${pWeaponAttr.toUpperCase()}]`;
+        document.getElementById('eq-weapon').innerText = wDisplay;
+        document.getElementById('eq-armor').innerText = pArmorName;
+        document.getElementById('eq-acc').innerText = pAccName;
+        
         updateVipProgressionUi();
     }
 
-    function updateRpgBars() {
-        const pPct = Math.max(0, Math.min(100, (pHP / pMaxHP) * 100));
-        document.getElementById('rpg-p-hp-bar').style.width = pPct + "%";
-        const mPct = Math.max(0, Math.min(100, (pMP / 50) * 100));
-        document.getElementById('rpg-p-mp-bar').style.width = mPct + "%";
-        if(eMaxHP > 0) {
-            const ePct = Math.max(0, Math.min(100, (eHP / eMaxHP) * 100));
-            document.getElementById('rpg-e-hp-bar').style.width = ePct + "%";
-            document.getElementById('rpg-e-hp').innerText = Math.floor(eHP);
-            document.getElementById('rpg-e-maxhp').innerText = Math.floor(eMaxHP);
+    async function saveRpgProgress() {
+        if(!currentUser) return;
+        await db.collection('users_v2').doc(currentUser).update({
+            rpgLevel: pLevel, rpgCoins: pCoins, rpgPotions: pPotions,
+            eqWName: pWeaponName, eqWAttr: pWeaponAttr, eqWAtk: pAtkBonus,
+            eqAName: pArmorName, eqADef: pDefBonus,
+            eqCName: pAccName, eqCHp: pHpBonus
+        });
+    }
+
+    async function changeBalance(amt, reason="") {
+        currentBalance += amt;
+        if(currentBalance < 0) currentBalance = 0;
+        document.getElementById('display-balance').innerText = Math.floor(currentBalance).toLocaleString();
+        await db.collection('users_v2').doc(currentUser).update({ balance: currentBalance });
+        if(amt < 0) {
+            currentVipWager += Math.abs(amt);
+            await db.collection('users_v2').doc(currentUser).update({ wagered: currentVipWager });
+            updateVipProgressionUi();
         }
-        document.getElementById('rpg-btn-skill1').innerText = healCooldown > 0 ? `冷却中 (${healCooldown}T)` : "💖 ヒール (15MP)";
+        if(reason) {
+            await db.collection('tx_logs').add({
+                username: currentUser, amount: amt, type: reason, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+    }
+
+    // --- 🎁 1日1回ログインボーナス（カジノ資金） ---
+    async function triggerLoginBonus() {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const userRef = db.collection('users_v2').doc(currentUser);
+        const snap = await userRef.get();
+        if(snap.exists && snap.data().lastLoginBonusDate !== todayStr) {
+            await userRef.update({ lastLoginBonusDate: todayStr });
+            await changeBalance(50, "ログインボーナス");
+            alert("🎁 1日1回ログインボーナス！カジノ資金として 50 コインを獲得しました！");
+        }
+    }
+
+    // --- 🔔 お知らせ & 採否判定データベース同期 ---
+    function openNotifModal() {
+        openSubModal('notif');
+        document.getElementById('bell-badge').classList.add('hidden');
+    }
+
+    function checkNotifications() {
+        db.collection('notifications').where('username', '==', currentUser).orderBy('timestamp', 'desc').limit(10).onSnapshot(snap => {
+            const area = document.getElementById('notif-list-area');
+            if(!area) return;
+            if(snap.empty) {
+                area.innerHTML = `<p style="font-size:12px; color:var(--text-muted); text-align:center;">通知はまだありません</p>`;
+                return;
+            }
+            let html = "";
+            let hasUnread = false;
+            snap.forEach(doc => {
+                const d = doc.data();
+                html += `<div class="notif-row"><div>${d.message}</div><span style="font-size:10px; color:var(--text-muted);">${d.timestamp ? d.timestamp.toDate().toLocaleString() : ""}</span></div>`;
+            });
+            area.innerHTML = html;
+        });
+    }
+
+    async function submitRpgIdea() {
+        const title = document.getElementById('idea-title').value.trim();
+        const type = document.getElementById('idea-type').value;
+        const desc = document.getElementById('idea-desc').value.trim();
+        if(!title || !desc) return alert("名前と説明を入力してください");
+        
+        await db.collection('rpg_ideas').add({
+            username: currentUser, title: title, type: type, desc: desc, status: "pending", timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        alert("💡 提案を送信しました！管理者が採用するとゲームに自動実装されます。");
+        document.getElementById('idea-title').value = "";
+        document.getElementById('idea-desc').value = "";
+    }
+
+    function listenApprovedDatabase() {
+        db.collection('approved_rpg_elements').onSnapshot(snap => {
+            approvedEnemies = []; approvedWeapons = []; approvedArmors = [];
+            snap.forEach(doc => {
+                const data = doc.data();
+                if(data.type === 'enemy') approvedEnemies.push(data.title);
+                if(data.type === 'weapon') approvedWeapons.push({name: data.title, desc: data.desc});
+                if(data.type === 'armor') approvedArmors.push({name: data.title, desc: data.desc});
+            });
+        });
+    }
+
+    // --- ⚔️ RPGコアロジック ---
+    function updateRpgBars() {
+        const pHpPct = Math.max(0, (pHP / pMaxHP) * 100);
+        document.getElementById('rpg-p-hp').style.width = pHpPct + "%";
+        document.getElementById('rpg-p-hp-txt').innerText = `${Math.floor(pHP)}/${pMaxHP}`;
+        
+        const pMpPct = Math.max(0, (pMP / pMaxMP) * 100);
+        document.getElementById('rpg-p-mp').style.width = pMpPct + "%";
+        document.getElementById('rpg-p-mp-txt').innerText = `${pMP}/${pMaxMP}`;
+
+        const eHpPct = Math.max(0, (eHP / eMaxHP) * 100);
+        document.getElementById('rpg-e-hp').style.width = eHpPct + "%";
+        document.getElementById('rpg-e-hp-txt').innerText = `${Math.floor(eHP)}/${Math.floor(eMaxHP)}`;
+        
+        document.getElementById('btn-skill-heal').disabled = (healCooldown > 0);
+        document.getElementById('btn-skill-heal').innerText = healCooldown > 0 ? `冷却中 (${healCooldown}T)` : "💖 ヒール (15MP)";
     }
 
     function logRpg(msg) {
@@ -700,16 +812,21 @@
     }
 
     function initNewRpgFight() {
+        // クールダウンリセット
         healCooldown = 0;
         chargeDuration = 0;
+        
+        // 敵のステータス計算（ご指定の数値を完全網羅）
         const baseHP = 50 + (pLevel - 1) * 50;
         const baseAtk = 100 + (pLevel - 1) * 100;
         const flexHP = baseHP * (0.9 + Math.random() * 0.2);
         const flexAtk = baseAtk * (0.9 + Math.random() * 0.2);
+        
         eMaxHP = flexHP;
         eHP = eMaxHP;
         eAtk = flexAtk;
-
+        
+        // レア度の抽選
         const roll = Math.random();
         if(roll < 0.015) { eRare = "ultrarare"; }
         else if(roll < 0.05) { eRare = "epic"; }
@@ -717,76 +834,84 @@
         else if(roll < 0.30) { eRare = "uncommon"; }
         else { eRare = "common"; }
 
+        // 名前の選定（管理者が採用した案があれば優先登場）
         if(approvedEnemies.length > 0 && Math.random() < 0.4) {
             eName = approvedEnemies[Math.floor(Math.random() * approvedEnemies.length)];
         } else {
             eName = enemyNamesBase[Math.floor(Math.random() * enemyNamesBase.length)];
         }
+        
         eAttr = attrTypes[Math.floor(Math.random() * attrTypes.length)];
+        
         const rareLabels = {common:"コモン", uncommon:"アンコモン", rare:"レア", epic:"激レア", ultrarare:"超激レア"};
         document.getElementById('rpg-e-name').innerHTML = `${eName} <span class="badge-element elem-${eAttr}">${eAttr.toUpperCase()}</span>`;
-        document.getElementById('rpg-e-details').innerText = `品質: ${rareLabels[eRare]} | ATK: ${Math.floor(eAtk)}`;
+        document.getElementById('rpg-e-details').innerText = `階層: ${pLevel} | 属性: ${eAttr.toUpperCase()} | 希少度: ${rareLabels[eRare]}`;
+        
+        document.getElementById('rpg-log-box').innerHTML = `<div style="color:var(--gold);">⚔️ 【階層 ${pLevel}】 ${rareLabels[eRare]}の野生の「${eName}」が立ちはだかった！</div>`;
         updateRpgBars();
     }
 
-    async function executeRpgAction(action) {
-        if(pHP <= 0) return alert("死亡しているか収監中のため行動できません");
-        
-        // 逃げた場合の処理（90秒クールダウンペナルティ）
-        if(action === 'run') {
-            logRpg(`🏃 戦闘から逃げ出しました。ペナルティとして90秒間、次の敵と戦えなくなります。`);
-            const cooldownUntil = new Date(Date.now() + 90 * 1000).toISOString();
-            await db.collection('users_v2').doc(currentUser).update({ runCooldownUntil: cooldownUntil });
-            checkRunCooldownStatus();
-            initNewRpgFight();
+    function calcAttrMultiplier(pAtkAttr, targetAttr) {
+        if(pAtkAttr === "fire" && targetAttr === "wood") return 1.1;
+        if(pAtkAttr === "wood" && targetAttr === "water") return 1.1;
+        if(pAtkAttr === "water" && targetAttr === "fire") return 1.1;
+        if((pAtkAttr === "light" && targetAttr === "dark") || (pAtkAttr === "dark" && targetAttr === "light")) return 1.1;
+        return 1.0;
+    }
+
+    function rpgAction(type) {
+        if(type === 'run') {
+            logRpg("🏃 ペナルティ：同じ階層の敵と最初からやり直しになります！");
+            setTimeout(() => { initNewRpgFight(); }, 1200);
             return;
         }
 
-        if(action === 'potion') {
-            if(pPotions <= 0) return alert("回復薬を持っていません");
+        if(type === 'potion') {
+            if(pPotions <= 0) return alert("回復薬がありません！ショップで購入するか敵からドロップさせてください");
             pPotions--;
-            pHP = Math.min(pMaxHP, pHP + 150);
-            logRpg("🧪 回復薬を貪り食った！ HPが150回復。");
+            pHP = Math.min(pMaxHP, pHP + 200);
+            logRpg(`🧪 回復薬を駆使した！プレイヤーのHPが200回復。`);
             updateDisplayUi();
-            saveRpgProgress();
+            enemyTurn();
             return;
         }
 
-        let pDamage = 80 + pAtkBonus;
+        let pDamage = 25 + pAtkBonus; // プレイヤーの基礎攻撃力 25
         let multiplier = 1.0;
 
-        if(action === 'skill1') {
-            if(healCooldown > 0) return alert("ヒールはまだ再使用できません");
+        if(type === 'skill-heal') {
             if(pMP < 15) return alert("MPが足りません");
             pMP -= 15;
             pHP = Math.min(pMaxHP, pHP + 150);
-            healCooldown = 4;
-            logRpg("💖 聖なる癒やし「ヒール」を展開！ 自身のHPが150回復した。");
+            healCooldown = 4; // 発動後3ターン使用不可(自身含め4)
+            logRpg(`💖 スキル「ヒール」発動！HPが150回復した。`);
             updateRpgBars();
             enemyTurn();
             return;
         }
-        if(action === 'skill2') {
+        if(type === 'skill-slash') {
             if(pMP < 10) return alert("MPが足りません");
             pMP -= 10;
-            multiplier = 1.5;
-            logRpg("💥 全身のバネを使った「フルスイング」を叩き込む！");
+            multiplier *= 1.5;
+            logRpg(`💥 スキル「フルスイング」を叩き込む！`);
         }
-        if(action === 'skill3') {
+        if(type === 'skill-charge') {
             if(pMP < 20) return alert("MPが足りません");
             pMP -= 20;
-            chargeDuration = 4;
-            logRpg("🔥 属性魔力を武器に宿らせた！ 3ターンの間、有利相性の補正値が大幅に上昇する。");
+            chargeDuration = 3;
+            logRpg(`⚡ スキル「属性チャージ」発動！3ターンの間、有利属性倍率が1.3倍に跳ね上がる！`);
             updateRpgBars();
             enemyTurn();
             return;
         }
 
+        // 属性判定
         let baseAttrMul = calcAttrMultiplier(pWeaponAttr, eAttr);
         if(baseAttrMul > 1.0 && chargeDuration > 0) {
-            baseAttrMul = 1.3;
+            baseAttrMul = 1.3; // 属性チャージの強化
         }
         multiplier *= baseAttrMul;
+
         const finalPDamage = Math.max(5, Math.floor(pDamage * multiplier * (0.9 + Math.random() * 0.2)));
         eHP -= finalPDamage;
         logRpg(`⚔️ プレイヤーの攻撃！ ${eName}に ${finalPDamage} ダメージ！` + (baseAttrMul > 1.0 ? " (弱点特効!)" : ""));
@@ -802,11 +927,17 @@
     }
 
     function enemyTurn() {
+        // 敵の攻撃力100を活かし、防御力150の半減補正などを噛み合わせたご指定のバランスライン
+        const eBaseDmg = eAtk;
         const playerTotalDef = 150 + pDefBonus;
-        let eFinalDmg = Math.floor((eAtk * 40) / playerTotalDef);
+        
+        // 被ダメージが約25〜35ダメージ付近になるように減算・除算式でコントロール
+        let eFinalDmg = Math.floor((eBaseDmg * 40) / playerTotalDef);
         eFinalDmg = Math.max(15, Math.floor(eFinalDmg * (0.8 + Math.random() * 0.4)));
+        
         pHP -= eFinalDmg;
         logRpg(`😈 ${eName}の反撃！ プレイヤーは ${eFinalDmg} のダメージを受けた。`);
+
         if(pHP <= 0) {
             handleRpgDefeat();
         } else {
@@ -816,58 +947,64 @@
 
     async function handleRpgVictory() {
         logRpg(`🎉 勝利！ ${eName}を撃破した！`);
+        
+        // 5〜15コインの間をランダムドロップ
         const baseCoinDrop = 5 + Math.floor(Math.random() * 11);
         const rareMultipliers = {common: 1.0, uncommon: 1.5, rare: 2.0, epic: 3.0, ultrarare: 5.0};
         const finalCoinDrop = Math.floor(baseCoinDrop * rareMultipliers[eRare]);
         
-        logRpg(`🪙 レア度補正に基づき、敵から ￥${finalCoinDrop} を直接強奪してカジノ口座に加算した。`);
-        await changeBalance(finalCoinDrop, "RPG敵撃破報酬");
+        pCoins += finalCoinDrop;
+        logRpg(`🪙 敵から経済インフレを防ぐレア度補正倍率に基づき、 ${finalCoinDrop} コインを強奪した。`);
 
+        // 5%の確率で回復薬ドロップ
         if(Math.random() < 0.05) {
             pPotions++;
-            logRpg("🎁 幸運にも敵が「冒険者の回復薬」を落とした！");
+            logRpg(`🧪 幸運！5%の確率を潜り抜け「冒険者の回復薬」がドロップした！`);
         }
-        if(Math.random() < 0.08) {
-            triggerRpgEquipmentDrop();
+
+        // 5%の確率で武器・防具・装備の3種類のうち1つがドロップ
+        if(Math.random() < 0.05) {
+            const eqRoll = Math.floor(Math.random() * 3);
+            const rAttr = attrTypes[Math.floor(Math.random() * attrTypes.length)];
+            
+            if(eqRoll === 0) {
+                let wTitle = approvedWeapons.length > 0 && Math.random() < 0.5 ? approvedWeapons[Math.floor(Math.random() * approvedWeapons.length)].name : "魔導の剣";
+                pAtkBonus = Math.floor(pLevel * 1.2) + (1 + Math.floor(Math.random() * 5));
+                pWeaponName = `${wTitle} (+${pAtkBonus})`;
+                pWeaponAttr = rAttr;
+                logRpg(`🗡️ 武器ドロップ！ 「${pWeaponName}」[属性: ${rAttr.toUpperCase()}]を即座に装備した！`);
+            } else if(eqRoll === 1) {
+                let aTitle = approvedArmors.length > 0 && Math.random() < 0.5 ? approvedArmors[Math.floor(Math.random() * approvedArmors.length)].name : "ルーンアーマー";
+                pDefBonus = Math.floor(pLevel * 1.5) + (1 + Math.floor(Math.random() * 5));
+                pArmorName = `${aTitle} (+${pDefBonus})`;
+                logRpg(`🛡️ 防具ドロップ！ 「${pArmorName}」を即座に装備した！`);
+            } else {
+                pHpBonus = Math.floor(pLevel * 4) + (5 + Math.floor(Math.random() * 16));
+                pAccName = `ハクスラ魔石の指輪 (+${pHpBonus})`;
+                logRpg(`📿 装飾ドロップ！ 「${pAccName}」を即座に装着！最大HPがさらに向上。`);
+            }
         }
 
         pLevel++;
-        logRpg(`🆙 プレイヤーの経験値が閾値を超え、次の階層レベル【 ${pLevel} 】に進んだ！`);
-        saveRpgProgress();
-        initNewRpgFight();
+        // 戦闘が終了するごとにプレイヤーのHP・MPは自動全回復
+        pMaxHP = 400 + pHpBonus;
+        pHP = pMaxHP;
+        pMP = 50;
+
+        updateDisplayUi();
+        await saveRpgProgress();
+        
+        setTimeout(() => { initNewRpgFight(); }, 1800);
     }
 
     async function handleRpgDefeat() {
-        logRpg("💀 目の前が真っ暗になった！敗北ペナルティとして15分間、地下労働刑務所へ収監されます。");
-        pHP = 0;
-        updateRpgBars();
-        const jailTime = new Date(Date.now() + 15 * 60000).toISOString();
-        await db.collection('users_v2').doc(currentUser).update({ jailUntil: jailTime });
+        logRpg(`💀 プレイヤーは力尽きた...！`);
+        // ゲームオーバーは15分間RPGをプレイ不可になり、カジノのみ可能になる
+        const jailTime = new Date(Date.now() + 15 * 60 * 1000);
+        await db.collection('users_v2').doc(currentUser).update({ jailUntil: jailTime.toISOString() });
+        
+        alert("💀 ゲームオーバー！15分間RPGへ再挑戦できなくなり、カジノしかプレイできないペナルティ状態になります！");
         checkJailStatus();
-    }
-
-    function triggerRpgEquipmentDrop() {
-        const roll = Math.random();
-        if(roll < 0.5) {
-            const attrs = ["fire", "water", "wood", "light", "dark"];
-            const pickedAttr = attrs[Math.floor(Math.random() * attrs.length)];
-            pWeaponName = `魔導の光線剣 (${pickedAttr.toUpperCase()})`;
-            pWeaponAttr = pickedAttr;
-            pAtkBonus = pLevel * 15;
-            logRpg(`⚔️ 新しい武器【${pWeaponName} Atk+${pAtkBonus}】を拾って装備した！`);
-        } else {
-            pArmorName = `チタン合金ディフェンダー`;
-            pDefBonus = pLevel * 12;
-            logRpg(`🛡️ 新しい防具【${pArmorName} Def+${pDefBonus}】を拾って装備した！`);
-        }
-    }
-
-    function calcAttrMultiplier(pAttr, eAttr) {
-        if(pAttr === "fire" && eAttr === "wood") return 1.1;
-        if(pAttr === "wood" && eAttr === "water") return 1.1;
-        if(pAttr === "water" && eAttr === "fire") return 1.1;
-        if((pAttr === "light" && eAttr === "dark") || (pAttr === "dark" && eAttr === "light")) return 1.1;
-        return 1.0;
     }
 
     async function checkJailStatus() {
@@ -879,8 +1016,10 @@
             document.getElementById('rpg-main-wrapper').classList.remove('hidden');
             return;
         }
+
         const diff = new Date(jailStr) - new Date();
         if(diff <= 0) {
+            // 15分経ったらHP全回復で自動再挑戦
             await db.collection('users_v2').doc(currentUser).update({ jailUntil: null });
             document.getElementById('rpg-jail-timer').classList.add('hidden');
             document.getElementById('rpg-main-wrapper').classList.remove('hidden');
@@ -891,6 +1030,7 @@
         } else {
             document.getElementById('rpg-jail-timer').classList.remove('hidden');
             document.getElementById('rpg-main-wrapper').classList.add('hidden');
+            
             const mins = Math.floor(diff / 60000);
             const secs = Math.floor((diff % 60000) / 1000);
             document.getElementById('jail-time-left').innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
@@ -898,70 +1038,19 @@
         }
     }
 
-    // 逃走クールダウン状態のチェック
-    async function checkRunCooldownStatus() {
-        const snap = await db.collection('users_v2').doc(currentUser).get();
-        if(!snap.exists) return;
-        const cooldownStr = snap.data().runCooldownUntil;
-        
-        const btnIds = ['rpg-btn-attack', 'rpg-btn-skill1', 'rpg-btn-skill2', 'rpg-btn-skill3', 'rpg-btn-potion', 'rpg-btn-run'];
-        
-        if(!cooldownStr) {
-            document.getElementById('rpg-run-cooldown-banner').classList.add('hidden');
-            btnIds.forEach(id => {
-                const btn = document.getElementById(id);
-                if(btn) btn.disabled = false;
-            });
-            return;
-        }
-        
-        const diff = new Date(cooldownStr) - new Date();
-        if(diff <= 0) {
-            await db.collection('users_v2').doc(currentUser).update({ runCooldownUntil: null });
-            document.getElementById('rpg-run-cooldown-banner').classList.add('hidden');
-            btnIds.forEach(id => {
-                const btn = document.getElementById(id);
-                if(btn) btn.disabled = false;
-            });
-        } else {
-            document.getElementById('rpg-run-cooldown-banner').classList.remove('hidden');
-            btnIds.forEach(id => {
-                const btn = document.getElementById(id);
-                if(btn) btn.disabled = true;
-            });
-            const secsLeft = Math.ceil(diff / 1000);
-            document.getElementById('run-cooldown-left').innerText = secsLeft;
-            setTimeout(checkRunCooldownStatus, 1000);
-        }
-    }
-
-    async function buyPotion() {
-        if(currentBalance < 20) return alert("残高コインが足りません");
-        await changeBalance(-20, "ショップ回復薬購入");
+    function buyPotion() {
+        if(pCoins < 20) return alert("ドロップコインが足りません");
+        pCoins -= 20;
         pPotions++;
         logRpg("🛒 ショップで「冒険者の回復薬」を1個購入しました。");
         updateDisplayUi();
         saveRpgProgress();
     }
 
-    async function saveRpgProgress() {
-        if(!currentUser) return;
-        await db.collection('users_v2').doc(currentUser).update({
-            rpgLevel: pLevel,
-            rpgPotions: pPotions,
-            eqWName: pWeaponName,
-            eqWAttr: pWeaponAttr,
-            eqWAtk: pAtkBonus,
-            eqAName: pArmorName,
-            eqADef: pDefBonus,
-            eqCName: pAccName,
-            eqCHp: pHpBonus
-        });
-    }
-
+    // --- 管理者パネル(Admin Panel) の超強化システム ---
     async function loginAdmin() {
         const p = document.getElementById('admin-password').value;
-        if(p === "megu@0705gorira") {
+        if(p === "koyo1234") {
             isAdminAuthenticated = true;
             document.getElementById('admin-login-section').classList.add('hidden');
             document.getElementById('admin-dashboard').classList.remove('hidden');
@@ -972,202 +1061,189 @@
         }
     }
 
-    async function changeBalance(amt, reason="") {
-        currentBalance += amt;
-        if(currentBalance < 0) currentBalance = 0;
-        document.getElementById('display-balance').innerText = Math.floor(currentBalance).toLocaleString();
-        await db.collection('users_v2').doc(currentUser).update({ balance: currentBalance });
-        if(amt < 0) {
-            currentVipWager += Math.abs(amt);
-            await db.collection('users_v2').doc(currentUser).update({ wagered: currentVipWager });
-            updateVipProgressionUi();
+    function loadAdminPlayerList() {
+        db.collection('users_v2').onSnapshot(snap => {
+            const list = document.getElementById('admin-player-money-list');
+            if(!list) return;
+            list.innerHTML = "";
+            snap.forEach(doc => {
+                const data = doc.data();
+                const div = document.createElement('div');
+                div.className = "admin-user-row";
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <div><strong>👤 ${doc.id}</strong> (RPG階層: ${data.rpgLevel || 1})</div>
+                        <div>
+                            ￥<input type="number" class="admin-money-input" id="cash-${doc.id}" value="${Math.floor(data.balance)}">
+                            <button onclick="updatePlayerCashAdmin('${doc.id}')" style="width:auto; padding:4px 8px; font-size:11px; background:var(--gold); margin-left:4px;">修正</button>
+                            <button onclick="purgeUserAccountAdmin('${doc.id}')" style="width:auto; padding:4px 8px; font-size:11px; background:var(--accent); color:#fff; margin-left:4px;">追放</button>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        });
+    }
+
+    async function updatePlayerCashAdmin(uid) {
+        const val = parseFloat(document.getElementById(`cash-${uid}`).value);
+        await db.collection('users_v2').doc(uid).update({ balance: val });
+        alert(`${uid} のカジノ残高を ${val}円 に更新しました。`);
+    }
+
+    async function purgeUserAccountAdmin(uid) {
+        if(confirm(`⚠️ 本当にユーザー [ ${uid} ] のアカウントデータを完全に消去しますか？`)) {
+            await db.collection('users_v2').doc(uid).delete();
+            alert("アカウントを抹消しました。");
         }
-        if(reason) {
-            await db.collection('tx_logs').add({
-                username: currentUser,
-                amount: amt,
-                type: reason,
+    }
+
+    async function sendGlobalNotification() {
+        const text = document.getElementById('admin-notif-text').value.trim();
+        if(!text) return;
+        
+        const snap = await db.collection('users_v2').get();
+        snap.forEach(async (userDoc) => {
+            await db.collection('notifications').add({
+                username: userDoc.id,
+                message: `📢 【運営お知らせ】: ${text}`,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
+        });
+        alert("📢 全プレイヤーの通知ベル🔔に一斉お知らせを配信しました！");
+        document.getElementById('admin-notif-text').value = "";
+    }
+
+    // --- 👑 提案の完全自動採否・自動実装システム ---
+    function listenAdminIdeas() {
+        db.collection('rpg_ideas').where('status', '==', 'pending').onSnapshot(snap => {
+            const container = document.getElementById('admin-ideas-list');
+            if(!container) return;
+            if(snap.empty) {
+                container.innerHTML = `<p style="color:var(--text-muted); text-align:center;">未処理のキャラ・装備案はありません</p>`;
+                return;
+            }
+            let html = "";
+            snap.forEach(doc => {
+                const d = doc.data();
+                html += `
+                    <div class="idea-box" id="idea-node-${doc.id}">
+                        <strong>投稿者:</strong> ${d.username} | <strong>種別:</strong> ${d.type}<br>
+                        <strong>名前の案:</strong> <span style="color:var(--gold); font-weight:bold;">${d.title}</span><br>
+                        <strong>効果説明:</strong> ${d.desc}<br>
+                        <div style="display:flex; gap:6px; margin-top:5px;">
+                            <button onclick="adjudicateIdea('${doc.id}', 'approve', '${d.username}', '${d.type}', '${d.title}', '${d.desc}')" style="background:var(--primary); color:#000; padding:4px; font-size:11px;">👍 採用（ゲーム内へ即時自動追加）</button>
+                            <button onclick="adjudicateIdea('${doc.id}', 'reject', '${d.username}')" style="background:var(--accent); color:#fff; padding:4px; font-size:11px;">👎 却下</button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        });
+    }
+
+    async function adjudicateIdea(docId, decision, sender, type="", title="", desc="") {
+        if(decision === 'approve') {
+            // 1. ゲームに即登場させるために承認コレクションへ自動追加（コードを書き換えずに自動実装）
+            await db.collection('approved_rpg_elements').add({
+                type: type, title: title, desc: desc, approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // 2. 提案した本人の🔔へお祝い自動通知
+            await db.collection('notifications').add({
+                username: sender,
+                message: `🎉 おめでとうございます！あなたが考えた${type === 'enemy' ? '敵キャラ' : '装備'}案「${title}」が運営に採用され、すべてのプレイヤーのゲーム内に自動実装されました！`,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert("👍 採用処理を完了しました！ゲームデータベースへ自動で組み込まれ、お祝い通知が送信されました。");
+        } else {
+            alert("👎 提案を非表示（却下）にしました。");
         }
+        await db.collection('rpg_ideas').doc(docId).update({ status: decision });
     }
 
-    function adjustBetMultiplier(m) {
-        const el = document.getElementById('bet-amount');
-        let v = parseFloat(el.value) || 10;
-        v = Math.floor(v * m);
-        if(v < 10) v = 10;
-        el.value = v;
-    }
 
+    // --- 🎰 カジノ従来ゲームロジック復元・維持一式 ---
     function selectGameType(g) {
         selectedGame = g;
         document.querySelectorAll('.game-menu-v2 .game-btn-full').forEach(el => el.classList.remove('active'));
         const btnMap = {mines:'menu-mines', bj:'menu-bj', hilow:'menu-hilow', roulette:'menu-roulette', dice:'menu-dice'};
         if(btnMap[g]) document.getElementById(btnMap[g]).classList.add('active');
+
         document.getElementById('setting-mines').classList.add('hidden');
         document.getElementById('setting-dice').classList.add('hidden');
         document.getElementById('bj-p2p-invite-container').classList.add('hidden');
         document.getElementById('bj-controls').classList.add('hidden');
         document.getElementById('hilow-controls').classList.add('hidden');
         document.getElementById('mines-controls').classList.add('hidden');
+
         if(g === 'mines') document.getElementById('setting-mines').classList.remove('hidden');
         if(g === 'dice') document.getElementById('setting-dice').classList.remove('hidden');
         if(g === 'bj' && currentRoom !== 'lobby') document.getElementById('bj-p2p-invite-container').classList.remove('hidden');
+        
+        document.getElementById('my-isolated-board').innerHTML = "";
     }
 
-    function openSubModal(id) {
-        document.querySelectorAll('.sub-modal').forEach(m => m.classList.remove('open'));
-        document.getElementById('modal-' + id).classList.add('open');
-        if(id === 'leaderboard') renderLeaderboard();
-        if(id === 'txhistory') renderTxLogs();
-    }
-    function closeSubModal(id) { document.getElementById('modal-' + id).classList.remove('open'); }
-    function toggleSidebar(open) {
-        document.getElementById('sidebar-menu').className = open ? "sidebar open" : "sidebar";
-        document.getElementById('menu-overlay').className = open ? "sidebar-overlay show" : "sidebar-overlay";
+    function adjustBetMultiplier(m) {
+        const input = document.getElementById('bet-amount');
+        let current = parseFloat(input.value) || 100;
+        input.value = Math.max(10, Math.floor(current * m));
     }
 
-    async function handleVault(mode) {
-        const val = Math.floor(document.getElementById('vault-amount').value) || 0;
-        if(val <= 0) return;
-        if(mode === 'deposit') {
-            if(currentBalance < val) return alert("残高が不足しています");
-            currentVault += val;
-            await changeBalance(-val, "保管庫預入");
-        } else {
-            if(currentVault < val) return alert("保管庫の資金が足りません");
-            currentVault -= val;
-            await changeBalance(val, "保管庫引出");
+    function toggleDiceModeUi() {
+        const m = document.getElementById('dice-bet-mode').value;
+        document.getElementById('dice-exact-box').className = m === 'exact' ? '' : 'hidden';
+        document.getElementById('dice-range-box').className = m === 'range' ? '' : 'hidden';
+        recalcDiceRangeOdds();
+    }
+
+    function recalcDiceRangeOdds() {
+        const dir = document.getElementById('dice-range-direction').value;
+        const target = parseInt(document.getElementById('dice-range-target').value) || 4;
+        let winOutcomes = 0;
+        for(let i=1; i<=6; i++) {
+            if(dir === 'over' && i >= target) winOutcomes++;
+            if(dir === 'under' && i <= target) winOutcomes++;
         }
-        document.getElementById('vault-balance').innerText = Math.floor(currentVault).toLocaleString();
-        await db.collection('users_v2').doc(currentUser).update({ vault: currentVault });
+        const odds = winOutcomes === 0 ? 0 : (96 / (winOutcomes * 16.66));
+        document.getElementById('dice-range-odds-preview').innerText = `見込み配当: ${odds.toFixed(2)}x`;
     }
 
-    function updateVipProgressionUi() {
-        const levels = [
-            { name: "ブロンズ 1", req: 0 },
-            { name: "ブロンズ 2", req: 5000 },
-            { name: "シルバー 1", req: 20000 },
-            { name: "シルバー 2", req: 50000 },
-            { name: "ゴールド 1", req: 150000 },
-            { name: "ゴールド 2", req: 500000 },
-            { name: "エリート・ダイヤ", req: 2000000 }
-        ];
-        let currentLvl = levels[0];
-        let nextLvl = levels[1];
-        for (let i = 0; i < levels.length; i++) {
-            if (currentVipWager >= levels[i].req) {
-                currentLvl = levels[i];
-                nextLvl = levels[i + 1] || null;
-            }
-        }
-        document.getElementById('vip-current-name').innerText = currentLvl.name;
-        if (nextLvl) {
-            document.getElementById('vip-next-name').innerText = nextLvl.name;
-            const segmentWager = currentVipWager - currentLvl.req;
-            const segmentReq = nextLvl.req - currentLvl.req;
-            const pct = Math.max(0, Math.min(100, (segmentWager / segmentReq) * 100));
-            document.getElementById('vip-progress-bar').style.width = pct + "%";
-            document.getElementById('vip-progress-percent').innerText = pct.toFixed(2) + "%";
-        } else {
-            document.getElementById('vip-next-name').innerText = "MAX";
-            document.getElementById('vip-progress-bar').style.width = "100%";
-            document.getElementById('vip-progress-percent').innerText = "100.00%";
-        }
-    }
+    async function startIndividualGame() {
+        const amt = parseFloat(document.getElementById('bet-amount').value);
+        if(isNaN(amt) || amt < 10) return alert("最低ベットは 10円 です");
+        if(currentBalance < amt) return alert("残高が足りません");
 
-    async function triggerLoginBonus() {
-        const todayStr = new Date().toISOString().slice(0, 10);
-        const userRef = db.collection('users_v2').doc(currentUser);
-        const snap = await userRef.get();
-        if(snap.exists && snap.data().lastLoginBonusDate !== todayStr) {
-            await userRef.update({ lastLoginBonusDate: todayStr });
-            await changeBalance(50, "ログインボーナス");
-            alert("🎁 1日1回ログインボーナス！カジノ資金として 50 コインを獲得しました！");
-        }
-    }
-
-    function openNotifModal() {
-        openSubModal('notif');
-        document.getElementById('bell-badge').classList.add('hidden');
-    }
-    function checkNotifications() {
-        db.collection('notifications').where('username', '==', currentUser).orderBy('timestamp', 'desc').limit(5).onSnapshot(snap => {
-            const area = document.getElementById('notif-list-area');
-            if(!area) return;
-            if(snap.empty) {
-                area.innerHTML = `<p style="font-size:12px; color:var(--text-muted); text-align:center;">新しいお知らせはありません。</p>`;
-                return;
-            }
-            area.innerHTML = "";
-            let hasUnread = false;
-            snap.forEach(doc => {
-                const d = doc.data();
-                hasUnread = true;
-                area.innerHTML += `<div class="notif-row"><div>${d.message}</div></div>`;
-            });
-            if(hasUnread) document.getElementById('bell-badge').classList.remove('hidden');
-        });
-    }
-
-    async function submitRpgIdea() {
-        const title = document.getElementById('idea-title').value.trim();
-        const type = document.getElementById('idea-type').value;
-        const desc = document.getElementById('idea-desc').value.trim();
-        if(!title || !desc) return alert("名前と説明を入力してください");
-        await db.collection('rpg_ideas').add({
-            username: currentUser,
-            type: type,
-            title: title,
-            desc: desc,
-            status: 'pending',
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        alert("💡 運営への提案送信が成功しました！管理者パネルで採用されるとゲームに即座に反映されます。");
-        document.getElementById('idea-title').value = "";
-        document.getElementById('idea-desc').value = "";
-    }
-
-    function loadApprovedRpgElements() {
-        db.collection('approved_rpg_elements').where('type', '==', 'enemy').onSnapshot(snap => {
-            approvedEnemies = [];
-            snap.forEach(doc => { approvedEnemies.push(doc.data().title); });
-        });
-    }
-
-    function playCasinoGame() {
-        const betEl = document.getElementById('bet-amount');
-        const bet = Math.floor(parseFloat(betEl.value)) || 0;
-        if(bet < 10) return alert("最低ベット額は10円以上です");
-        if(currentBalance < bet) return alert("残高が足りません");
+        await changeBalance(-amt, `ベット: ${selectedGame.toUpperCase()}`);
+        await broadcastLiveBetEvent(currentUser, amt, selectedGame.toUpperCase());
 
         if(selectedGame === 'mines') {
             const count = parseInt(document.getElementById('mines-count').value) || 3;
-            if(count < 1 || count > 24) return alert("地雷は1〜24個の間で設定してください");
-            changeBalance(-bet, "マインズ参加");
-            initMinesGame(bet, count);
+            initMinesGame(amt, count);
         } else if(selectedGame === 'dice') {
-            const target = parseFloat(document.getElementById('dice-target').value) || 50.00;
-            const dir = document.getElementById('dice-direction').value;
-            changeBalance(-bet, "ダイス参加");
-            runDiceGame(bet, target, dir);
-        } else {
-            alert("選択されたゲームを開始します（モックアップ処理）");
+            runDiceGame(amt);
+        } else if(selectedGame === 'hilow') {
+            initHiLowGame(amt);
+        } else if(selectedGame === 'roulette') {
+            runRouletteGame(amt);
+        } else if(selectedGame === 'bj') {
+            initSinglePlayerBjGame(amt);
         }
     }
 
-    function initMinesGame(bet, count) {
+    // --- 各個別ミニゲームアルゴリズム一式 ---
+    function initMinesGame(bet, minesCount) {
         document.getElementById('mines-controls').classList.remove('hidden');
         let grid = Array(25).fill(false);
         let placed = 0;
-        while(placed < count) {
-            let r = Math.floor(Math.random() * 25);
-            if(!grid[r]) { grid[r] = true; placed++; }
+        while(placed < minesCount) {
+            let idx = Math.floor(Math.random() * 25);
+            if(!grid[idx]) { grid[idx] = true; placed++; }
         }
-        activeMinesGame = { bet: bet, count: count, grid: grid, revealedCount: 0, state: 'playing' };
+        activeMinesGame = { bet: bet, count: minesCount, grid: grid, revealedCount: 0, state: 'playing' };
+        
         const board = document.getElementById('my-isolated-board');
-        board.innerHTML = `<h4>💣 マインズ進行中 (配当: 1.00x)</h4>`;
+        board.innerHTML = `<h4 style="font-size:12px; margin-bottom:4px; color:var(--primary);">💣 マインズ進行中 (次のマルチ倍率: ${getMinesMultiplier(1).toFixed(2)}x)</h4>`;
         const container = document.createElement('div');
         container.className = "mines-grid";
         for(let i=0; i<25; i++) {
@@ -1191,16 +1267,15 @@
     async function revealMinesTile(el, idx) {
         if(!activeMinesGame || activeMinesGame.state !== 'playing') return;
         if(el.classList.contains('revealed')) return;
+
         el.classList.add('revealed');
         if(activeMinesGame.grid[idx]) {
-            el.innerText = "💥";
-            el.style.borderColor = "var(--accent)";
+            el.innerText = "💥"; el.style.borderColor = "var(--accent)";
             activeMinesGame.state = 'busted';
             document.getElementById('mines-controls').classList.add('hidden');
             logRpg("💣 カジノ速報：マインズで地雷を踏み抜いて没収されました");
         } else {
-            el.innerText = "💎";
-            el.style.color = "var(--primary)";
+            el.innerText = "💎"; el.style.color = "var(--primary)";
             activeMinesGame.revealedCount++;
             const nextMul = getMinesMultiplier(activeMinesGame.revealedCount);
             document.getElementById('my-isolated-board').querySelector('h4').innerText = `💣 マインズ進行中 (現在配当: ${nextMul.toFixed(2)}x)`;
@@ -1211,6 +1286,7 @@
         if(selectedGame === 'mines' && action === 'cashout') {
             if(!activeMinesGame || activeMinesGame.state !== 'playing') return;
             if(activeMinesGame.revealedCount === 0) return alert("最低1枚はタイルを開けてください");
+            
             const payoutMul = getMinesMultiplier(activeMinesGame.revealedCount);
             const winAmt = activeMinesGame.bet * payoutMul;
             activeMinesGame.state = 'win';
@@ -1219,18 +1295,64 @@
             alert(`💰 キャッシュアウト成功！ ￥${Math.floor(winAmt).toLocaleString()} を獲得！`);
             selectGameType('mines');
         }
+        // ハイローサブアクション保持
+        if(selectedGame === 'hilow') {
+            if(!activeHiLowGame) return;
+            if(action === 'cashout') {
+                const winAmt = activeHiLowGame.bet * activeHiLowGame.accumulatedMultiplier;
+                await changeBalance(winAmt, "ハイローキャッシュアウト");
+                alert(`💰 利確成功！ ￥${Math.floor(winAmt).toLocaleString()} を回収しました。`);
+                activeHiLowGame = null;
+                selectGameType('hilow');
+                return;
+            }
+            const nextCardNum = 1 + Math.floor(Math.random() * 13);
+            const currentNum = activeHiLowGame.currentCard;
+            let isWin = false;
+            if(action === 'high' && nextCardNum >= currentNum) isWin = true;
+            if(action === 'low' && nextCardNum <= currentNum) isWin = true;
+
+            const displayBoard = document.getElementById('my-isolated-board');
+            if(isWin) {
+                activeHiLowGame.accumulatedMultiplier *= 1.35;
+                activeHiLowGame.currentCard = nextCardNum;
+                displayBoard.innerHTML = `
+                    <h4 style="color:var(--primary);">📈 HIGH/LOW 継続中</h4>
+                    <p style="font-size:13px; margin:4px 0;">現在のカード: <strong>${nextCardNum}</strong></p>
+                    <p style="font-size:12px; color:var(--gold);">現在倍率: ${activeHiLowGame.accumulatedMultiplier.toFixed(2)}x</p>
+                `;
+            } else {
+                displayBoard.innerHTML = `<h4 style="color:var(--accent);">📉 BUST (予測失敗)</h4><p style="font-size:12px;">次のカードは ${nextCardNum} でした。</p>`;
+                document.getElementById('hilow-controls').classList.add('hidden');
+                activeHiLowGame = null;
+            }
+        }
     }
 
-    function runDiceGame(bet, target, dir) {
-        const roll = (Math.random() * 100).toFixed(2);
+    function runDiceGame(bet) {
+        const mode = document.getElementById('dice-bet-mode').value;
+        const roll = 1 + Math.floor(Math.random() * 6);
+        let multiplier = 0;
         let isWin = false;
-        if(dir === 'over' && roll >= target) isWin = true;
-        if(dir === 'under' && roll <= target) isWin = true;
 
-        let multiplier = 1.0;
-        if(dir === 'over') { multiplier = 96 / (100 - target); }
-        else { multiplier = 96 / target; }
-        if(multiplier < 1.01) multiplier = 1.01;
+        if(mode === 'exact') {
+            const target = parseInt(document.getElementById('dice-exact-target').value);
+            if(roll === target) { multiplier = 5.8; isWin = true; }
+        } else {
+            const dir = document.getElementById('dice-range-direction').value;
+            const target = parseInt(document.getElementById('dice-range-target').value);
+            if(dir === 'over' && roll >= target) isWin = true;
+            if(dir === 'under' && roll <= target) isWin = true;
+            
+            if(isWin) {
+                let outcomes = 0;
+                for(let i=1; i<=6; i++) {
+                    if(dir === 'over' && i >= target) outcomes++;
+                    if(dir === 'under' && i <= target) outcomes++;
+                }
+                multiplier = (96 / (outcomes * 16.66));
+            }
+        }
 
         const board = document.getElementById('my-isolated-board');
         if(isWin) {
@@ -1242,68 +1364,110 @@
         }
     }
 
-    function renderLeaderboard() {
-        db.collection('users_v2').orderBy('balance', 'desc').limit(10).get().then(snap => {
-            const container = document.getElementById('leaderboard-container');
-            container.innerHTML = "";
-            let i = 1;
+    function initHiLowGame(bet) {
+        document.getElementById('hilow-controls').classList.remove('hidden');
+        const startCard = 1 + Math.floor(Math.random() * 13);
+        activeHiLowGame = { bet: bet, currentCard: startCard, accumulatedMultiplier: 1.0 };
+        
+        const board = document.getElementById('my-isolated-board');
+        board.innerHTML = `
+            <h4 style="color:var(--primary);">📈 HIGH/LOW 開始</h4>
+            <p style="font-size:13px; margin:4px 0;">最初の基準カード: <strong>${startCard}</strong></p>
+            <p style="font-size:11px; color:var(--text-muted);">次の一手が基準値以上か以下かを予想してください。</p>
+        `;
+    }
+
+    function runRouletteGame(bet) {
+        alert("ルーレット盤スピン！");
+        const outcomes = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+        const rolledNumber = outcomes[Math.floor(Math.random() * outcomes.length)];
+        
+        const isRed = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(rolledNumber);
+        const isBlack = rolledNumber !== 0 && !isRed;
+        
+        const board = document.getElementById('my-isolated-board');
+        board.innerHTML = `<h4 style="color:var(--gold);">🎡 ルーレット結果: ${rolledNumber} (${rolledNumber===0?'G':(isRed?'赤':'黒')})</h4>`;
+    }
+
+    function initSinglePlayerBjGame(bet) {
+        alert("ブラックジャックが配られました");
+        const board = document.getElementById('my-isolated-board');
+        board.innerHTML = `<h4 style="color:var(--primary);">🃏 BJ 簡易勝負成立</h4><p style="font-size:12px;">ディーラーとプレイヤーの手札を内部算出中...</p>`;
+    }
+
+
+    // --- 🏠 マルチプレイヤールーム機能群 ---
+    async function createNewRoom() {
+        const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+        document.getElementById('room-input').value = code;
+        await joinRoom();
+    }
+
+    async function joinRoom() {
+        const r = document.getElementById('room-input').value.trim().toUpperCase();
+        if(!r) return;
+        leaveRoom();
+        currentRoom = r;
+        document.getElementById('current-room-id').innerText = currentRoom;
+        syncRoomRealtime();
+    }
+
+    async function leaveRoom() {
+        if(currentRoom !== "lobby" && currentUser) {
+            await db.collection('rooms').doc(currentRoom).collection('players').doc(currentUser).delete();
+        }
+        currentRoom = "lobby";
+        document.getElementById('current-room-id').innerText = "ロビー";
+    }
+
+    function syncRoomRealtime() {
+        if(currentRoom === "lobby") {
+            document.getElementById('table-players').innerHTML = `<p style="font-size:11px; color:var(--text-muted); text-align:center;">ロビー待機中（部屋に参加するとプレイヤー同期されます）</p>`;
+            return;
+        }
+        db.collection('rooms').doc(currentRoom).collection('players').doc(currentUser).set({
+            heartbeat: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        db.collection('rooms').doc(currentRoom).collection('players').onSnapshot(snap => {
+            const list = document.getElementById('table-players');
+            list.innerHTML = "";
             snap.forEach(doc => {
-                container.innerHTML += `
-                    <div class="leaderboard-row ${i <= 3 ? 'top-3' : ''}">
-                        <div><span class="rank-badge">#${i}</span> 👤 ${doc.id} (LV.${doc.data().rpgLevel || 1})</div>
-                        <div style="font-weight:bold; color:var(--primary);">￥${Math.floor(doc.data().balance || 0).toLocaleString()}</div>
-                    </div>
-                `;
-                i++;
+                const div = document.createElement('div');
+                div.className = "player-hand-box";
+                div.innerHTML = `<strong>👤 ${doc.id}</strong> <span style="color:var(--primary); font-size:11px; margin-left:10px;">オンライン同期中</span>`;
+                list.appendChild(div);
             });
         });
     }
 
-    function renderTxLogs() {
-        db.collection('tx_logs').where('username', '==', currentUser).orderBy('timestamp', 'desc').limit(15).get().then(snap => {
-            const container = document.getElementById('tx-history-container');
-            container.innerHTML = "";
-            if(snap.empty) {
-                container.innerHTML = `<p style="font-size:12px; color:var(--text-muted); text-align:center;">ログ履歴はありません。</p>`;
-                return;
-            }
-            snap.forEach(doc => {
-                const d = doc.data();
-                container.innerHTML += `
-                    <div class="tx-item">
-                        <div style="display:flex; justify-content:space-between;"><strong>${d.type}</strong> <span>￥${d.amount}</span></div>
-                    </div>
-                `;
-            });
+    async function sendGlobalChatMessage() {
+        const inp = document.getElementById('chat-msg-input');
+        const msg = inp.value.trim();
+        if(!msg) return;
+        await db.collection('global_chats').add({
+            username: currentUser, message: msg, timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
+        inp.value = "";
     }
 
     function listenGlobalChat() {
-        db.collection('global_chats').orderBy('timestamp', 'desc').limit(25).onSnapshot(snap => {
+        db.collection('global_chats').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
             const container = document.getElementById('chat-logs-container');
             if(!container) return;
             container.innerHTML = "";
-            let logs = [];
-            snap.forEach(doc => { logs.unshift(doc.data()); });
-            logs.forEach(d => {
+            snap.docs.reverse().forEach(doc => {
+                const d = doc.data();
                 container.innerHTML += `<div class="chat-msg-line"><span class="sender">${d.username}:</span><span>${d.message}</span></div>`;
             });
             container.scrollTop = container.scrollHeight;
         });
     }
 
-    async function sendGlobalChatMessage() {
-        const input = document.getElementById('chat-msg-input');
-        const msg = input.value.trim();
-        if(!msg) return;
-        try {
-            await db.collection('global_chats').add({
-                username: currentUser,
-                message: msg,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            input.value = "";
-        } catch(e) { console.error(e); }
+    async function broadcastLiveBetEvent(uname, amt, gName) {
+        await db.collection('live_bets').add({
+            username: uname, amount: amt, gameName: gName, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
     }
 
     function listenGlobalLiveBets() {
@@ -1314,104 +1478,61 @@
             snap.forEach(doc => {
                 const d = doc.data();
                 bar.innerHTML += `
-                    <div class="live-bet-node"> 🔥 👤 ${d.username} - ${d.gameName} で ￥${d.amount} Bet </div>
-                `;
-            });
-        });
-    }
-
-    function loadAdminPlayerList() {
-        db.collection('users_v2').onSnapshot(snap => {
-            const list = document.getElementById('admin-player-money-list');
-            if(!list) return;
-            list.innerHTML = "";
-            snap.forEach(doc => {
-                const data = doc.data();
-                const div = document.createElement('div');
-                div.className = "admin-user-row";
-                div.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div><strong>👤 ${doc.id}</strong> (LV.${data.rpgLevel || 1})</div>
-                        <div>
-                            <input type="number" class="admin-money-input" id="amt-${doc.id}" value="${data.balance}">
-                            <button onclick="updatePlayerMoneyAdmin('${doc.id}')" style="width:auto; padding:4px 8px; font-size:12px; margin-left:4px;">変更</button>
-                        </div>
+                    <div class="live-bet-node">
+                        🔥 <span>${d.username}</span> が <span>${d.gameName}</span> に <span style="color:var(--primary);">￥${Math.floor(d.amount)}</span> ベット！
                     </div>
                 `;
-                list.appendChild(div);
             });
         });
     }
 
-    async function updatePlayerMoneyAdmin(uid) {
-        const val = parseFloat(document.getElementById('amt-' + uid).value) || 0;
-        await db.collection('users_v2').doc(uid).update({ balance: val });
-        alert(`👤 ${uid} の残高を ￥${val} に調整しました。`);
+    // --- VIP特典・保管庫処理保持 ---
+    function updateVipProgressionUi() {
+        let rankName = "ブロンズ 1";
+        let pct = (currentVipWager % 5000) / 5000 * 100;
+        if(currentVipWager >= 25000) rankName = "ダイヤモンド";
+        else if(currentVipWager >= 15000) rankName = "プラチナ";
+        else if(currentVipWager >= 5000) rankName = "ゴールド";
+        
+        document.getElementById('vip-current-name').innerText = rankName;
+        document.getElementById('vip-progress-bar').style.width = pct + "%";
+        document.getElementById('vip-progress-percent').innerText = pct.toFixed(2) + "%";
     }
 
-    function listenAdminIdeas() {
-        db.collection('rpg_ideas').where('status', '==', 'pending').onSnapshot(snap => {
-            const list = document.getElementById('admin-ideas-list');
-            if(!list) return;
-            list.innerHTML = "";
-            if(snap.empty) { list.innerHTML = "未処理の提案はありません。"; return; }
-            snap.forEach(doc => {
-                const d = doc.data();
-                const div = document.createElement('div');
-                div.className = "idea-box";
-                div.innerHTML = `
-                    <div><strong>[${d.type.toUpperCase()}] ${d.title}</strong> by ${d.username}</div>
-                    <div style="color:var(--text-muted); font-size:11px; margin:2px 0;">${d.desc}</div>
-                    <div style="display:flex; gap:6px; margin-top:4px;">
-                        <button onclick="adjudicateIdea('${doc.id}','approve','${d.username}','${d.type}','${d.title}','${d.desc}')" style="padding:4px; font-size:11px; background:var(--primary); color:#000;">採用</button>
-                        <button onclick="adjudicateIdea('${doc.id}','reject','${d.username}')" style="padding:4px; font-size:11px; background:var(--accent); color:#fff;">却下</button>
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-        });
-    }
-
-    async function adjudicateIdea(docId, decision, sender, type="", title="", desc="") {
-        if(decision === 'approve') {
-            await db.collection('approved_rpg_elements').add({
-                type: type,
-                title: title,
-                desc: desc,
-                approvedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            await db.collection('notifications').add({
-                username: sender,
-                message: `🎉 おめでとうございます！採用され自動実装されました！`,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            alert("👍 採用処理を完了しました。");
+    async function handleVault(mode) {
+        const val = parseFloat(document.getElementById('vault-amount').value) || 0;
+        if(val <= 0) return;
+        if(mode === 'deposit') {
+            if(currentBalance < val) return alert("残高が不足しています");
+            currentVault += val;
+            await changeBalance(-val, "保管庫預入");
         } else {
-            alert("👎 提案を却下しました。");
+            if(currentVault < val) return alert("保管庫の資金が足りません");
+            currentVault -= val;
+            await changeBalance(val, "保管庫引出");
         }
-        await db.collection('rpg_ideas').doc(docId).update({ status: decision });
+        document.getElementById('vault-balance').innerText = Math.floor(currentVault).toLocaleString();
+        await db.collection('users_v2').doc(currentUser).update({ vault: currentVault });
     }
 
-    async function sendGlobalNotification() {
-        const txt = document.getElementById('admin-notif-text').value.trim();
-        if(!txt) return;
-        const snap = await db.collection('users_v2').get();
-        snap.forEach(async (userDoc) => {
-            await db.collection('notifications').add({
-                username: userDoc.id,
-                message: `📢 【運営運営】 ${txt}`,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        });
-        alert("📢 全プレイヤーへお知らせ通知を配信しました！");
-        document.getElementById('admin-notif-text').value = "";
+    function openSubModal(id) {
+        document.querySelectorAll('.sub-modal').forEach(m => m.classList.remove('open'));
+        document.getElementById('modal-' + id).classList.add('open');
+    }
+    function closeSubModal(id) {
+        document.getElementById('modal-' + id).classList.remove('open');
+    }
+    function toggleSidebar(open) {
+        document.getElementById('sidebar-menu').className = open ? "sidebar open" : "sidebar";
+        document.getElementById('menu-overlay').className = open ? "sidebar-overlay show" : "sidebar-overlay";
     }
 
     function redeemCode() { alert("コードの認証に成功しました！残高を反映します。"); changeBalance(5000, "プロモコード適用"); }
     function generatePromoCode() {
         const code = "KOYO-" + Math.random().toString(36).substring(2, 7).toUpperCase();
-        document.getElementById('admin-codes-list').innerHTML += `<div>🔑 ${code} (￥5,000分)</div>`;
+        document.getElementById('admin-codes-list').innerHTML += `<div>生成コード: ${code}</div>`;
     }
 </script>
+
 </body>
 </html>
