@@ -606,7 +606,9 @@
         if(currentTab === 'rpg') {
             area.innerHTML = `
                 <button onclick="openSubModal('rpgrule')" style="background-color:#2980b9; color:#fff; text-align:left;">📋 RPGルール・属性相性を見る</button>
+                <button onclick="openSubModal('zukan')" style="background-color:#e67e22; color:#fff; text-align:left;">📖 敵キャラ図鑑 (Zukan)</button>
                 <button onclick="openSubModal('leaderboard')" style="background-color:#2ecc71; color:#000; text-align:left;">🏆 階層突破ランキング</button>
+                <button onclick="scrollToChat()" style="background-color:#34495e; color:#fff; text-align:left;">💬 グローバルチャット</button>
             `;
         } else {
             area.innerHTML = `
@@ -615,8 +617,15 @@
                 <button onclick="openSubModal('tip')" style="background-color:#3498db; color:#fff; text-align:left;">💸 友達にチップを送る</button>
                 <button onclick="openSubModal('leaderboard')" style="background-color:#2ecc71; color:#000; text-align:left;">🏆 カジノ所持金ランキング</button>
                 <button onclick="openSubModal('txhistory')" style="background-color:#2c3e50; color:#fff; text-align:left;">📜 取引履歴 (Logs)</button>
+                <button onclick="scrollToChat()" style="background-color:#34495e; color:#fff; text-align:left;">💬 グローバルチャット</button>
             `;
         }
+    }
+
+    function scrollToChat() {
+        toggleSidebar(false);
+        const chatBox = document.querySelector('.global-chat-box');
+        if (chatBox) chatBox.scrollIntoView({ behavior: 'smooth' });
     }
 
     async function handleAuth() {
@@ -697,6 +706,7 @@
         listenApprovedDatabase();
         checkNotifications();
         initNewRpgFight();
+        buildSidebarMenu('game');
     }
 
     function toggleAuthMode() {
@@ -774,9 +784,12 @@
     function openNotifModal() {
         openSubModal('notif');
         document.getElementById('bell-badge').classList.add('hidden');
+        // 全て既読にする処理（簡易的に最終確認時間を保存するなど）
+        localStorage.setItem('last_notif_check', Date.now());
     }
 
     function checkNotifications() {
+        const lastCheck = parseInt(localStorage.getItem('last_notif_check') || "0");
         db.collection('notifications').where('username', '==', currentUser).orderBy('timestamp', 'desc').limit(10).onSnapshot(snap => {
             const area = document.getElementById('notif-list-area');
             if(!area) return;
@@ -785,12 +798,17 @@
                 return;
             }
             let html = "";
-            let hasUnread = false;
+            let hasNew = false;
             snap.forEach(doc => {
                 const d = doc.data();
-                html += `<div class="notif-row"><div>${d.message}</div><span style="font-size:10px; color:var(--text-muted);">${d.timestamp ? d.timestamp.toDate().toLocaleString() : ""}</span></div>`;
+                const ts = d.timestamp ? d.timestamp.toDate() : new Date();
+                if (ts.getTime() > lastCheck) hasNew = true;
+                html += `<div class="notif-row"><div>${d.message}</div><span style="font-size:10px; color:var(--text-muted);">${ts.toLocaleString()}</span></div>`;
             });
             area.innerHTML = html;
+            if (hasNew) {
+                document.getElementById('bell-badge').classList.remove('hidden');
+            }
         });
     }
 
@@ -1087,14 +1105,34 @@
             const isRunPenalty = diff <= 91 * 1000;
             const titleEl = document.getElementById('rpg-jail-timer').querySelector('h3');
             const descEl = document.getElementById('rpg-jail-timer').querySelector('p');
+            
+            // 復活ボタンの作成/更新
+            let reviveBtn = document.getElementById('btn-rpg-revive');
+            if (!reviveBtn) {
+                reviveBtn = document.createElement('button');
+                reviveBtn.id = 'btn-rpg-revive';
+                reviveBtn.style.marginTop = '15px';
+                reviveBtn.style.background = 'var(--gold)';
+                reviveBtn.style.color = '#000';
+                document.getElementById('rpg-jail-timer').appendChild(reviveBtn);
+            }
+
             if (isRunPenalty) {
                 titleEl.innerText = "🏃 逃走ペナルティ中";
                 titleEl.style.color = "var(--accent)";
                 descEl.innerText = "逃走したため、90秒間RPGエリアへのアクセスが制限されています。";
+                reviveBtn.classList.add('hidden');
             } else {
                 titleEl.innerText = "⚠️ 敗北ペナルティ中";
                 titleEl.style.color = "var(--accent)";
                 descEl.innerText = "15分間、RPGエリアへのアクセスが制限されています。カジノでリベンジ資金を稼ぎましょう！";
+                
+                // 復活費用の計算: 15分(900秒)で1000円、450秒で500円
+                const remainingSecs = Math.floor(diff / 1000);
+                const cost = Math.max(10, Math.floor((remainingSecs / 900) * 1000));
+                reviveBtn.innerText = `💸 ￥${cost} で即時復活する`;
+                reviveBtn.onclick = () => executeRevive(cost);
+                reviveBtn.classList.remove('hidden');
             }
 
             const mins = Math.floor(diff / 60000);
@@ -1102,6 +1140,16 @@
             document.getElementById('jail-time-left').innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
             setTimeout(checkJailStatus, 1000);
         }
+    }
+
+    async function executeRevive(cost) {
+        if (currentBalance < cost) return alert("残高が足りません");
+        if (!confirm(`￥${cost} を支払って即時復活しますか？`)) return;
+        
+        await changeBalance(-cost, "RPG即時復活");
+        await db.collection('users_v2').doc(currentUser).update({ jailUntil: null });
+        alert("🎉 復活しました！HP全快で再挑戦します。");
+        checkJailStatus();
     }
 
     async function buyPotion() {
@@ -1488,7 +1536,17 @@
             return;
         }
         const board = document.getElementById('my-isolated-board');
+        let betDisplay = "";
+        const spot = rouletteSelectedSpots[0];
+        if (spot === 'red') betDisplay = "🔴 赤 (Red)";
+        else if (spot === 'black') betDisplay = "⚫ 黒 (Black)";
+        else if (spot.startsWith('num-')) betDisplay = `🔢 数字 [${spot.replace('num-', '')}]`;
+
         board.innerHTML = `
+            <div style="background:rgba(0,0,0,0.3); padding:8px; border-radius:6px; margin-bottom:10px; border:1px solid var(--gold);">
+                <div style="font-size:11px; color:var(--text-muted);">現在のベット内容</div>
+                <div style="font-size:14px; font-weight:bold; color:var(--gold);">${betDisplay} に ￥${bet.toLocaleString()}</div>
+            </div>
             <h4 style="color:var(--gold); margin-bottom:8px;">🎡 ルーレットスピン中...</h4>
             <canvas id="roulette-canvas" width="200" height="200" style="background:#0a1118; border-radius:50%; border:4px solid #2f4553; display:block; margin:0 auto;"></canvas>
             <div id="roulette-result-text" style="font-size:14px; font-weight:bold; color:#fff; text-align:center; margin-top:10px;"></div>
@@ -1951,13 +2009,58 @@
             }
         }
         const board = document.getElementById('my-isolated-board');
-        if(isWin) {
-            const winAmt = bet * multiplier;
-            await changeBalance(winAmt, "ダイス勝利");
-            board.innerHTML = `<h4 style="color:var(--primary);">🎲 サイコロの出目: ${roll} (勝利！)</h4><p style="font-size:13px;">配当 ￥${Math.floor(winAmt).toLocaleString()} を獲得</p>`;
-        } else {
-            board.innerHTML = `<h4 style="color:var(--accent);">🎲 サイコロの出目: ${roll} (敗北)</h4>`;
+        const resultHtml = isWin ? 
+            `<h4 style="color:var(--primary);">🎲 サイコロの出目: ${roll} (勝利！)</h4><p style="font-size:13px;">配当 ￥${Math.floor(bet * multiplier).toLocaleString()} を獲得</p>` :
+            `<h4 style="color:var(--accent);">🎲 サイコロの出目: ${roll} (敗北)</h4>`;
+        
+        board.innerHTML = `
+            ${resultHtml}
+            <canvas id="dice-result-canvas" width="100" height="100" style="display:block; margin:10px auto; background:transparent;"></canvas>
+        `;
+        // 結果表示用キャンバスに最終結果を描画
+        const newCanvas = document.getElementById('dice-result-canvas');
+        if (newCanvas) {
+            const ctx = newCanvas.getContext('2d');
+            drawDiceOnContext(ctx, roll, 0);
         }
+
+        if(isWin) {
+            await changeBalance(bet * multiplier, "ダイス勝利");
+        }
+    }
+
+    function drawDiceOnContext(ctx, num, angle) {
+        const cx = 50, cy = 50, size = 60;
+        ctx.clearRect(0,0,100,100);
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(255,255,255,0.5)';
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(-size/2, -size/2, size, size, 8);
+        else ctx.rect(-size/2, -size/2, size, size);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#333333';
+        const offset = size / 4;
+        const dotR = size / 10;
+        function drawDot(x, y) { ctx.beginPath(); ctx.arc(x, y, dotR, 0, Math.PI*2); ctx.fill(); }
+        if (num === 1) { ctx.fillStyle = '#e74c3c'; drawDot(0, 0); }
+        else if (num === 2) { drawDot(-offset, -offset); drawDot(offset, offset); }
+        else if (num === 3) { drawDot(-offset, -offset); drawDot(0, 0); drawDot(offset, offset); }
+        else if (num === 4) { drawDot(-offset, -offset); drawDot(offset, -offset); drawDot(-offset, offset); drawDot(offset, offset); }
+        else if (num === 5) { drawDot(-offset, -offset); drawDot(offset, -offset); drawDot(0, 0); drawDot(-offset, offset); drawDot(offset, offset); }
+        else if (num === 6) { drawDot(-offset, -offset); drawDot(offset, -offset); drawDot(-offset, 0); drawDot(offset, 0); drawDot(-offset, offset); drawDot(offset, offset); }
+        ctx.restore();
+    }
+
+    function drawDice(num, angle) {
+        const canvas = document.getElementById('dice-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        drawDiceOnContext(ctx, num, angle);
     }
 
     // --- 📈 ハイロー ---
@@ -2100,10 +2203,129 @@
 
     function openSubModal(id) {
         document.querySelectorAll('.sub-modal').forEach(m => m.classList.remove('open'));
-        document.getElementById('modal-' + id).classList.add('open');
+        const modal = document.getElementById('modal-' + id);
+        if (modal) modal.classList.add('open');
+        
+        if (id === 'leaderboard') fetchLeaderboard();
+        if (id === 'txhistory') fetchTxHistory();
+        if (id === 'notif') checkNotifications();
+        if (id === 'zukan') fetchEnemyZukan();
     }
+
+    async function fetchLeaderboard() {
+        const container = document.getElementById('leaderboard-container');
+        if (!container) return;
+        container.innerHTML = `<p style="font-size:12px; color:var(--text-muted); text-align:center;">ランキングを集計中...</p>`;
+        
+        // RPGかカジノかで切り替え
+        const isRpg = document.getElementById('section-rpg').classList.contains('active-tab');
+        const sortField = isRpg ? 'rpgLevel' : 'balance';
+        
+        try {
+            const snap = await db.collection('users_v2').orderBy(sortField, 'desc').limit(20).get();
+            let html = "";
+            let rank = 1;
+            snap.forEach(doc => {
+                const d = doc.data();
+                const val = isRpg ? `階層 ${d.rpgLevel}` : `￥${Math.floor(d.balance).toLocaleString()}`;
+                html += `
+                    <div class="leaderboard-row ${rank <= 3 ? 'top-3' : ''}">
+                        <div style="display:flex; align-items:center;">
+                            <span class="rank-badge">#${rank}</span>
+                            <span>${doc.id}</span>
+                        </div>
+                        <div style="font-weight:bold; color:var(--primary);">${val}</div>
+                    </div>
+                `;
+                rank++;
+            });
+            container.innerHTML = html || '<p style="text-align:center; font-size:12px;">データがありません</p>';
+        } catch (e) {
+            container.innerHTML = '<p style="text-align:center; font-size:12px; color:var(--accent);">データの取得に失敗しました</p>';
+        }
+    }
+
+    async function fetchTxHistory() {
+        const container = document.getElementById('tx-history-container');
+        if (!container) return;
+        container.innerHTML = `<p style="font-size:12px; color:var(--text-muted); text-align:center;">履歴を読み込み中...</p>`;
+        try {
+            const snap = await db.collection('tx_logs').where('username', '==', currentUser).orderBy('timestamp', 'desc').limit(30).get();
+            let html = "";
+            snap.forEach(doc => {
+                const d = doc.data();
+                const date = d.timestamp ? d.timestamp.toDate().toLocaleString() : "---";
+                const color = d.amount >= 0 ? 'var(--primary)' : 'var(--accent)';
+                html += `
+                    <div class="tx-item" style="border-left-color:${color}">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                            <strong>${d.type}</strong>
+                            <span style="color:${color}; font-weight:bold;">${d.amount >= 0 ? '+' : ''}${Math.floor(d.amount).toLocaleString()}</span>
+                        </div>
+                        <div style="font-size:10px; color:var(--text-muted);">${date}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html || '<p style="text-align:center; font-size:12px;">履歴はありません</p>';
+        } catch (e) {
+            container.innerHTML = '<p style="text-align:center; font-size:12px; color:var(--accent);">履歴の取得に失敗しました</p>';
+        }
+    }
+
+    async function fetchEnemyZukan() {
+        let modal = document.getElementById('modal-zukan');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.className = 'sub-modal';
+            modal.id = 'modal-zukan';
+            modal.innerHTML = `
+                <div class="modal-header"><h3>📖 敵キャラ図鑑 (Zukan)</h3><span style="cursor:pointer;" onclick="closeSubModal('zukan')">✕</span></div>
+                <div id="zukan-content" style="display:flex; flex-direction:column; gap:10px;"></div>
+            `;
+            document.body.appendChild(modal);
+        }
+        modal.classList.add('open');
+        
+        const container = document.getElementById('zukan-content');
+        container.innerHTML = `<p style="text-align:center; font-size:12px; color:var(--text-muted);">図鑑を読み込み中...</p>`;
+        
+        let zukanData = {};
+        attrTypes.forEach(attr => zukanData[attr] = []);
+        zukanData['none'] = [];
+
+        // 固定敵
+        enemyNamesBase.forEach(name => {
+            zukanData['none'].push(name);
+        });
+
+        // 承認済み敵
+        approvedEnemies.forEach(enemy => {
+            const attr = enemy.attr || 'none';
+            if (zukanData[attr]) zukanData[attr].push(enemy.title);
+            else zukanData['none'].push(enemy.title);
+        });
+
+        let html = "";
+        for (const attr of [...attrTypes, 'none']) {
+            const names = zukanData[attr];
+            if (names && names.length > 0) {
+                const uniqueNames = [...new Set(names)];
+                html += `
+                    <div style="background:var(--bg-input); padding:10px; border-radius:8px; border-left:4px solid var(--primary); margin-bottom:10px;">
+                        <h4 class="badge-element elem-${attr}" style="margin-bottom:8px; display:inline-block; font-size:14px; padding:4px 8px; color:#fff;">${attr.toUpperCase()} 属性</h4>
+                        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px;">
+                            ${uniqueNames.map(n => `<div style="font-size:12px; color:#fff;">・${n}</div>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        container.innerHTML = html;
+    }
+
     function closeSubModal(id) {
-        document.getElementById('modal-' + id).classList.remove('open');
+        const modal = document.getElementById('modal-' + id);
+        if (modal) modal.classList.remove('open');
     }
     function toggleSidebar(open) {
         document.getElementById('sidebar-menu').className = open ? "sidebar open" : "sidebar";
@@ -2111,7 +2333,8 @@
     }
 
     async function redeemCode() {
-        const code = document.getElementById('charge-code').value.trim().toUpperCase();
+        const codeInput = document.getElementById('charge-code');
+        const code = codeInput.value.trim().toUpperCase();
         if (!code) return alert("コードを入力してください");
         
         const codeRef = db.collection('promo_codes').doc(code);
@@ -2132,14 +2355,49 @@
         
         await changeBalance(data.amount, "プロモコード適用");
         
-        const historyList = document.getElementById('promo-history-list');
-        if (historyList) {
-            historyList.innerHTML = `<div class="history-item">コード: ${code} 使用 (￥${data.amount})</div>` + historyList.innerHTML;
-        }
+        await fetchPromoHistory();
         
         alert(`🎉 コードの認証に成功しました！残高に ￥${data.amount.toLocaleString()} を反映しました。`);
-        document.getElementById('charge-code').value = "";
+        codeInput.value = "";
     }
+
+    async function fetchPromoHistory() {
+        const container = document.getElementById('promo-history-list');
+        if (!container) return;
+        
+        try {
+            const snap = await db.collection('promo_codes').where('usedBy', '==', currentUser).orderBy('usedAt', 'desc').get();
+            if (snap.empty) {
+                container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">履歴はありません。</p>`;
+                return;
+            }
+            
+            let html = "";
+            snap.forEach(doc => {
+                const d = doc.data();
+                const date = d.usedAt ? d.usedAt.toDate().toLocaleString() : "---";
+                html += `
+                    <div class="history-item">
+                        <div style="display:flex; justify-content:space-between;">
+                            <strong>コード: ${doc.id}</strong>
+                            <span style="color:var(--primary); font-weight:bold;">￥${d.amount.toLocaleString()}</span>
+                        </div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">使用日時: ${date}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        } catch (e) {
+            container.innerHTML = `<p style="font-size:12px; color:var(--accent);">履歴の取得に失敗しました。</p>`;
+        }
+    }
+
+    // セクション切り替え時にも履歴を更新
+    const originalSwitchTab = switchTab;
+    switchTab = function(tabId) {
+        if (typeof originalSwitchTab === 'function') originalSwitchTab(tabId);
+        if (tabId === 'charge') fetchPromoHistory();
+    };
 
     async function generatePromoCode() {
         const amt = parseFloat(document.getElementById('admin-code-amount').value) || 5000;
