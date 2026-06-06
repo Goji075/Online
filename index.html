@@ -308,6 +308,14 @@
         </div>
 
         <div style="background:var(--bg-input); padding:10px; border-radius:4px; border:1px solid #2f4553; margin-bottom:12px; font-size:13px; line-height:1.6;">
+            <strong style="color:var(--primary); font-size:14px;">👥 プレイヤー同士のオンライン対戦ルール (PvP)</strong><br>
+            カジノ残高を賭け合ってオンラインの他プレイヤーと直接対戦できます。ルーレットおよびハイローは対戦対象外（シングルプレイ専用）です。<br>
+            ・🗡️ <strong>対戦ブラックジャック</strong>: ディーラー抜きのプレイヤー同士の勝負。ホストからアクションを行い、HitまたはStandを選択。スタンド・バーストすると相手のターンに移ります。相手のカードは1枚のみ開示され、完了するまでもう1枚は伏せられます。21を超えずに、値が大きい方が勝利（賭け金総取り、同数は引き分け返金）。<br>
+            ・🎲 <strong>対戦ダイス</strong>: 双方がダイスを1回ずつ振り、出目が大きい方が勝利（賭け金総取り、同数は引き分け返金）。<br>
+            ・💣 <strong>対戦マインズ</strong>: 25マス（爆弾は3個固定）の盤面を交互に1マスずつ選択して開けていきます。爆弾(💥)を引いた時点で即座に敗北となり、相手が勝利（賭け金総取り）となります。
+        </div>
+
+        <div style="background:var(--bg-input); padding:10px; border-radius:4px; border:1px solid #2f4553; margin-bottom:12px; font-size:13px; line-height:1.6;">
             <strong style="color:var(--gold); font-size:14px;">🛠️ 装備合成システム（合成のルール）</strong><br>
             インベントリの「合成」タブから、2つの装備を合成して強化できます。<br>
             ・<strong>合成条件</strong>: 「ベース」となる装備と、それと<strong>同じ部位</strong>（武器同士、防具同士など）の「素材」となる装備が必要です。装備中のアイテムは合成に使えないため、事前にインベントリから「外す」必要があります。<br>
@@ -1624,221 +1632,36 @@
         else return 0.3;
     }
 
-    function renderSynthesisUi() {
-        const area = document.getElementById('inventory-list-area');
-        
-        // プレビュー構築
-        let previewHtml = "";
-        let costHtml = "";
-        let executeBtnDisabled = "disabled";
-        
-        if (synthesisBaseId && synthesisMaterialId) {
-            const base = pInventory.find(i => i.id === synthesisBaseId);
-            const material = pInventory.find(i => i.id === synthesisMaterialId);
-            
-            if (base && material && base.type === material.type) {
-                const rarities = ["common", "uncommon", "rare", "epic", "ultrarare"];
-                const baseRarityIdx = rarities.indexOf(base.rarity);
-                const cost = getSynthesisCost(base);
-                const rate = getSynthesisSuccessRate(base, material) * 100;
-                
-                const nextPlus = base.plus + 1;
-                const statIncrease = (baseRarityIdx + 1) * 2;
-                const nextStat = base.stat + statIncrease;
-                
-                let upgradeChanceText = "";
-                if (nextPlus % 5 === 0 && baseRarityIdx < rarities.length - 1) {
-                    const nextRarity = rarities[baseRarityIdx + 1].toUpperCase();
-                    upgradeChanceText = `<br><span style="color:var(--primary); font-weight:bold;">🌟 レア度昇格チャンス! (30%の確率で ${nextRarity} へ昇格)</span>`;
-                }
-                
-                previewHtml = `
-                    <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:6px; margin-top:10px; font-size:12px; border:1px solid #2f4553; text-align:left;">
-                        <div style="font-weight:bold; color:var(--primary); margin-bottom:5px; text-align:center;">📊 合成予測プレビュー</div>
-                        <div><strong>強化対象:</strong> ${base.name} (+${base.plus}) ➔ (+${nextPlus})</div>
-                        <div><strong>効果変化:</strong> +${base.stat} ➔ <span style="color:var(--primary); font-weight:bold;">+${nextStat}</span> (+${statIncrease}上昇)</div>
-                        <div><strong>成功確率:</strong> <span style="color:var(--gold); font-weight:bold;">${rate}%</span></div>
-                        ${upgradeChanceText}
-                    </div>
-                `;
-                
-                const balanceColor = currentBalance >= cost ? 'var(--primary)' : 'var(--accent)';
-                costHtml = `
-                    <div style="margin-top:8px; font-size:12px; font-weight:bold;">
-                        合成費用: <span style="color:var(--gold);">￥${cost}</span> 
-                        (所持金: <span style="color:${balanceColor};">￥${Math.floor(currentBalance)}</span>)
-                    </div>
-                `;
-                
-                if (currentBalance >= cost) {
-                    executeBtnDisabled = "";
-                }
-            }
-        }
-
-        area.innerHTML = `
-            <div style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--gold); margin-bottom:10px; text-align:center;">
-                <div style="font-size:11px; color:var(--gold); margin-bottom:8px;">🛠️ 装備合成システム</div>
-                <div style="display:flex; justify-content:center; gap:10px; align-items:center;">
-                    <div id="syn-base-slot" onclick="selectSynItem('base')" style="width:70px; height:70px; background:var(--bg-input); border:2px solid #2f4553; border-radius:8px; display:flex; flex-direction:column; justify-content:center; align-items:center; cursor:pointer; overflow:hidden;">
-                        <span style="font-size:20px;">＋</span><span style="font-size:9px; color:var(--text-muted);">ベース</span>
-                    </div>
-                    <div style="font-size:20px; color:var(--gold);">×</div>
-                    <div id="syn-material-slot" onclick="selectSynItem('material')" style="width:70px; height:70px; background:var(--bg-input); border:2px solid #2f4553; border-radius:8px; display:flex; flex-direction:column; justify-content:center; align-items:center; cursor:pointer; overflow:hidden;">
-                        <span style="font-size:20px;">＋</span><span style="font-size:9px; color:var(--text-muted);">素材</span>
-                    </div>
-                </div>
-                ${previewHtml}
-                ${costHtml}
-                <button onclick="executeSynthesis()" ${executeBtnDisabled} style="margin-top:15px; background:var(--gold); color:#000;">合成を実行する</button>
-            </div>
-            <div id="syn-selection-area"></div>
-        `;
-        updateSynthesisSlots();
-    }
-
-    function selectSynItem(slot) {
-        const selectionArea = document.getElementById('syn-selection-area');
-        selectionArea.innerHTML = `<h4 style="font-size:12px; margin-bottom:8px;">${slot === 'base' ? 'ベース' : '素材'}となる装備を選択</h4>`;
-        
-        // 装備中以外の全装備を表示
-        const items = pInventory.filter(i => !i.equipped);
-        if (items.length === 0) {
-            selectionArea.innerHTML += `<p style="font-size:11px; color:var(--text-muted); text-align:center;">合成可能な装備がありません（装備を外すか、未装備のものから選んでください）</p>`;
-            return;
-        }
-
-        items.forEach(item => {
-            if (slot === 'material' && synthesisBaseId === item.id) return;
-            if (slot === 'base' && synthesisMaterialId === item.id) return;
-            const btn = document.createElement('div');
-            btn.className = "eq-card";
-            btn.style.marginBottom = "5px";
-            btn.style.cursor = "pointer";
-            btn.onclick = () => {
-                if (slot === 'base') synthesisBaseId = item.id;
-                else synthesisMaterialId = item.id;
-                renderSynthesisUi();
-            };
-            btn.innerHTML = `<div class="rarity-${item.rarity}" style="font-size:12px;">${item.name} (+${item.plus || 0})</div><div style="font-size:10px; color:var(--text-muted);">+${item.stat}</div>`;
-            selectionArea.appendChild(btn);
-        });
-    }
-
-    function updateSynthesisSlots() {
-        if (synthesisBaseId) {
-            const item = pInventory.find(i => i.id === synthesisBaseId);
-            if (item) {
-                const slot = document.getElementById('syn-base-slot');
-                slot.innerHTML = `<div class="rarity-${item.rarity}" style="font-size:9px; font-weight:bold; text-align:center; padding: 2px;">${item.name}</div><div style="font-size:11px; font-weight:bold;">+${item.plus}</div><div style="font-size:8px; color:var(--accent);">[解除]</div>`;
-                slot.style.borderColor = 'var(--gold)';
-                slot.onclick = () => {
-                    synthesisBaseId = null;
-                    renderSynthesisUi();
-                };
-            }
-        } else {
-            const slot = document.getElementById('syn-base-slot');
-            slot.onclick = () => selectSynItem('base');
-        }
-        if (synthesisMaterialId) {
-            const item = pInventory.find(i => i.id === synthesisMaterialId);
-            if (item) {
-                const slot = document.getElementById('syn-material-slot');
-                slot.innerHTML = `<div class="rarity-${item.rarity}" style="font-size:9px; font-weight:bold; text-align:center; padding: 2px;">${item.name}</div><div style="font-size:11px; font-weight:bold;">+${item.plus}</div><div style="font-size:8px; color:var(--accent);">[解除]</div>`;
-                slot.style.borderColor = 'var(--gold)';
-                slot.onclick = () => {
-                    synthesisMaterialId = null;
-                    renderSynthesisUi();
-                };
-            }
-        } else {
-            const slot = document.getElementById('syn-material-slot');
-            slot.onclick = () => selectSynItem('material');
-        }
-    }
-
-    async function executeSynthesis() {
-        if (!synthesisBaseId || !synthesisMaterialId) return alert("ベースと素材の両方を選択してください");
-        const base = pInventory.find(i => i.id === synthesisBaseId);
-        const material = pInventory.find(i => i.id === synthesisMaterialId);
-
-        if (!base || !material) return;
-        if (base.type !== material.type) return alert("同じ種類の装備（武器同士など）しか合成できません");
-
-        const cost = getSynthesisCost(base);
-        if (currentBalance < cost) return alert(`残高が足りません。合成には ￥${cost} 必要です。`);
-
-        const rate = getSynthesisSuccessRate(base, material);
-        if (!confirm(`￥${cost} を支払って合成を実行しますか？（成功確率: ${rate * 100}%）`)) return;
-
-        // 費用支払い
-        await changeBalance(-cost, "装備合成費用");
-
-        const rarities = ["common", "uncommon", "rare", "epic", "ultrarare"];
-        const baseRarityIdx = rarities.indexOf(base.rarity);
-
-        // 合成成功判定
-        const success = Math.random() < rate;
-
-        if (success) {
-            base.plus++;
-            base.stat += (baseRarityIdx + 1) * 2; // レア度に応じて加算値増加
-            
-            // レア度昇格チャンス (+5, +10... ごとに)
-            if (base.plus % 5 === 0 && baseRarityIdx < rarities.length - 1) {
-                if (Math.random() < 0.3) {
-                    base.rarity = rarities[baseRarityIdx + 1];
-                    alert(`🌟 奇跡！ ${base.name} が ${rarities[baseRarityIdx + 1].toUpperCase()} に昇格しました！`);
-                }
-            }
-            alert(`✅ 合成成功！ ${base.name} が +${base.plus} に強化されました。`);
-        } else {
-            alert(`❌ 合成失敗... 素材が消滅しました。`);
-        }
-
-        // 素材を削除
-        pInventory = pInventory.filter(i => i.id !== synthesisMaterialId);
-        synthesisMaterialId = null;
-        synthesisBaseId = null; // 合成後はベースの選択もリセット
-        
-        renderSynthesisUi();
-        updateDisplayUi();
-        await saveRpgProgress();
-    }
-
-    // --- ⚔️ 対戦 (Duel Market) システム ---
-    let onlineUsersUnsubscribe = null;
-    let duelInvitesUnsubscribe = null;
-
-    function startHeartbeat() {
-        // 30秒ごとにオンライン生存確認を更新
-        setInterval(() => {
-            if (currentUser) {
-                db.collection('users_v2').doc(currentUser).update({
-                    isOnline: true,
-                    lastActive: firebase.firestore.FieldValue.serverTimestamp()
-                }).catch(e => console.error("Heartbeat error:", e));
-            }
-        }, 30000);
-    }
-
     async function invitePlayerToDuel(targetUid) {
-        const amtStr = prompt(`⚔️ ${targetUid} に対戦を申し込みます。ベット額を入力してください (最低 10円):`, "100");
+        const gameMode = prompt(`⚔️ ${targetUid} と対戦するゲームを選択してください:\n1: ブラックジャック (対戦)\n2: ダイス (出目勝負)\n3: マインズ (地雷避け勝負)`, "1");
+        if (gameMode !== "1" && gameMode !== "2" && gameMode !== "3") return alert("無効なゲーム選択です。ルーレットとハイローは対戦できません。");
+        
+        const modeName = gameMode === "1" ? "bj_duel" : (gameMode === "2" ? "dice_duel" : "mines_duel");
+        const modeLabel = gameMode === "1" ? "ブラックジャック" : (gameMode === "2" ? "ダイス" : "マインズ");
+        
+        const amtStr = prompt(`⚔️ 【${modeLabel}対戦】ベット額を入力してください (最低 10円):`, "100");
         if (amtStr === null) return;
         const amt = parseFloat(amtStr);
         if (isNaN(amt) || amt < 10) return alert("無効なベット額です。最低 10円 からです。");
         if (currentBalance < amt) return alert("残高が足りません。");
 
-        if (confirm(`￥${amt.toLocaleString()} をベットして ${targetUid} に対戦招待を送りますか？`)) {
-            await changeBalance(-amt, `対戦招待ベット: to ${targetUid}`, true);
+        if (confirm(`￥${amt.toLocaleString()} をベットして ${targetUid} に「${modeLabel}」の対戦招待を送りますか？\n※賭け金は相手が承認した時点で引かれます。`)) {
             await db.collection('duels').add({
                 host: currentUser,
                 guest: targetUid,
                 bet: amt,
+                gameMode: modeName,
                 status: 'invited',
                 host_roll: null,
                 guest_roll: null,
+                host_bj_hand: [],
+                guest_bj_hand: [],
+                host_bj_state: 'playing',
+                guest_bj_state: 'playing',
+                mines_grid: [],
+                revealed_tiles: [],
+                loser: null,
+                active_turn: 'host',
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
             alert("✉️ 招待を送信しました。相手の返答を待ちましょう！");
@@ -1860,9 +1683,12 @@
                 const doc = snap.docs[0];
                 const d = doc.data();
                 const duelId = doc.id;
+                const modeLabel = d.gameMode === "bj_duel" ? "ブラックジャック" : (d.gameMode === "dice_duel" ? "ダイス" : "マインズ");
+                
                 document.getElementById('p2p-invite-text').innerHTML = `
                     ⚔️ 対戦招待が届きました！<br>
                     <strong>相手:</strong> ${d.host}<br>
+                    <strong>ゲーム:</strong> ${modeLabel}<br>
                     <strong>賭け金:</strong> ￥${d.bet.toLocaleString()}
                 `;
                 document.getElementById('p2p-accept-btn').onclick = () => acceptDuelInvite(duelId, d.bet);
@@ -1879,11 +1705,11 @@
         const toast = document.getElementById('p2p-invite-toast');
         if (toast) toast.classList.remove('show');
 
+        // ゲスト側の引き落とし
         await changeBalance(-bet, "対戦招待承認ベット", true);
+        
         await db.collection('duels').doc(duelId).update({
-            status: 'playing',
-            host_roll: Math.floor(Math.random() * 1000) + 1,
-            guest_roll: Math.floor(Math.random() * 1000) + 1
+            status: 'accepted'
         });
     }
 
@@ -1919,38 +1745,72 @@
             
             if (d.status === 'rejected') {
                 if (d.host === currentUser) {
-                    alert(`❌ ${d.guest} に対戦招待を拒否されました。ベット額 ￥${d.bet} が返金されました。`);
-                    await changeBalance(d.bet, "対戦招待拒否による返金");
+                    alert(`❌ ${d.guest} に対戦招待を拒否されました。`);
+                }
+                await db.collection('duels').doc(duelId).delete().catch(()=>{});
+                return;
+            }
+
+            if (d.status === 'cancelled_due_to_funds') {
+                if (d.guest === currentUser) {
+                    alert(`⚠️ ホスト側の残高不足のため、対戦がキャンセルされました。賭け金 ￥${d.bet} が返金されました。`);
+                    await changeBalance(d.bet, "対戦ホスト残高不足による返金");
                 }
                 await db.collection('duels').doc(duelId).delete().catch(()=>{});
                 return;
             }
             
-            if (d.status === 'playing') {
-                const opponent = d.host === currentUser ? d.guest : d.host;
-                const board = document.getElementById('my-isolated-board');
-                board.innerHTML = `
-                    <div style="text-align:center; padding:20px; border: 2px solid var(--gold); border-radius: 12px; background: rgba(26, 44, 56, 0.9);">
-                        <h3 style="color:var(--gold); margin-bottom:15px;">⚔️ ${opponent} と対戦中！！</h3>
-                        <div style="display:flex; justify-content:space-around; align-items:center;">
-                            <div>
-                                <div style="font-size:12px; color:var(--text-muted);">${d.host} (ホスト)</div>
-                                <div id="duel-p1-card" style="width:80px; height:120px; background:var(--bg-input); border:2px solid var(--gold); border-radius:8px; display:flex; justify-content:center; align-items:center; font-size:30px;">？</div>
-                            </div>
-                            <div style="font-size:24px; font-weight:bold; color:var(--gold);">VS</div>
-                            <div>
-                                <div style="font-size:12px; color:var(--text-muted);">${d.guest} (ゲスト)</div>
-                                <div id="duel-p2-card" style="width:80px; height:120px; background:var(--bg-input); border:2px solid var(--gold); border-radius:8px; display:flex; justify-content:center; align-items:center; font-size:30px;">？</div>
-                            </div>
-                        </div>
-                        <p style="margin-top:20px; font-size:12px; color:var(--gold);">数値を抽選中...</p>
-                    </div>
-                `;
-                
+            if (d.status === 'accepted') {
+                // ホスト側で承認を検知したら、お金を引いて対戦開始状態にする
                 if (d.host === currentUser) {
-                    await new Promise(res => setTimeout(res, 2000));
-                    await db.collection('duels').doc(duelId).update({ status: 'finished' });
+                    if (currentBalance < d.bet) {
+                        alert("⚠️ 対戦招待が承認されましたが、あなたの残高が不足しているため対戦を開始できません。");
+                        await db.collection('duels').doc(duelId).update({ status: 'cancelled_due_to_funds' });
+                        return;
+                    }
+                    
+                    // ホスト側の引き落とし
+                    await changeBalance(-d.bet, "対戦招待承認ベット", true);
+                    
+                    // ゲームモードの初期化
+                    const updateData = {
+                        status: 'playing'
+                    };
+                    
+                    if (d.gameMode === 'bj_duel') {
+                        const deck = createDeck();
+                        updateData.deck = deck;
+                        updateData.host_bj_hand = [deck.pop(), deck.pop()];
+                        updateData.guest_bj_hand = [deck.pop(), deck.pop()];
+                        updateData.host_bj_state = 'playing';
+                        updateData.guest_bj_state = 'playing';
+                        updateData.active_turn = 'host';
+                    } else if (d.gameMode === 'mines_duel') {
+                        let grid = Array(25).fill(false);
+                        let placed = 0;
+                        while(placed < 3) {
+                            let idx = Math.floor(Math.random() * 25);
+                            if(!grid[idx]) { grid[idx] = true; placed++; }
+                        }
+                        updateData.mines_grid = grid;
+                        updateData.revealed_tiles = Array(25).fill(false);
+                        updateData.active_turn = 'host';
+                    }
+                    
+                    await db.collection('duels').doc(duelId).update(updateData);
                 }
+            }
+            
+            if (d.status === 'playing') {
+                // 承認ポップアップの表示（ホスト/ゲスト両方で1回のみ表示）
+                const startedKey = duelId + "_started";
+                if (!handledDuelIds.has(startedKey)) {
+                    handledDuelIds.add(startedKey);
+                    alert("🎉 対戦が承認されました！ゲーム画面へ遷移します。");
+                }
+                
+                // ゲーム画面の描画
+                renderDuelGame(duelId, d);
             }
             
             if (d.status === 'finished') {
@@ -1961,16 +1821,374 @@
         });
     }
 
+    function renderDuelGame(duelId, data) {
+        if (data.gameMode === 'bj_duel') {
+            renderBjDuel(duelId, data);
+        } else if (data.gameMode === 'mines_duel') {
+            renderMinesDuel(duelId, data);
+        } else {
+            renderDiceDuel(duelId, data);
+        }
+    }
+
+    function renderDiceDuel(duelId, data) {
+        const board = document.getElementById('my-isolated-board');
+        const opponent = data.host === currentUser ? data.guest : data.host;
+        const myRole = data.host === currentUser ? 'host' : 'guest';
+        const myRoll = myRole === 'host' ? data.host_roll : data.guest_roll;
+        
+        let rollButtonHtml = "";
+        if (myRoll === null || myRoll === undefined) {
+            rollButtonHtml = `<button onclick="rollDuelDice('${duelId}', '${myRole}')" style="background:var(--primary); color:#000; padding:12px; font-weight:bold; margin-top:15px; cursor:pointer;">🎲 ダイスを振る！</button>`;
+        } else {
+            rollButtonHtml = `<p style="color:var(--gold); margin-top:15px; font-weight:bold; animation: pulse 1.5s infinite;">⏳ 相手が振るのを待っています...</p>`;
+        }
+        
+        board.innerHTML = `
+            <div style="text-align:center; padding:20px; border: 2px solid var(--gold); border-radius: 12px; background: rgba(26, 44, 56, 0.95); margin-bottom:15px;">
+                <h3 style="color:var(--gold); margin-bottom:15px;">🎲 ダイス対戦 (VS ${opponent})</h3>
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">賭け金: ￥${data.bet.toLocaleString()}</p>
+                <div style="display:flex; justify-content:space-around; align-items:center;">
+                    <div>
+                        <div style="font-size:12px; color:var(--text-muted);">${data.host} ${data.host === currentUser ? '(あなた)' : ''}</div>
+                        <div style="width:80px; height:80px; background:var(--bg-input); border:2px solid var(--gold); border-radius:8px; display:flex; justify-content:center; align-items:center; font-size:32px; font-weight:bold; color:#fff; margin-top:5px;">
+                            ${data.host_roll !== null && data.host_roll !== undefined ? data.host_roll : '？'}
+                        </div>
+                    </div>
+                    <div style="font-size:24px; font-weight:bold; color:var(--gold);">VS</div>
+                    <div>
+                        <div style="font-size:12px; color:var(--text-muted);">${data.guest} ${data.guest === currentUser ? '(あなた)' : ''}</div>
+                        <div style="width:80px; height:80px; background:var(--bg-input); border:2px solid var(--gold); border-radius:8px; display:flex; justify-content:center; align-items:center; font-size:32px; font-weight:bold; color:#fff; margin-top:5px;">
+                            ${data.guest_roll !== null && data.guest_roll !== undefined ? data.guest_roll : '？'}
+                        </div>
+                    </div>
+                </div>
+                ${rollButtonHtml}
+            </div>
+        `;
+    }
+
+    async function rollDuelDice(duelId, role) {
+        const roll = Math.floor(Math.random() * 6) + 1;
+        const updateData = {};
+        if (role === 'host') {
+            updateData.host_roll = roll;
+        } else {
+            updateData.guest_roll = roll;
+        }
+        await db.collection('duels').doc(duelId).update(updateData);
+        
+        const snap = await db.collection('duels').doc(duelId).get();
+        const d = snap.data();
+        if (d.host_roll !== null && d.guest_roll !== null) {
+            await db.collection('duels').doc(duelId).update({ status: 'finished' });
+        }
+    }
+
+    function renderMinesDuel(duelId, data) {
+        const board = document.getElementById('my-isolated-board');
+        const opponent = data.host === currentUser ? data.guest : data.host;
+        const myRole = data.host === currentUser ? 'host' : 'guest';
+        
+        let turnText = "";
+        let isMyTurn = data.active_turn === myRole;
+        if (isMyTurn) {
+            turnText = `<span style="color:var(--primary); font-weight:bold; animation: pulse 1.5s infinite;">👉 あなたのターンです！パネルを1個めくってください。</span>`;
+        } else {
+            turnText = `<span style="color:var(--gold);">⏳ 相手 (${opponent}) のターンです。待機中...</span>`;
+        }
+        
+        const container = document.createElement('div');
+        container.className = "mines-grid";
+        container.style.maxWidth = "240px";
+        container.style.margin = "10px auto";
+        
+        for (let i = 0; i < 25; i++) {
+            const tile = document.createElement('div');
+            tile.className = "mines-tile";
+            const isRevealed = data.revealed_tiles[i];
+            
+            if (isRevealed) {
+                tile.classList.add('revealed');
+                const isBomb = data.mines_grid[i];
+                if (isBomb) {
+                    tile.innerText = "💥";
+                    tile.style.borderColor = "var(--accent)";
+                } else {
+                    tile.innerText = "💎";
+                    tile.style.color = "var(--primary)";
+                }
+            } else {
+                tile.innerText = "";
+                if (isMyTurn) {
+                    tile.style.cursor = "pointer";
+                    tile.onclick = () => selectDuelMinesTile(duelId, myRole, i);
+                } else {
+                    tile.style.cursor = "not-allowed";
+                }
+            }
+            container.appendChild(tile);
+        }
+        
+        board.innerHTML = `
+            <div style="text-align:center; padding:20px; border: 2px solid var(--gold); border-radius: 12px; background: rgba(26, 44, 56, 0.95); margin-bottom:15px;">
+                <h3 style="color:var(--gold); margin-bottom:10px;">💣 対戦マインズ (VS ${opponent})</h3>
+                <p style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">ルール: 交互にめくり、爆弾（3個固定）を引いた方が敗北！</p>
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">賭け金: ￥${data.bet.toLocaleString()}</p>
+                <div style="margin-bottom:15px; font-size:13px;">${turnText}</div>
+            </div>
+        `;
+        board.querySelector('div').appendChild(container);
+    }
+
+    async function selectDuelMinesTile(duelId, role, tileIdx) {
+        const snap = await db.collection('duels').doc(duelId).get();
+        const d = snap.data();
+        if (d.status !== 'playing' || d.active_turn !== role) return;
+        if (d.revealed_tiles[tileIdx]) return;
+        
+        let revealed = [...d.revealed_tiles];
+        revealed[tileIdx] = true;
+        
+        const isBomb = d.mines_grid[tileIdx];
+        const updateData = {
+            revealed_tiles: revealed
+        };
+        
+        if (isBomb) {
+            updateData.status = 'finished';
+            updateData.loser = role;
+        } else {
+            updateData.active_turn = role === 'host' ? 'guest' : 'host';
+        }
+        
+        await db.collection('duels').doc(duelId).update(updateData);
+    }
+
+    function renderBjDuel(duelId, data) {
+        const board = document.getElementById('my-isolated-board');
+        const opponent = data.host === currentUser ? data.guest : data.host;
+        const myRole = data.host === currentUser ? 'host' : 'guest';
+        
+        const myHand = myRole === 'host' ? data.host_bj_hand : data.guest_bj_hand;
+        const oppHand = myRole === 'host' ? data.guest_bj_hand : data.host_bj_hand;
+        
+        const myState = myRole === 'host' ? data.host_bj_state : data.guest_bj_state;
+        const oppState = myRole === 'host' ? data.guest_bj_state : data.host_bj_state;
+        
+        const myScore = calculateHandValue(myHand);
+        const showOpponentFull = (oppState !== 'playing' || myState !== 'playing');
+        
+        let oppScore = showOpponentFull ? calculateHandValue(oppHand) : "?";
+        let oppCardsHtml = oppHand.map((c, i) => getCardHtml(c, i === 1 && !showOpponentFull)).join('');
+        let myCardsHtml = myHand.map(c => getCardHtml(c)).join('');
+        
+        let controlHtml = "";
+        if (data.active_turn === myRole && myState === 'playing') {
+            controlHtml = `
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:15px;">
+                    <button onclick="actionDuelBj('${duelId}', '${myRole}', 'hit')" style="background:var(--primary); color:#000; padding:12px; font-weight:bold; cursor:pointer;">ヒット (Hit)</button>
+                    <button onclick="actionDuelBj('${duelId}', '${myRole}', 'stand')" style="background:var(--gold); color:#000; padding:12px; font-weight:bold; cursor:pointer;">スタンド (Stand)</button>
+                </div>
+            `;
+        } else if (myState !== 'playing') {
+            controlHtml = `<p style="color:var(--text-muted); margin-top:15px; font-weight:bold;">あなたの操作は完了しました。相手 (${opponent}) を待っています...</p>`;
+        } else {
+            controlHtml = `<p style="color:var(--gold); margin-top:15px; font-weight:bold; animation: pulse 1.5s infinite;">⏳ 相手 (${opponent}) のターンです。待機中...</p>`;
+        }
+        
+        board.innerHTML = `
+            <div style="text-align:center; padding:20px; border: 2px solid var(--primary); border-radius: 12px; background: rgba(15, 33, 46, 0.95); margin-bottom:15px;">
+                <h3 style="color:var(--primary); margin-bottom:15px;">🃏 ブラックジャック対戦 (VS ${opponent})</h3>
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">賭け金: ￥${data.bet.toLocaleString()}</p>
+                
+                <div style="margin-bottom:15px; background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; text-align:left;">
+                    <div style="font-size:12px; color:var(--text-muted); margin-bottom:5px;">👤 ${opponent} の手札 (スコア: ${oppScore})</div>
+                    <div class="cards-flex">${oppCardsHtml}</div>
+                    <div style="text-align:right; margin-top:4px;">
+                        ${oppState === 'stand' ? '<span style="color:var(--gold); font-size:11px; font-weight:bold;">🟢 スタンド完了</span>' : ''}
+                        ${oppState === 'busted' ? '<span style="color:var(--accent); font-size:11px; font-weight:bold;">💥 バースト！</span>' : ''}
+                    </div>
+                </div>
+                
+                <div style="margin-bottom:15px; background:rgba(0,231,1,0.05); padding:10px; border-radius:8px; border:1px solid rgba(0,231,1,0.2); text-align:left;">
+                    <div style="font-size:12px; color:var(--primary); margin-bottom:5px;">👤 あなたの手札 (スコア: ${myScore})</div>
+                    <div class="cards-flex">${myCardsHtml}</div>
+                    <div style="text-align:right; margin-top:4px;">
+                        ${myState === 'stand' ? '<span style="color:var(--gold); font-size:11px; font-weight:bold;">🟢 スタンド完了</span>' : ''}
+                        ${myState === 'busted' ? '<span style="color:var(--accent); font-size:11px; font-weight:bold;">💥 バースト！</span>' : ''}
+                    </div>
+                </div>
+                
+                ${controlHtml}
+            </div>
+        `;
+    }
+
+    async function actionDuelBj(duelId, role, action) {
+        const snap = await db.collection('duels').doc(duelId).get();
+        const d = snap.data();
+        if (d.active_turn !== role) return;
+        
+        let hand = role === 'host' ? d.host_bj_hand : d.guest_bj_hand;
+        let deck = d.deck;
+        let state = 'playing';
+        let active_turn = d.active_turn;
+        
+        if (action === 'hit') {
+            hand.push(deck.pop());
+            const val = calculateHandValue(hand);
+            if (val > 21) {
+                state = 'busted';
+                if (role === 'host') {
+                    active_turn = 'guest';
+                }
+            }
+        } else if (action === 'stand') {
+            state = 'stand';
+            if (role === 'host') {
+                active_turn = 'guest';
+            }
+        }
+        
+        const updateData = {
+            deck: deck
+        };
+        
+        if (role === 'host') {
+            updateData.host_bj_hand = hand;
+            updateData.host_bj_state = state;
+            updateData.active_turn = active_turn;
+        } else {
+            updateData.guest_bj_hand = hand;
+            updateData.guest_bj_state = state;
+        }
+        
+        await db.collection('duels').doc(duelId).update(updateData);
+        
+        const nextSnap = await db.collection('duels').doc(duelId).get();
+        const nd = nextSnap.data();
+        
+        const isHostFinished = nd.host_bj_state !== 'playing';
+        const isGuestFinished = nd.guest_bj_state !== 'playing';
+        
+        if (isHostFinished && isGuestFinished) {
+            await db.collection('duels').doc(duelId).update({ status: 'finished' });
+        }
+    }
+
     async function showDuelResultV3(duelId, data) {
         const board = document.getElementById('my-isolated-board');
-        const hRoll = data.host_roll;
-        const gRoll = data.guest_roll;
-        const isHostWinner = hRoll > gRoll;
-        const isGuestWinner = gRoll > hRoll;
-        const isDraw = hRoll === gRoll;
-
+        let isHostWinner = false;
+        let isGuestWinner = false;
+        let isDraw = false;
         let resultText = "";
         let winAmt = data.bet * 2;
+        let detailHtml = "";
+
+        if (data.gameMode === 'bj_duel') {
+            const hScore = calculateHandValue(data.host_bj_hand);
+            const gScore = calculateHandValue(data.guest_bj_hand);
+            const hBusted = hScore > 21;
+            const gBusted = gScore > 21;
+            
+            if (hBusted && gBusted) {
+                isDraw = true;
+            } else if (hBusted) {
+                isGuestWinner = true;
+            } else if (gBusted) {
+                isHostWinner = true;
+            } else {
+                if (hScore > gScore) isHostWinner = true;
+                else if (gScore > hScore) isGuestWinner = true;
+                else isDraw = true;
+            }
+            
+            const hCards = data.host_bj_hand.map(c => getCardHtml(c)).join('');
+            const gCards = data.guest_bj_hand.map(c => getCardHtml(c)).join('');
+
+            detailHtml = `
+                <div style="display:flex; justify-content:space-around; align-items:center; margin-top:10px;">
+                    <div>
+                        <div style="font-size:12px; color:var(--text-muted);">${data.host}</div>
+                        <div style="min-width:90px; background:var(--bg-input); border:2px solid ${isHostWinner ? 'var(--primary)' : '#2f4553'}; border-radius:8px; padding:6px; display:flex; flex-direction:column; align-items:center;">
+                            <span style="font-size:20px; font-weight:bold; color:${isHostWinner ? 'var(--primary)' : '#fff'};">${hScore}</span>
+                            <span style="font-size:8px; color:var(--text-muted);">${hBusted ? 'バースト' : 'SCORE'}</span>
+                            <div class="cards-flex" style="scale: 0.8; margin-top:5px;">${hCards}</div>
+                        </div>
+                    </div>
+                    <div style="font-size:24px; font-weight:bold; color:var(--gold);">VS</div>
+                    <div>
+                        <div style="font-size:12px; color:var(--text-muted);">${data.guest}</div>
+                        <div style="min-width:90px; background:var(--bg-input); border:2px solid ${isGuestWinner ? 'var(--primary)' : '#2f4553'}; border-radius:8px; padding:6px; display:flex; flex-direction:column; align-items:center;">
+                            <span style="font-size:20px; font-weight:bold; color:${isGuestWinner ? 'var(--primary)' : '#fff'};">${gScore}</span>
+                            <span style="font-size:8px; color:var(--text-muted);">${gBusted ? 'バースト' : 'SCORE'}</span>
+                            <div class="cards-flex" style="scale: 0.8; margin-top:5px;">${gCards}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (data.gameMode === 'mines_duel') {
+            if (data.loser === 'host') {
+                isGuestWinner = true;
+            } else {
+                isHostWinner = true;
+            }
+            
+            const gridHtml = data.mines_grid.map((isBomb, i) => {
+                const isRevealed = data.revealed_tiles[i];
+                let content = "";
+                let borderColor = "#2f4553";
+                let bgColor = "var(--bg-main)";
+                
+                if (isBomb) {
+                    content = "💥";
+                    borderColor = "var(--accent)";
+                } else if (isRevealed) {
+                    content = "💎";
+                    borderColor = "var(--primary)";
+                }
+                
+                return `<div style="width:18px; height:18px; border:1px solid ${borderColor}; background:${bgColor}; font-size:10px; display:flex; justify-content:center; align-items:center; border-radius:3px;">${content}</div>`;
+            }).join('');
+            
+            const loserName = data.loser === 'host' ? data.host : data.guest;
+            
+            detailHtml = `
+                <div style="margin-top:15px; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px;">
+                    <div style="font-size:12px; color:var(--accent); margin-bottom:8px; font-weight:bold;">💀 ${loserName} が爆弾を踏んで爆発しました！</div>
+                    <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:3px; max-width:110px; margin:0 auto;">
+                        ${gridHtml}
+                    </div>
+                </div>
+            `;
+        } else {
+            const hRoll = data.host_roll;
+            const gRoll = data.guest_roll;
+            if (hRoll > gRoll) isHostWinner = true;
+            else if (gRoll > hRoll) isGuestWinner = true;
+            else isDraw = true;
+
+            detailHtml = `
+                <div style="display:flex; justify-content:space-around; align-items:center; margin-top:10px;">
+                    <div>
+                        <div style="font-size:12px; color:var(--text-muted);">${data.host}</div>
+                        <div style="width:80px; height:100px; background:var(--bg-input); border:2px solid ${isHostWinner ? 'var(--primary)' : '#2f4553'}; border-radius:8px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                            <span style="font-size:28px; font-weight:bold; color:${isHostWinner ? 'var(--primary)' : '#fff'};">${hRoll}</span>
+                            <span style="font-size:9px; color:var(--text-muted);">DICE</span>
+                        </div>
+                    </div>
+                    <div style="font-size:24px; font-weight:bold; color:var(--gold);">VS</div>
+                    <div>
+                        <div style="font-size:12px; color:var(--text-muted);">${data.guest}</div>
+                        <div style="width:80px; height:100px; background:var(--bg-input); border:2px solid ${isGuestWinner ? 'var(--primary)' : '#2f4553'}; border-radius:8px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                            <span style="font-size:28px; font-weight:bold; color:${isGuestWinner ? 'var(--primary)' : '#fff'};">${gRoll}</span>
+                            <span style="font-size:9px; color:var(--text-muted);">DICE</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
         
         if (isDraw) {
             resultText = "引き分け！返金されます";
@@ -1985,25 +2203,9 @@
         }
 
         board.innerHTML = `
-            <div style="text-align:center; padding:20px; border: 2px solid var(--primary); border-radius: 12px; background: rgba(15, 33, 46, 0.95);">
+            <div style="text-align:center; padding:20px; border: 2px solid var(--primary); border-radius: 12px; background: rgba(15, 33, 46, 0.95); margin-bottom:15px;">
                 <h3 style="${isDraw ? 'color:var(--text-muted)' : 'color:var(--primary)'}; margin-bottom:15px;">${resultText}</h3>
-                <div style="display:flex; justify-content:space-around; align-items:center;">
-                    <div>
-                        <div style="font-size:12px; color:var(--text-muted);">${data.host}</div>
-                        <div style="width:80px; height:120px; background:var(--bg-input); border:2px solid ${isHostWinner ? 'var(--primary)' : '#2f4553'}; border-radius:8px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-                            <span style="font-size:28px; font-weight:bold; color:${isHostWinner ? 'var(--primary)' : '#fff'};">${hRoll}</span>
-                            <span style="font-size:9px; color:var(--text-muted);">POWER</span>
-                        </div>
-                    </div>
-                    <div style="font-size:24px; font-weight:bold; color:var(--gold);">VS</div>
-                    <div>
-                        <div style="font-size:12px; color:var(--text-muted);">${data.guest}</div>
-                        <div style="width:80px; height:120px; background:var(--bg-input); border:2px solid ${isGuestWinner ? 'var(--primary)' : '#2f4553'}; border-radius:8px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-                            <span style="font-size:28px; font-weight:bold; color:${isGuestWinner ? 'var(--primary)' : '#fff'};">${gRoll}</span>
-                            <span style="font-size:9px; color:var(--text-muted);">POWER</span>
-                        </div>
-                    </div>
-                </div>
+                ${detailHtml}
                 <button onclick="clearDuelBoard('${duelId}')" style="margin-top:20px; background:var(--primary); color:#000; padding:10px 20px; border-radius:4px; font-weight:bold; cursor:pointer;">結果を確認して閉じる</button>
             </div>
         `;
