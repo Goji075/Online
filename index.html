@@ -175,14 +175,6 @@
 </head>
 <body>
 
-<div id="p2p-toast" class="p2p-toast-banner">
-    <div id="p2p-toast-text">⚔️ 対戦招待が届きました</div>
-    <div class="p2p-btn-row">
-        <button onclick="handleP2PResponse(true)" style="background:#00e701; color:#000; flex:1;">参戦</button>
-        <button onclick="handleP2PResponse(false)" style="background:#fff; color:#000; flex:1;">拒否</button>
-    </div>
-</div>
-
 <div class="sidebar-overlay" id="menu-overlay" onclick="toggleSidebar(false)"></div>
 
 <div class="sidebar" id="sidebar-menu">
@@ -270,12 +262,31 @@
     </div>
 </div>
 
+<div class="sub-modal" id="modal-inventory">
+    <div class="modal-header"><h3>🎒 インベントリ & 装備合成</h3><span style="cursor:pointer;" onclick="closeSubModal('inventory')">✕</span></div>
+    <div style="display:flex; gap:5px; margin-bottom:15px;">
+        <button onclick="switchInventoryTab('weapon')" class="inventory-tab-btn active" id="inv-tab-weapon" style="padding:8px; font-size:12px;">武器</button>
+        <button onclick="switchInventoryTab('armor')" class="inventory-tab-btn" id="inv-tab-armor" style="padding:8px; font-size:12px;">防具</button>
+        <button onclick="switchInventoryTab('accessory')" class="inventory-tab-btn" id="inv-tab-accessory" style="padding:8px; font-size:12px;">装飾</button>
+        <button onclick="switchInventoryTab('synthesis')" class="inventory-tab-btn" id="inv-tab-synthesis" style="background:var(--gold); color:#000; padding:8px; font-size:12px;">合成</button>
+    </div>
+    <div id="inventory-list-area" style="max-height:350px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
+</div>
+
+<style>
+    .inventory-tab-btn { background: var(--bg-input); color: var(--text-muted); border: 1px solid #2f4553; flex: 1; }
+    .inventory-tab-btn.active { border-color: var(--primary); color: var(--primary); background: rgba(0,231,1,0.05); }
+    .eq-card { background: var(--bg-input); padding: 10px; border-radius: 6px; border: 1px solid #2f4553; display: flex; justify-content: space-between; align-items: center; }
+    .eq-card.equipped { border-color: var(--primary); background: rgba(0,231,1,0.05); }
+    .rarity-common { color: #fff; }
+    .rarity-uncommon { color: #1abc9c; }
+    .rarity-rare { color: #3498db; }
+    .rarity-epic { color: #9b59b6; }
+    .rarity-ultrarare { color: #f1c40f; text-shadow: 0 0 5px rgba(241,196,15,0.5); }
+</style>
+
 <div class="sub-modal" id="modal-rpgrule">
     <div class="modal-header"><h3>📋 RPGデータ・計算式・ルール</h3><span style="cursor:pointer;" onclick="closeSubModal('rpgrule')">✕</span></div>
-    <div style="font-size:12px; line-height:1.6; display:flex; flex-direction:column; gap:10px;">
-        <div><strong>🔥 属性相性の相関関係（ダメージ 1.1倍）</strong><br>
-        <span class="badge-element elem-fire">火</span> → <span class="badge-element elem-wood">木</span> → <span class="badge-element elem-water">水</span> → <span class="badge-element elem-fire">火</span><br>
-        <span class="badge-element elem-light">光</span> ⇄ <span class="badge-element elem-dark">暗</span> (お互いに有利)</div>
         
         <div style="background:var(--bg-input); padding:8px; border-radius:4px; border:1px solid #2f4553;">
             <strong>🧮 戦闘計算式マニュアル</strong><br>
@@ -395,9 +406,12 @@
 
                 <button id="btn-action-main" onclick="startIndividualGame()">ベットして勝負開始</button>
 
-                <div id="bj-p2p-invite-container" class="hidden" style="margin-top:10px; background: rgba(0,0,0,0.2); padding:10px; border-radius:6px; border:1px solid #2f4553;">
-                    <select id="p2p-target-selector" style="padding:8px; font-size:13px; margin-bottom:8px;"><option value="">-- 部屋のプレイヤーを読み込み中 --</option></select>
-                    <button onclick="sendP2PInvite()" style="background-color:var(--gold); color:#000; padding:10px; font-size:14px;">⚔️ 選択した相手に対戦を申し込む</button>
+                <div id="duel-controls" class="hidden" style="margin-top:15px; border-top:1px solid #2f4553; padding-top:10px;">
+                    <h4 style="font-size:13px; color:var(--gold); margin-bottom:8px;">⚔️ 公開対戦 (Duel) を募集</h4>
+                    <div style="display:flex; gap:5px;">
+                        <input type="number" id="duel-bet-amount" value="500" min="10" style="margin-bottom:0; flex:1; font-size:14px; padding:8px;">
+                        <button onclick="createPublicDuel()" style="width:auto; padding:8px 12px; font-size:13px; background:var(--gold); color:#000;">募集を出す</button>
+                    </div>
                 </div>
 
                 <div id="bj-controls" class="hidden" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; margin-top:10px;">
@@ -422,8 +436,15 @@
 
             <div id="my-isolated-board" class="my-game-area"></div>
 
+            <div class="panel" style="padding:15px; border:1px solid var(--gold);">
+                <h3 style="font-size:14px; color:var(--gold); margin-bottom:10px; display:flex; align-items:center; gap:6px;">⚔️ 進行中の対戦募集 (Duel Market)</h3>
+                <div id="duel-market-list" style="display:flex; flex-direction:column; gap:8px; min-height:50px;">
+                    <p style="font-size:11px; color:var(--text-muted); text-align:center;">ロビーでは対戦できません。部屋に参加してください。</p>
+                </div>
+            </div>
+
             <div class="table-area">
-                <div style="font-size:12px; text-align:center; color:var(--text-muted); margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">👥 ルーム内同期</div>
+                <div style="font-size:12px; text-align:center; color:var(--text-muted); margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">👥 オンラインプレイヤー</div>
                 <div class="players-side" id="table-players"></div>
             </div>
 
@@ -598,6 +619,7 @@
     let pHP = 400, pMaxHP = 400, pMP = 50, pMaxMP = 50;
     let pAtkBonus = 0, pDefBonus = 0, pHpBonus = 0;
     let pLevel = 1, pFloor = 1, pCoins = 0, pPotions = 0, pExp = 0;
+    let pInventory = []; // { id, name, type, stat, rarity, attr, equipped, plus }
     let pWeaponName = "初期のナイフ (+0)", pArmorName = "旅人の服 (+0)", pAccName = "お守り (+0)";
     let pWeaponAttr = "none";
     let eHP = 50, eMaxHP = 50, eAtk = 100, eName = "スライム", eAttr = "none", eRare = "common";
@@ -635,6 +657,7 @@
         if(!area) return;
         if(currentTab === 'rpg') {
             area.innerHTML = `
+                <button onclick="openSubModal('inventory')" style="background-color:var(--gold); color:#000; text-align:left;">🎒 インベントリ & 装備合成</button>
                 <button onclick="openSubModal('rpgrule')" style="background-color:#2980b9; color:#fff; text-align:left;">📋 RPGルール・属性相性を見る</button>
                 <button onclick="openSubModal('zukan')" style="background-color:#e67e22; color:#fff; text-align:left;">📖 敵キャラ図鑑 (Zukan)</button>
                 <button onclick="openSubModal('leaderboard')" style="background-color:#2ecc71; color:#000; text-align:left;">🏆 階層突破ランキング</button>
@@ -681,6 +704,7 @@
             pLevel = doc.data().rpgLevel || 1;
             pFloor = doc.data().rpgFloor || 1;
             pExp = doc.data().rpgExp || 0;
+            pInventory = doc.data().pInventory || [];
             pCoins = doc.data().rpgCoins || 0;
             pPotions = doc.data().rpgPotions || 0;
             pWeaponName = doc.data().eqWName || "初期のナイフ (+0)";
@@ -696,7 +720,8 @@
             }
             await userRef.set({
                 password: p, balance: 100, wagered: 0, vault: 0,
-                rpgLevel: 1, rpgFloor: 1, rpgExp: 0, rpgCoins: 0, rpgPotions: 2, jailUntil: null,
+                rpgLevel: 1, rpgFloor: 1, rpgExp: 0, pInventory: [],
+                rpgCoins: 0, rpgPotions: 2, jailUntil: null,
                 eqWName: "初期のナイフ (+0)", eqWAttr: "none", eqWAtk: 0,
                 eqAName: "旅人の服 (+0)", eqADef: 0,
                 eqCName: "お守り (+0)", eqCHp: 0,
@@ -774,8 +799,8 @@
         document.getElementById('rpg-player-coins').innerText = Math.floor(currentBalance).toLocaleString();
         document.getElementById('rpg-count-potion').innerText = pPotions;
         
-        // EXP UI 更新
-        const nextExp = pLevel * 100;
+        // EXP UI 更新 (大幅にレベルアップしやすく調整: 必要値を半分以下に)
+        const nextExp = pLevel * 40; 
         const expPct = Math.min(100, (pExp / nextExp) * 100);
         document.getElementById('rpg-exp-text').innerText = `${pExp} / ${nextExp}`;
         document.getElementById('rpg-exp-bar').style.width = `${expPct}%`;
@@ -792,7 +817,9 @@
     async function saveRpgProgress() {
         if(!currentUser) return;
         await db.collection('users_v2').doc(currentUser).update({
-            rpgLevel: pLevel, rpgFloor: pFloor, rpgExp: pExp, rpgCoins: pCoins, rpgPotions: pPotions,
+            rpgLevel: pLevel, rpgFloor: pFloor, rpgExp: pExp,
+            pInventory: pInventory,
+            rpgCoins: pCoins, rpgPotions: pPotions,
             eqWName: pWeaponName, eqWAttr: pWeaponAttr, eqWAtk: pAtkBonus,
             eqAName: pArmorName, eqADef: pDefBonus,
             eqCName: pAccName, eqCHp: pHpBonus
@@ -1105,9 +1132,9 @@
         // 状態クリア
         await db.collection('users_v2').doc(currentUser).update({ currentBattle: null });
 
-        // 経験値獲得 (レア度に応じて増加)
-        const rareExp = {common: 25, uncommon: 45, rare: 90, epic: 180, ultrarare: 400};
-        const gainedExp = rareExp[eRare] || 25;
+        // 経験値獲得 (大幅増量)
+        const rareExp = {common: 30, uncommon: 60, rare: 120, epic: 250, ultrarare: 600};
+        const gainedExp = rareExp[eRare] || 30;
         pExp += gainedExp;
         logRpg(`✨ 経験値を ${gainedExp} 獲得した。`);
 
@@ -1121,8 +1148,8 @@
 
         let dropMsg = "";
         
-        // レベルアップ判定 (必要経験値: 現在のプレイヤーレベル * 100)
-        const nextExp = pLevel * 100;
+        // レベルアップ判定 (必要経験値: 現在のプレイヤーレベル * 40)
+        const nextExp = pLevel * 40;
         if (pExp >= nextExp) {
             pExp -= nextExp;
             const oldAtk = 25 + (pLevel - 1) * 5;
@@ -1143,30 +1170,34 @@
             logRpg(`🧪 幸運！「冒険者の回復薬」がドロップした！`);
         }
 
-        // 5%の確率で武器・防具・装備の3種類のうち1つがドロップ
-        if(Math.random() < 0.05) {
+        // 10%の確率で装備ドロップ (確率アップ)
+        if(Math.random() < 0.10) {
             const eqRoll = Math.floor(Math.random() * 3);
             const rAttr = attrTypes[Math.floor(Math.random() * attrTypes.length)];
+            const itemId = Math.random().toString(36).substring(2, 9);
+            let newItem = { id: itemId, plus: 0, rarity: eRare, equipped: false };
 
             if(eqRoll === 0) {
                 let wTitle = approvedWeapons.length > 0 && Math.random() < 0.5 ? approvedWeapons[Math.floor(Math.random() * approvedWeapons.length)].name : "魔導の剣";
-                pAtkBonus = Math.floor(pFloor * 1.2) + (1 + Math.floor(Math.random() * 5));
-                pWeaponName = `${wTitle} (+${pAtkBonus})`;
-                pWeaponAttr = rAttr;
-                dropMsg += `🗡️ 武器: ${pWeaponName} [${rAttr.toUpperCase()}] を装備！\n`;
-                logRpg(`🗡️ 武器ドロップ！ 「${pWeaponName}」を装備した！`);
+                newItem.name = wTitle;
+                newItem.type = "weapon";
+                newItem.stat = Math.floor(pFloor * 1.2) + (1 + Math.floor(Math.random() * 5));
+                newItem.attr = rAttr;
+                dropMsg += `🗡️ 武器ドロップ: ${newItem.name} (+0) [${rAttr.toUpperCase()}]！\n`;
             } else if(eqRoll === 1) {
                 let aTitle = approvedArmors.length > 0 && Math.random() < 0.5 ? approvedArmors[Math.floor(Math.random() * approvedArmors.length)].name : "ルーンアーマー";
-                pDefBonus = Math.floor(pFloor * 1.5) + (1 + Math.floor(Math.random() * 5));
-                pArmorName = `${aTitle} (+${pDefBonus})`;
-                dropMsg += `🛡️ 防具: ${pArmorName} を装備！\n`;
-                logRpg(`🛡️ 防具ドロップ！ 「${pArmorName}」を装備した！`);
+                newItem.name = aTitle;
+                newItem.type = "armor";
+                newItem.stat = Math.floor(pFloor * 1.5) + (1 + Math.floor(Math.random() * 5));
+                dropMsg += `🛡️ 防具ドロップ: ${newItem.name} (+0)！\n`;
             } else {
-                pHpBonus = Math.floor(pFloor * 4) + (5 + Math.floor(Math.random() * 16));
-                pAccName = `ハクスラ魔石の指輪 (+${pHpBonus})`;
-                dropMsg += `📿 装飾: ${pAccName} を装着！\n`;
-                logRpg(`📿 装飾ドロップ！ 「${pAccName}」を装着！`);
+                newItem.name = "ハクスラ魔石の指輪";
+                newItem.type = "accessory";
+                newItem.stat = Math.floor(pFloor * 4) + (5 + Math.floor(Math.random() * 16));
+                dropMsg += `📿 装飾ドロップ: ${newItem.name} (+0)！\n`;
             }
+            pInventory.push(newItem);
+            logRpg(`🎁 装備がドロップしました！インベントリを確認してください。`);
         }
 
         if (dropMsg) alert(dropMsg);
@@ -1409,6 +1440,367 @@
         }
     }
 
+    // --- 🎒 インベントリ & 合成ロジック ---
+    let currentInvTab = 'weapon';
+    function switchInventoryTab(tab) {
+        currentInvTab = tab;
+        document.querySelectorAll('.inventory-tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('inv-tab-' + tab).classList.add('active');
+        renderInventory();
+    }
+
+    function renderInventory() {
+        const area = document.getElementById('inventory-list-area');
+        if(!area) return;
+        area.innerHTML = "";
+        
+        if (currentInvTab === 'synthesis') {
+            renderSynthesisUi();
+            return;
+        }
+
+        const filtered = pInventory.filter(item => item.type === currentInvTab);
+        if (filtered.length === 0) {
+            area.innerHTML = `<p style="text-align:center; color:var(--text-muted); font-size:12px; margin-top:20px;">アイテムがありません</p>`;
+            return;
+        }
+
+        filtered.forEach(item => {
+            const card = document.createElement('div');
+            card.className = `eq-card ${item.equipped ? 'equipped' : ''}`;
+            const rarityLabels = {common:"コモン", uncommon:"アンコモン", rare:"レア", epic:"激レア", ultrarare:"超激レア"};
+            const attrLabel = item.attr && item.attr !== 'none' ? ` [${item.attr.toUpperCase()}]` : "";
+            
+            card.innerHTML = `
+                <div style="flex:1;">
+                    <div class="rarity-${item.rarity}" style="font-weight:bold; font-size:13px;">${item.name} (+${item.plus || 0})${attrLabel}</div>
+                    <div style="font-size:10px; color:var(--text-muted);">${rarityLabels[item.rarity]} | ステータス: +${item.stat}</div>
+                </div>
+                <div style="width:80px;">
+                    ${item.equipped ? '<span style="color:var(--primary); font-size:11px; font-weight:bold;">装備中</span>' : 
+                    `<button onclick="equipItemFromInv('${item.id}')" style="padding:6px; font-size:11px;">装備する</button>`}
+                </div>
+            `;
+            area.appendChild(card);
+        });
+    }
+
+    async function equipItemFromInv(id) {
+        const item = pInventory.find(i => i.id === id);
+        if (!item) return;
+        
+        // 同じタイプの他の装備を外す
+        pInventory.filter(i => i.type === item.type).forEach(i => i.equipped = false);
+        item.equipped = true;
+        
+        if (item.type === 'weapon') {
+            pWeaponName = `${item.name} (+${item.plus || 0})`;
+            pWeaponAttr = item.attr || 'none';
+            pAtkBonus = item.stat;
+        } else if (item.type === 'armor') {
+            pArmorName = `${item.name} (+${item.plus || 0})`;
+            pDefBonus = item.stat;
+        } else if (item.type === 'accessory') {
+            pAccName = `${item.name} (+${item.plus || 0})`;
+            pHpBonus = item.stat;
+        }
+        
+        updateDisplayUi();
+        renderInventory();
+        await saveRpgProgress();
+        alert(`🎉 ${item.name} を装備しました！`);
+    }
+
+    let synthesisBaseId = null;
+    let synthesisMaterialId = null;
+
+    function renderSynthesisUi() {
+        const area = document.getElementById('inventory-list-area');
+        area.innerHTML = `
+            <div style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--gold); margin-bottom:10px; text-align:center;">
+                <div style="font-size:11px; color:var(--gold); margin-bottom:8px;">🛠️ 装備合成システム</div>
+                <div style="display:flex; justify-content:center; gap:10px; align-items:center;">
+                    <div id="syn-base-slot" onclick="selectSynItem('base')" style="width:70px; height:70px; background:var(--bg-input); border:2px solid #2f4553; border-radius:8px; display:flex; flex-direction:column; justify-content:center; align-items:center; cursor:pointer;">
+                        <span style="font-size:20px;">＋</span><span style="font-size:9px; color:var(--text-muted);">ベース</span>
+                    </div>
+                    <div style="font-size:20px; color:var(--gold);">×</div>
+                    <div id="syn-material-slot" onclick="selectSynItem('material')" style="width:70px; height:70px; background:var(--bg-input); border:2px solid #2f4553; border-radius:8px; display:flex; flex-direction:column; justify-content:center; align-items:center; cursor:pointer;">
+                        <span style="font-size:20px;">＋</span><span style="font-size:9px; color:var(--text-muted);">素材</span>
+                    </div>
+                </div>
+                <button onclick="executeSynthesis()" style="margin-top:15px; background:var(--gold); color:#000;">合成を実行する</button>
+            </div>
+            <div id="syn-selection-area"></div>
+        `;
+        updateSynthesisSlots();
+    }
+
+    function selectSynItem(slot) {
+        const selectionArea = document.getElementById('syn-selection-area');
+        selectionArea.innerHTML = `<h4 style="font-size:12px; margin-bottom:8px;">${slot === 'base' ? 'ベース' : '素材'}となる装備を選択</h4>`;
+        
+        // 装備中以外の全装備を表示
+        const items = pInventory.filter(i => !i.equipped);
+        if (items.length === 0) {
+            selectionArea.innerHTML += `<p style="font-size:11px; color:var(--text-muted); text-align:center;">合成可能な装備がありません（装備を外すか、未装備のものから選んでください）</p>`;
+            return;
+        }
+
+        items.forEach(item => {
+            if (slot === 'material' && synthesisBaseId === item.id) return;
+            if (slot === 'base' && synthesisMaterialId === item.id) return;
+            const btn = document.createElement('div');
+            btn.className = "eq-card";
+            btn.style.marginBottom = "5px";
+            btn.style.cursor = "pointer";
+            btn.onclick = () => {
+                if (slot === 'base') synthesisBaseId = item.id;
+                else synthesisMaterialId = item.id;
+                renderSynthesisUi();
+            };
+            btn.innerHTML = `<div class="rarity-${item.rarity}" style="font-size:12px;">${item.name} (+${item.plus || 0})</div><div style="font-size:10px; color:var(--text-muted);">+${item.stat}</div>`;
+            selectionArea.appendChild(btn);
+        });
+    }
+
+    function updateSynthesisSlots() {
+        if (synthesisBaseId) {
+            const item = pInventory.find(i => i.id === synthesisBaseId);
+            if (item) {
+                const slot = document.getElementById('syn-base-slot');
+                slot.innerHTML = `<div class="rarity-${item.rarity}" style="font-size:9px; font-weight:bold; text-align:center;">${item.name}</div><div style="font-size:11px;">+${item.plus}</div>`;
+                slot.style.borderColor = 'var(--gold)';
+            }
+        }
+        if (synthesisMaterialId) {
+            const item = pInventory.find(i => i.id === synthesisMaterialId);
+            if (item) {
+                const slot = document.getElementById('syn-material-slot');
+                slot.innerHTML = `<div class="rarity-${item.rarity}" style="font-size:9px; font-weight:bold; text-align:center;">${item.name}</div><div style="font-size:11px;">+${item.plus}</div>`;
+                slot.style.borderColor = 'var(--gold)';
+            }
+        }
+    }
+
+    async function executeSynthesis() {
+        if (!synthesisBaseId || !synthesisMaterialId) return alert("ベースと素材の両方を選択してください");
+        const base = pInventory.find(i => i.id === synthesisBaseId);
+        const material = pInventory.find(i => i.id === synthesisMaterialId);
+
+        if (!base || !material) return;
+        if (base.type !== material.type) return alert("同じ種類の装備（武器同士など）しか合成できません");
+
+        const rarities = ["common", "uncommon", "rare", "epic", "ultrarare"];
+        const baseRarityIdx = rarities.indexOf(base.rarity);
+        const matRarityIdx = rarities.indexOf(material.rarity);
+
+        // 合成成功判定
+        let success = false;
+        if (baseRarityIdx === matRarityIdx) success = true;
+        else if (baseRarityIdx > matRarityIdx) success = Math.random() < 0.6;
+        else success = Math.random() < 0.3;
+
+        if (success) {
+            base.plus++;
+            base.stat += (baseRarityIdx + 1) * 2; // レア度に応じて加算値増加
+            
+            // レア度昇格チャンス (+5, +10... ごとに)
+            if (base.plus % 5 === 0 && baseRarityIdx < rarities.length - 1) {
+                if (Math.random() < 0.3) {
+                    base.rarity = rarities[baseRarityIdx + 1];
+                    alert(`🌟 奇跡！ ${base.name} が ${rarities[baseRarityIdx + 1].toUpperCase()} に昇格しました！`);
+                }
+            }
+            alert(`✅ 合成成功！ ${base.name} が +${base.plus} に強化されました。`);
+        } else {
+            alert(`❌ 合成失敗... 素材が消滅しました。`);
+        }
+
+        // 素材を削除
+        pInventory = pInventory.filter(i => i.id !== synthesisMaterialId);
+        synthesisMaterialId = null;
+        
+        renderSynthesisUi();
+        updateDisplayUi();
+        await saveRpgProgress();
+    }
+
+    // --- ⚔️ 対戦 (Duel Market) システム ---
+    let activeDuelUnsubscribe = null;
+
+    async function createPublicDuel() {
+        if (currentRoom === 'lobby') return alert("対戦するには部屋に参加してください");
+        const amt = parseFloat(document.getElementById('duel-bet-amount').value);
+        if (isNaN(amt) || amt < 10) return alert("最低 10円 からです");
+        if (currentBalance < amt) return alert("残高が足りません");
+
+        if (confirm(`￥${amt.toLocaleString()} をベットして対戦相手を募集しますか？`)) {
+            await changeBalance(-amt, "対戦募集ベット", true);
+            await db.collection('rooms').doc(currentRoom).collection('duels').add({
+                host: currentUser,
+                bet: amt,
+                status: 'waiting',
+                player1_roll: null,
+                player2_roll: null,
+                player2: null,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert("⚔️ 募集を出しました。相手が来るのを待ちましょう！");
+        }
+    }
+
+    function listenToDuels() {
+        if (currentRoom === 'lobby') {
+            document.getElementById('duel-market-list').innerHTML = `<p style="font-size:11px; color:var(--text-muted); text-align:center;">ロビーでは対戦できません。</p>`;
+            return;
+        }
+
+        db.collection('rooms').doc(currentRoom).collection('duels').orderBy('timestamp', 'desc').limit(10).onSnapshot(snap => {
+            const area = document.getElementById('duel-market-list');
+            if (snap.empty) {
+                area.innerHTML = `<p style="font-size:11px; color:var(--text-muted); text-align:center;">現在募集中の対戦はありません</p>`;
+                return;
+            }
+            area.innerHTML = "";
+            snap.forEach(doc => {
+                const d = doc.data();
+                const div = document.createElement('div');
+                div.className = "eq-card"; 
+                div.style.border = "1px solid var(--gold)";
+                
+                let actionBtn = "";
+                if (d.status === 'waiting') {
+                    if (d.host === currentUser) {
+                        actionBtn = `<span style="font-size:11px; color:var(--gold);">待機中...</span>`;
+                    } else {
+                        actionBtn = `<button onclick="joinDuel('${doc.id}', ${d.bet})" style="padding:6px 12px; font-size:11px; background:var(--gold); color:#000;">参戦する</button>`;
+                    }
+                } else if (d.status === 'playing') {
+                    actionBtn = `<span style="font-size:11px; color:var(--primary);">対戦中...</span>`;
+                } else {
+                    actionBtn = `<span style="font-size:11px; color:var(--text-muted);">終了</span>`;
+                }
+
+                div.innerHTML = `
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:bold;">⚔️ ${d.host} の挑戦</div>
+                        <div style="font-size:10px; color:var(--gold);">賞金: ￥${(d.bet * 2).toLocaleString()} (ベット: ${d.bet})</div>
+                    </div>
+                    <div style="width:80px; text-align:right;">${actionBtn}</div>
+                `;
+                
+                if ((d.host === currentUser || d.player2 === currentUser) && d.status !== 'waiting') {
+                    handleDuelGameSync(doc.id, d);
+                }
+                
+                area.appendChild(div);
+            });
+        });
+    }
+
+    async function joinDuel(duelId, bet) {
+        if (currentBalance < bet) return alert("残高が足りません");
+        if (!confirm(`￥${bet.toLocaleString()} を支払って対戦に参加しますか？`)) return;
+
+        await changeBalance(-bet, "対戦参戦ベット", true);
+        await db.collection('rooms').doc(currentRoom).collection('duels').doc(duelId).update({
+            player2: currentUser,
+            status: 'playing',
+            player1_roll: Math.floor(Math.random() * 1000), 
+            player2_roll: Math.floor(Math.random() * 1000)
+        });
+    }
+
+    let lastActiveDuelId = null;
+    async function handleDuelGameSync(duelId, data) {
+        if (data.status === 'finished') {
+            if (lastActiveDuelId === duelId) return;
+            lastActiveDuelId = duelId;
+            showDuelResult(data);
+            return;
+        }
+        
+        if (data.status === 'playing') {
+            if (lastActiveDuelId === duelId) return;
+            lastActiveDuelId = duelId;
+            
+            const board = document.getElementById('my-isolated-board');
+            board.innerHTML = `
+                <div style="text-align:center; padding:20px;">
+                    <h3 style="color:var(--gold); margin-bottom:15px;">⚔️ 対戦開始！！</h3>
+                    <div style="display:flex; justify-content:space-around; align-items:center;">
+                        <div>
+                            <div style="font-size:12px; color:var(--text-muted);">${data.host}</div>
+                            <div id="duel-p1-card" style="width:80px; height:120px; background:var(--bg-input); border:2px solid var(--gold); border-radius:8px; display:flex; justify-content:center; align-items:center; font-size:30px;">？</div>
+                        </div>
+                        <div style="font-size:24px; font-weight:bold; color:var(--gold);">VS</div>
+                        <div>
+                            <div style="font-size:12px; color:var(--text-muted);">${data.player2}</div>
+                            <div id="duel-p2-card" style="width:80px; height:120px; background:var(--bg-input); border:2px solid var(--gold); border-radius:8px; display:flex; justify-content:center; align-items:center; font-size:30px;">？</div>
+                        </div>
+                    </div>
+                    <p style="margin-top:20px; font-size:12px; color:var(--gold);">数値を抽選中...</p>
+                </div>
+            `;
+            
+            await new Promise(res => setTimeout(res, 2000));
+            
+            if (data.host === currentUser) {
+                await db.collection('rooms').doc(currentRoom).collection('duels').doc(duelId).update({
+                    status: 'finished'
+                });
+            }
+        }
+    }
+
+    async function showDuelResult(data) {
+        const board = document.getElementById('my-isolated-board');
+        const p1 = data.player1_roll;
+        const p2 = data.player2_roll;
+        const isP1Winner = p1 > p2;
+        const isP2Winner = p2 > p1;
+        const isDraw = p1 === p2;
+
+        let resultText = "";
+        let winAmt = data.bet * 2;
+        
+        if (isDraw) {
+            resultText = "引き分け！返金されます";
+            if (data.host === currentUser || data.player2 === currentUser) await changeBalance(data.bet, "対戦引き分け返金");
+        } else {
+            const winner = isP1Winner ? data.host : data.player2;
+            resultText = `🎉 ${winner} の勝利！！`;
+            if (winner === currentUser) {
+                await changeBalance(winAmt, "対戦勝利賞金");
+                alert(`💰 対戦に勝利しました！ ￥${winAmt.toLocaleString()} を獲得！`);
+            }
+        }
+
+        board.innerHTML = `
+            <div style="text-align:center; padding:20px;">
+                <h3 style="${isDraw ? 'color:var(--text-muted)' : 'color:var(--primary)'}; margin-bottom:15px;">${resultText}</h3>
+                <div style="display:flex; justify-content:space-around; align-items:center;">
+                    <div>
+                        <div style="font-size:12px; color:var(--text-muted);">${data.host}</div>
+                        <div style="width:80px; height:120px; background:var(--bg-input); border:2px solid ${isP1Winner ? 'var(--primary)' : '#2f4553'}; border-radius:8px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                            <span style="font-size:28px; font-weight:bold; color:${isP1Winner ? 'var(--primary)' : '#fff'};">${p1}</span>
+                            <span style="font-size:9px; color:var(--text-muted);">POWER</span>
+                        </div>
+                    </div>
+                    <div style="font-size:24px; font-weight:bold; color:var(--gold);">VS</div>
+                    <div>
+                        <div style="font-size:12px; color:var(--text-muted);">${data.player2}</div>
+                        <div style="width:80px; height:120px; background:var(--bg-input); border:2px solid ${isP2Winner ? 'var(--primary)' : '#2f4553'}; border-radius:8px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                            <span style="font-size:28px; font-weight:bold; color:${isP2Winner ? 'var(--primary)' : '#fff'};">${p2}</span>
+                            <span style="font-size:9px; color:var(--text-muted);">POWER</span>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="selectGameType('bj')" style="margin-top:20px; background:var(--bg-input); border:1px solid #2f4553;">閉じる</button>
+            </div>
+        `;
+    }
+
     // --- 👑 提案の完全自動採否・自動実装システム ---
     function listenAdminIdeas() {
         db.collection('rpg_ideas').where('status', '==', 'pending').onSnapshot(snap => {
@@ -1467,14 +1859,14 @@
 
         document.getElementById('setting-mines').classList.add('hidden');
         document.getElementById('setting-dice').classList.add('hidden');
-        document.getElementById('bj-p2p-invite-container').classList.add('hidden');
+        document.getElementById('duel-controls').classList.add('hidden'); // 新設
         document.getElementById('bj-controls').classList.add('hidden');
         document.getElementById('hilow-controls').classList.add('hidden');
         document.getElementById('mines-controls').classList.add('hidden');
 
         if(g === 'mines') document.getElementById('setting-mines').classList.remove('hidden');
         if(g === 'dice') document.getElementById('setting-dice').classList.remove('hidden');
-        if(g === 'bj' && currentRoom !== 'lobby') document.getElementById('bj-p2p-invite-container').classList.remove('hidden');
+        if(currentRoom !== 'lobby') document.getElementById('duel-controls').classList.remove('hidden');
         
         document.getElementById('my-isolated-board').innerHTML = "";
 
@@ -1881,6 +2273,7 @@
                     const allBusted = activeBjGame.hands.every(h => calculateHandValue(h) > 21);
                     if (allBusted) {
                         activeBjGame.state = 'busted';
+                        renderBjBoard(); // ディーラーの手札をめくるために描画
                         document.getElementById('bj-controls').classList.add('hidden');
                         document.getElementById('bj-status-text').innerText = "💥 すべての手札がバースト！あなたの負けです。";
                         logRpg("🃏 カジノ速報：BJでバーストして没収されました");
@@ -2255,10 +2648,13 @@
             snap.forEach(doc => {
                 const div = document.createElement('div');
                 div.className = "player-hand-box";
-                div.innerHTML = `<strong>👤 ${doc.id}</strong> <span style="color:var(--primary); font-size:11px; margin-left:10px;">オンライン同期中</span>`;
+                div.innerHTML = `<strong>👤 ${doc.id}</strong> <span style="color:var(--primary); font-size:11px; margin-left:10px;">オンライン</span>`;
                 list.appendChild(div);
             });
         });
+
+        // 対戦システム (Duel Market) の監視を開始
+        listenToDuels();
     }
 
     async function sendGlobalChatMessage() {
