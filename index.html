@@ -422,7 +422,7 @@
                 <div class="panel" style="padding:12px;">
                     <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:5px;">
                         <div>⚔️ 挑戦レベル: <span id="rpg-player-lv" style="color:var(--gold);">1</span></div>
-                        <div>💰 鞄: <span id="rpg-player-coins" style="color:var(--primary);">0</span> コイン</div>
+                        <div>💰 所持金: ￥<span id="rpg-player-coins" style="color:var(--primary);">0</span></div>
                     </div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px; border-top:1px solid #2f4553; padding-top:6px;">
                         <div>💥 攻撃力: <span id="stat-atk">25</span> | 🛡️ 防御力: <span id="stat-def">150</span></div>
@@ -686,7 +686,7 @@
         document.getElementById('stat-atk').innerText = 25 + pAtkBonus;
         document.getElementById('stat-def').innerText = 150 + pDefBonus;
         document.getElementById('rpg-player-lv').innerText = pLevel;
-        document.getElementById('rpg-player-coins').innerText = pCoins;
+        document.getElementById('rpg-player-coins').innerText = Math.floor(currentBalance).toLocaleString();
         document.getElementById('rpg-count-potion').innerText = pPotions;
         
         let wDisplay = pWeaponName;
@@ -859,10 +859,13 @@
         return 1.0;
     }
 
-    function rpgAction(type) {
+    async function rpgAction(type) {
         if(type === 'run') {
-            logRpg("🏃 ペナルティ：同じ階層の敵と最初からやり直しになります！");
-            setTimeout(() => { initNewRpgFight(); }, 1200);
+            logRpg("🏃 ペナルティ：逃走したため、90秒間RPGエリアの探索が制限されます！");
+            const jailTime = new Date(Date.now() + 90 * 1000);
+            await db.collection('users_v2').doc(currentUser).update({ jailUntil: jailTime.toISOString() });
+            alert("🏃 逃げ出しました！90秒間RPGへ再挑戦できなくなります！");
+            checkJailStatus();
             return;
         }
 
@@ -920,7 +923,7 @@
         if(healCooldown > 0) healCooldown--;
 
         if(eHP <= 0) {
-            handleRpgVictory();
+            await handleRpgVictory();
         } else {
             enemyTurn();
         }
@@ -953,8 +956,8 @@
         const rareMultipliers = {common: 1.0, uncommon: 1.5, rare: 2.0, epic: 3.0, ultrarare: 5.0};
         const finalCoinDrop = Math.floor(baseCoinDrop * rareMultipliers[eRare]);
         
-        pCoins += finalCoinDrop;
-        logRpg(`🪙 敵から経済インフレを防ぐレア度補正倍率に基づき、 ${finalCoinDrop} コインを強奪した。`);
+        await changeBalance(finalCoinDrop, "RPG敵撃破報酬");
+        logRpg(`🪙 敵から経済インフレを防ぐレア度補正倍率に基づき、 ￥${finalCoinDrop} を獲得した。`);
 
         // 5%の確率で回復薬ドロップ
         if(Math.random() < 0.05) {
@@ -1031,6 +1034,19 @@
             document.getElementById('rpg-jail-timer').classList.remove('hidden');
             document.getElementById('rpg-main-wrapper').classList.add('hidden');
             
+            const isRunPenalty = diff <= 91 * 1000;
+            const titleEl = document.getElementById('rpg-jail-timer').querySelector('h3');
+            const descEl = document.getElementById('rpg-jail-timer').querySelector('p');
+            if (isRunPenalty) {
+                titleEl.innerText = "🏃 逃走ペナルティ中";
+                titleEl.style.color = "var(--accent)";
+                descEl.innerText = "逃走したため、90秒間RPGエリアへのアクセスが制限されています。";
+            } else {
+                titleEl.innerText = "⚠️ 敗北ペナルティ中";
+                titleEl.style.color = "var(--accent)";
+                descEl.innerText = "15分間、RPGエリアへのアクセスが制限されています。カジノでリベンジ資金を稼ぎましょう！";
+            }
+
             const mins = Math.floor(diff / 60000);
             const secs = Math.floor((diff % 60000) / 1000);
             document.getElementById('jail-time-left').innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
@@ -1038,19 +1054,32 @@
         }
     }
 
-    function buyPotion() {
-        if(pCoins < 20) return alert("ドロップコインが足りません");
-        pCoins -= 20;
+    async function buyPotion() {
+        if(currentBalance < 20) return alert("カジノ残高が足りません");
+        await changeBalance(-20, "回復薬購入");
         pPotions++;
         logRpg("🛒 ショップで「冒険者の回復薬」を1個購入しました。");
         updateDisplayUi();
         saveRpgProgress();
     }
 
+    async function deleteCurrentAccount() {
+        if(!currentUser) return;
+        if(confirm(`⚠️ 本当にあなたのアカウント [ ${currentUser} ] を完全に削除しますか？\nこの操作は取り消せません。`)) {
+            try {
+                await db.collection('users_v2').doc(currentUser).delete();
+                alert("アカウントを削除しました。");
+                location.reload();
+            } catch(e) {
+                alert("アカウント削除中にエラーが発生しました: " + e.message);
+            }
+        }
+    }
+
     // --- 管理者パネル(Admin Panel) の超強化システム ---
     async function loginAdmin() {
         const p = document.getElementById('admin-password').value;
-        if(p === "koyo1234") {
+        if(p === "megu@0705gorira") {
             isAdminAuthenticated = true;
             document.getElementById('admin-login-section').classList.add('hidden');
             document.getElementById('admin-dashboard').classList.remove('hidden');
@@ -1227,7 +1256,7 @@
         } else if(selectedGame === 'roulette') {
             runRouletteGame(amt);
         } else if(selectedGame === 'bj') {
-            initSinglePlayerBjGame(amt);
+            await initSinglePlayerBjGame(amt);
         }
     }
 
@@ -1282,11 +1311,275 @@
         }
     }
 
+    // --- 🎡 ルーレットロジック ---
+    function selectRouletteSpot(type) {
+        let target = type;
+        if (type === 'number') {
+            const num = prompt("賭ける数字を入力してください (0〜36):");
+            if (num === null) return;
+            const parsed = parseInt(num);
+            if (isNaN(parsed) || parsed < 0 || parsed > 36) {
+                alert("0から36の数字を入力してください");
+                return;
+            }
+            target = `num-${parsed}`;
+        }
+        rouletteSelectedSpots = [target];
+        document.querySelectorAll('.roulette-spot-btn').forEach(btn => btn.classList.remove('selected'));
+        if (type === 'red') document.querySelector('.roulette-spot-btn[onclick*="red"]').classList.add('selected');
+        if (type === 'black') document.querySelector('.roulette-spot-btn[onclick*="black"]').classList.add('selected');
+        if (type === 'number') {
+            const btn = document.querySelector('.roulette-spot-btn[onclick*="number"]');
+            btn.classList.add('selected');
+            btn.innerText = `🔢 数字 [${target.replace('num-', '')}] (35x)`;
+        } else {
+            document.querySelector('.roulette-spot-btn[onclick*="number"]').innerText = `🔢 数字 (35x)`;
+        }
+    }
+
+    function drawRouletteWheel(angle) {
+        const canvas = document.getElementById('roulette-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const radius = canvas.width / 2 - 10;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+        const totalSlices = numbers.length;
+        const sliceAngle = (2 * Math.PI) / totalSlices;
+        for (let i = 0; i < totalSlices; i++) {
+            const startA = angle + i * sliceAngle;
+            const endA = startA + sliceAngle;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, radius, startA, endA);
+            ctx.closePath();
+            const num = numbers[i];
+            if (num === 0) { ctx.fillStyle = '#27ae60'; }
+            else if ([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(num)) { ctx.fillStyle = '#fe2247'; }
+            else { ctx.fillStyle = '#111111'; }
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(startA + sliceAngle / 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 8px Helvetica';
+            ctx.textAlign = 'right';
+            ctx.fillText(num.toString(), radius - 5, 3);
+            ctx.restore();
+        }
+        ctx.beginPath();
+        ctx.moveTo(cx - 5, 5);
+        ctx.lineTo(cx + 5, 5);
+        ctx.lineTo(cx, 20);
+        ctx.closePath();
+        ctx.fillStyle = 'var(--gold)';
+        ctx.fill();
+    }
+
+    function runRouletteGame(bet) {
+        if (rouletteSelectedSpots.length === 0) {
+            alert("賭ける場所（赤、黒、または数字）を選択してください");
+            changeBalance(bet);
+            return;
+        }
+        const board = document.getElementById('my-isolated-board');
+        board.innerHTML = `
+            <h4 style="color:var(--gold); margin-bottom:8px;">🎡 ルーレットスピン中...</h4>
+            <canvas id="roulette-canvas" width="200" height="200" style="background:#0a1118; border-radius:50%; border:4px solid #2f4553; display:block; margin:0 auto;"></canvas>
+            <div id="roulette-result-text" style="font-size:14px; font-weight:bold; color:#fff; text-align:center; margin-top:10px;"></div>
+        `;
+        let currentAngle = 0;
+        let speed = 0.5 + Math.random() * 0.3;
+        const decay = 0.985;
+        function spin() {
+            currentAngle += speed;
+            speed *= decay;
+            drawRouletteWheel(currentAngle);
+            if (speed > 0.005) { requestAnimationFrame(spin); }
+            else { finishRouletteGame(currentAngle, bet); }
+        }
+        spin();
+    }
+
+    async function finishRouletteGame(finalAngle, bet) {
+        const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+        const totalSlices = numbers.length;
+        const sliceAngle = (2 * Math.PI) / totalSlices;
+        const normalizedAngle = (2 * Math.PI - (finalAngle % (2 * Math.PI))) % (2 * Math.PI);
+        const needleAngle = (normalizedAngle - Math.PI / 2 + 2 * Math.PI) % (2 * Math.PI);
+        const winningIndex = Math.floor(needleAngle / sliceAngle) % totalSlices;
+        const rolledNumber = numbers[winningIndex];
+        const isRed = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(rolledNumber);
+        const isBlack = rolledNumber !== 0 && !isRed;
+        const colorStr = rolledNumber === 0 ? '緑' : (isRed ? '赤' : '黒');
+        const resultTextEl = document.getElementById('roulette-result-text');
+        let winAmt = 0;
+        let winType = "";
+        const betType = rouletteSelectedSpots[0];
+        if (betType === 'red' && isRed) { winAmt = bet * 2; winType = "赤に的中！"; }
+        else if (betType === 'black' && isBlack) { winAmt = bet * 2; winType = "黒に的中！"; }
+        else if (betType.startsWith('num-')) {
+            const numVal = parseInt(betType.replace('num-', ''));
+            if (numVal === rolledNumber) { winAmt = bet * 35; winType = `数字 [${rolledNumber}] に的中！`; }
+        }
+        if (winAmt > 0) {
+            resultTextEl.innerHTML = `<span style="color:var(--primary);">🎯 結果: ${rolledNumber} (${colorStr}) - ${winType} ￥${Math.floor(winAmt).toLocaleString()} を獲得！</span>`;
+            await changeBalance(winAmt, "ルーレット勝利");
+        } else {
+            resultTextEl.innerHTML = `<span style="color:var(--accent);">💀 結果: ${rolledNumber} (${colorStr}) - ハズレ...</span>`;
+        }
+    }
+
+    // --- 🃏 BJロジック ---
+    function createDeck() {
+        const suits = ['♠', '♥', '♦', '♣'];
+        const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        const deck = [];
+        for (let suit of suits) {
+            for (let rank of ranks) {
+                let value = parseInt(rank);
+                if (['J', 'Q', 'K'].includes(rank)) value = 10;
+                if (rank === 'A') value = 11;
+                const isRed = ['♥', '♦'].includes(suit);
+                deck.push({ suit, rank, value, isRed });
+            }
+        }
+        for (let i = deck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [deck[i], deck[j]] = [deck[j], deck[i]];
+        }
+        return deck;
+    }
+
+    function calculateHandValue(hand) {
+        let sum = 0;
+        let aces = 0;
+        for (let card of hand) {
+            sum += card.value;
+            if (card.rank === 'A') aces++;
+        }
+        while (sum > 21 && aces > 0) {
+            sum -= 10;
+            aces--;
+        }
+        return sum;
+    }
+
+    function getCardHtml(card, hide = false) {
+        if (hide) { return `<div class="card-back-mini"></div>`; }
+        return `<div class="card-mini ${card.isRed ? 'red' : ''}"><div>${card.suit}${card.rank}</div><div style="text-align:right; margin-top:auto;">${card.rank}</div></div>`;
+    }
+
+    function renderBjBoard() {
+        const board = document.getElementById('my-isolated-board');
+        if (!activeBjGame) return;
+        let dealerCardsHtml = activeBjGame.dealerHand.map((c, i) => getCardHtml(c, i === 1 && activeBjGame.state === 'playing')).join('');
+        let playerCardsHtml = activeBjGame.playerHand.map(c => getCardHtml(c)).join('');
+        let dealerScore = activeBjGame.state === 'playing' ? "?" : calculateHandValue(activeBjGame.dealerHand);
+        let playerScore = calculateHandValue(activeBjGame.playerHand);
+        board.innerHTML = `
+            <h4 style="color:var(--primary); margin-bottom:8px;">🃏 BJ (ベット: ￥${activeBjGame.bet})</h4>
+            <div style="margin-bottom:10px;">
+                <div style="font-size:12px; color:var(--text-muted);">ディーラー (スコア: ${dealerScore})</div>
+                <div class="cards-flex">${dealerCardsHtml}</div>
+            </div>
+            <div style="margin-bottom:10px;">
+                <div style="font-size:12px; color:var(--text-muted);">プレイヤー (スコア: ${playerScore})</div>
+                <div class="cards-flex">${playerCardsHtml}</div>
+            </div>
+            <div id="bj-status-text" style="font-size:13px; font-weight:bold; color:var(--gold); text-align:center; margin-top:10px;"></div>
+        `;
+    }
+
+    async function initSinglePlayerBjGame(bet) {
+        document.getElementById('bj-controls').classList.remove('hidden');
+        const deck = createDeck();
+        const playerHand = [deck.pop(), deck.pop()];
+        const dealerHand = [deck.pop(), deck.pop()];
+        activeBjGame = { bet: bet, deck: deck, playerHand: playerHand, dealerHand: dealerHand, state: 'playing' };
+        renderBjBoard();
+        const playerScore = calculateHandValue(playerHand);
+        if (playerScore === 21) { await resolveBjGame('stand'); }
+    }
+
+    async function resolveBjGame(action) {
+        if (!activeBjGame) return;
+        if (action === 'hit') {
+            activeBjGame.playerHand.push(activeBjGame.deck.pop());
+            renderBjBoard();
+            const score = calculateHandValue(activeBjGame.playerHand);
+            if (score > 21) {
+                activeBjGame.state = 'busted';
+                document.getElementById('bj-controls').classList.add('hidden');
+                document.getElementById('bj-status-text').innerText = "💥 バースト！あなたの負けです。";
+                logRpg("🃏 カジノ速報：BJでバーストして没収されました");
+                activeBjGame = null;
+            }
+        } else if (action === 'double') {
+            const additionalBet = activeBjGame.bet;
+            if (currentBalance < additionalBet) {
+                alert("残高が足りないためダブルダウンできません");
+                return;
+            }
+            await changeBalance(-additionalBet, "BJダブルダウン追加ベット");
+            activeBjGame.bet += additionalBet;
+            activeBjGame.playerHand.push(activeBjGame.deck.pop());
+            renderBjBoard();
+            const score = calculateHandValue(activeBjGame.playerHand);
+            if (score > 21) {
+                activeBjGame.state = 'busted';
+                document.getElementById('bj-controls').classList.add('hidden');
+                document.getElementById('bj-status-text').innerText = "💥 バースト！あなたの負けです。";
+                logRpg("🃏 カジノ速報：BJでダブルダウン後にバーストしました");
+                activeBjGame = null;
+            } else {
+                await resolveBjDealerTurn();
+            }
+        } else if (action === 'stand') {
+            await resolveBjDealerTurn();
+        }
+    }
+
+    async function resolveBjDealerTurn() {
+        activeBjGame.state = 'dealer-turn';
+        document.getElementById('bj-controls').classList.add('hidden');
+        let dealerScore = calculateHandValue(activeBjGame.dealerHand);
+        while (dealerScore < 17) {
+            activeBjGame.dealerHand.push(activeBjGame.deck.pop());
+            dealerScore = calculateHandValue(activeBjGame.dealerHand);
+        }
+        renderBjBoard();
+        const playerScore = calculateHandValue(activeBjGame.playerHand);
+        let resultText = "";
+        let winAmt = 0;
+        if (dealerScore > 21) {
+            resultText = "🎉 ディーラーがバースト！あなたの勝ちです！";
+            winAmt = activeBjGame.bet * 2;
+        } else if (playerScore > dealerScore) {
+            const isNatural = playerScore === 21 && activeBjGame.playerHand.length === 2;
+            winAmt = isNatural ? activeBjGame.bet * 2.5 : activeBjGame.bet * 2;
+            resultText = isNatural ? "🃏 ナチュラルBJ！あなたの勝ちです！" : "🎉 あなたの勝ちです！";
+        } else if (playerScore < dealerScore) {
+            resultText = "💀 あなたの負けです。";
+            winAmt = 0;
+        } else {
+            resultText = "🤝 引き分け（プッシュ）です。";
+            winAmt = activeBjGame.bet;
+        }
+        document.getElementById('bj-status-text').innerText = resultText;
+        if (winAmt > 0) { await changeBalance(winAmt, "BJ払い戻し"); }
+        activeBjGame = null;
+    }
+
     async function gameSubAction(action) {
         if(selectedGame === 'mines' && action === 'cashout') {
             if(!activeMinesGame || activeMinesGame.state !== 'playing') return;
             if(activeMinesGame.revealedCount === 0) return alert("最低1枚はタイルを開けてください");
-            
             const payoutMul = getMinesMultiplier(activeMinesGame.revealedCount);
             const winAmt = activeMinesGame.bet * payoutMul;
             activeMinesGame.state = 'win';
@@ -1295,7 +1588,10 @@
             alert(`💰 キャッシュアウト成功！ ￥${Math.floor(winAmt).toLocaleString()} を獲得！`);
             selectGameType('mines');
         }
-        // ハイローサブアクション保持
+        if(selectedGame === 'bj') {
+            if(!activeBjGame || activeBjGame.state !== 'playing') return;
+            await resolveBjGame(action);
+        }
         if(selectedGame === 'hilow') {
             if(!activeHiLowGame) return;
             if(action === 'cashout') {
@@ -1311,18 +1607,26 @@
             let isWin = false;
             if(action === 'high' && nextCardNum >= currentNum) isWin = true;
             if(action === 'low' && nextCardNum <= currentNum) isWin = true;
-
             const displayBoard = document.getElementById('my-isolated-board');
+            const suits = ['♠', '♥', '♦', '♣'];
+            const randomSuit = suits[Math.floor(Math.random() * suits.length)];
+            const isRed = ['♥', '♦'].includes(randomSuit);
+            const rank = nextCardNum === 1 ? 'A' : (nextCardNum === 11 ? 'J' : (nextCardNum === 12 ? 'Q' : (nextCardNum === 13 ? 'K' : nextCardNum.toString())));
+            const cardHtml = `<div class="card-mini ${isRed ? 'red' : ''}"><div>${randomSuit}${rank}</div><div style="text-align:right; margin-top:auto;">${rank}</div></div>`;
             if(isWin) {
                 activeHiLowGame.accumulatedMultiplier *= 1.35;
                 activeHiLowGame.currentCard = nextCardNum;
                 displayBoard.innerHTML = `
                     <h4 style="color:var(--primary);">📈 HIGH/LOW 継続中</h4>
-                    <p style="font-size:13px; margin:4px 0;">現在のカード: <strong>${nextCardNum}</strong></p>
-                    <p style="font-size:12px; color:var(--gold);">現在倍率: ${activeHiLowGame.accumulatedMultiplier.toFixed(2)}x</p>
+                    <div style="margin:10px 0; display:flex; justify-content:center;">${cardHtml}</div>
+                    <p style="font-size:12px; color:var(--gold); text-align:center;">現在倍率: ${activeHiLowGame.accumulatedMultiplier.toFixed(2)}x</p>
                 `;
             } else {
-                displayBoard.innerHTML = `<h4 style="color:var(--accent);">📉 BUST (予測失敗)</h4><p style="font-size:12px;">次のカードは ${nextCardNum} でした。</p>`;
+                displayBoard.innerHTML = `
+                    <h4 style="color:var(--accent);">📉 BUST (予測失敗)</h4>
+                    <div style="margin:10px 0; display:flex; justify-content:center;">${cardHtml}</div>
+                    <p style="font-size:12px; text-align:center;">次のカードは【${rank}】でした。</p>
+                `;
                 document.getElementById('hilow-controls').classList.add('hidden');
                 activeHiLowGame = null;
             }
@@ -1331,10 +1635,23 @@
 
     function runDiceGame(bet) {
         const mode = document.getElementById('dice-bet-mode').value;
-        const roll = 1 + Math.floor(Math.random() * 6);
+        const board = document.getElementById('my-isolated-board');
+        let roll = 1;
+        let ticks = 0;
+        const maxTicks = 15;
+        function tick() {
+            roll = 1 + Math.floor(Math.random() * 6);
+            board.innerHTML = `<h4 style="color:var(--primary);">🎲 サイコロを振っています... [ ${roll} ]</h4>`;
+            ticks++;
+            if (ticks < maxTicks) { setTimeout(tick, 80); }
+            else { finishDiceGame(bet, mode, roll); }
+        }
+        tick();
+    }
+
+    async function finishDiceGame(bet, mode, roll) {
         let multiplier = 0;
         let isWin = false;
-
         if(mode === 'exact') {
             const target = parseInt(document.getElementById('dice-exact-target').value);
             if(roll === target) { multiplier = 5.8; isWin = true; }
@@ -1343,7 +1660,6 @@
             const target = parseInt(document.getElementById('dice-range-target').value);
             if(dir === 'over' && roll >= target) isWin = true;
             if(dir === 'under' && roll <= target) isWin = true;
-            
             if(isWin) {
                 let outcomes = 0;
                 for(let i=1; i<=6; i++) {
@@ -1353,46 +1669,32 @@
                 multiplier = (96 / (outcomes * 16.66));
             }
         }
-
         const board = document.getElementById('my-isolated-board');
         if(isWin) {
             const winAmt = bet * multiplier;
-            changeBalance(winAmt, "ダイス勝利");
+            await changeBalance(winAmt, "ダイス勝利");
             board.innerHTML = `<h4 style="color:var(--primary);">🎲 サイコロの出目: ${roll} (勝利！)</h4><p style="font-size:13px;">配当 ￥${Math.floor(winAmt).toLocaleString()} を獲得</p>`;
         } else {
             board.innerHTML = `<h4 style="color:var(--accent);">🎲 サイコロの出目: ${roll} (敗北)</h4>`;
         }
     }
 
+    // --- 📈 ハイロー ---
     function initHiLowGame(bet) {
         document.getElementById('hilow-controls').classList.remove('hidden');
         const startCard = 1 + Math.floor(Math.random() * 13);
         activeHiLowGame = { bet: bet, currentCard: startCard, accumulatedMultiplier: 1.0 };
-        
         const board = document.getElementById('my-isolated-board');
+        const suits = ['♠', '♥', '♦', '♣'];
+        const randomSuit = suits[Math.floor(Math.random() * suits.length)];
+        const isRed = ['♥', '♦'].includes(randomSuit);
+        const rank = startCard === 1 ? 'A' : (startCard === 11 ? 'J' : (startCard === 12 ? 'Q' : (startCard === 13 ? 'K' : startCard.toString())));
+        const cardHtml = `<div class="card-mini ${isRed ? 'red' : ''}"><div>${randomSuit}${rank}</div><div style="text-align:right; margin-top:auto;">${rank}</div></div>`;
         board.innerHTML = `
             <h4 style="color:var(--primary);">📈 HIGH/LOW 開始</h4>
-            <p style="font-size:13px; margin:4px 0;">最初の基準カード: <strong>${startCard}</strong></p>
-            <p style="font-size:11px; color:var(--text-muted);">次の一手が基準値以上か以下かを予想してください。</p>
+            <div style="margin:10px 0; display:flex; justify-content:center;">${cardHtml}</div>
+            <p style="font-size:12px; color:var(--text-muted); text-align:center;">次の一手がこのカード【${rank}】以上か以下かを予想してください。</p>
         `;
-    }
-
-    function runRouletteGame(bet) {
-        alert("ルーレット盤スピン！");
-        const outcomes = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
-        const rolledNumber = outcomes[Math.floor(Math.random() * outcomes.length)];
-        
-        const isRed = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(rolledNumber);
-        const isBlack = rolledNumber !== 0 && !isRed;
-        
-        const board = document.getElementById('my-isolated-board');
-        board.innerHTML = `<h4 style="color:var(--gold);">🎡 ルーレット結果: ${rolledNumber} (${rolledNumber===0?'G':(isRed?'赤':'黒')})</h4>`;
-    }
-
-    function initSinglePlayerBjGame(bet) {
-        alert("ブラックジャックが配られました");
-        const board = document.getElementById('my-isolated-board');
-        board.innerHTML = `<h4 style="color:var(--primary);">🃏 BJ 簡易勝負成立</h4><p style="font-size:12px;">ディーラーとプレイヤーの手札を内部算出中...</p>`;
     }
 
 
