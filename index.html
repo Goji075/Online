@@ -252,12 +252,20 @@
     <div style="border-top:1px dashed #2f4553; padding-top:10px;">
         <h4 style="font-size:13px; margin-bottom:6px; color:var(--gold);">💡 RPGの敵キャラ・装備案を送る</h4>
         <input type="text" id="idea-title" placeholder="案の名前（例：溶岩ゴーレム、伝説の聖剣）">
-        <select id="idea-type">
+        <select id="idea-type" onchange="toggleIdeaFormUi()">
             <option value="enemy">敵キャラクターの案</option>
             <option value="weapon">武器の案</option>
             <option value="armor">防具の案</option>
         </select>
-        <textarea id="idea-desc" placeholder="ステータス効果や見た目の説明" style="width:100%; height:60px; background:var(--bg-input); border:1px solid #2f4553; border-radius:4px; color:#fff; padding:8px; font-size:13px; margin-bottom:10px;"></textarea>
+        <select id="idea-attr" style="width:100%; padding:12px; background-color:var(--bg-input); border:2px solid #2f4553; border-radius:4px; color:#fff; margin-bottom:12px; font-size:16px;">
+            <option value="none">無属性</option>
+            <option value="fire">火属性</option>
+            <option value="water">水属性</option>
+            <option value="wood">木属性</option>
+            <option value="light">光属性</option>
+            <option value="dark">暗属性</option>
+        </select>
+        <textarea id="idea-desc" class="hidden" placeholder="ステータス効果や見た目の説明" style="width:100%; height:60px; background:var(--bg-input); border:1px solid #2f4553; border-radius:4px; color:#fff; padding:8px; font-size:13px; margin-bottom:10px;"></textarea>
         <button onclick="submitRpgIdea()" style="background:var(--gold); color:#000; padding:10px; font-size:13px;">開発者へアイデアを送信</button>
     </div>
 </div>
@@ -375,6 +383,7 @@
                     <button class="secondary" onclick="gameSubAction('hit')">ヒット</button>
                     <button class="secondary" style="background-color:var(--gold); color:#000;" onclick="gameSubAction('stand')">スタンド</button>
                     <button class="secondary" style="grid-column: span 2; background-color:#e67e22; color:#fff;" onclick="gameSubAction('double')">ダブルダウン</button>
+                    <button id="btn-bj-split" class="secondary hidden" style="grid-column: span 2; background-color:#3498db; color:#fff;" onclick="gameSubAction('split')">スプリット</button>
                 </div>
                 
                 <div id="hilow-controls" class="hidden" style="margin-top:10px; display:flex; flex-direction:column; gap:6px;">
@@ -614,23 +623,19 @@
         const u = document.getElementById('auth-username').value.trim();
         const p = document.getElementById('auth-password').value.trim();
         if(!u || !p) return alert("ユーザーIDとパスワードを入力してください");
-        currentUser = u;
         
+        const isLoginMode = (document.getElementById('auth-title').innerText === "ログイン");
         const userRef = db.collection('users_v2').doc(u);
         const doc = await userRef.get();
-        if(!doc.exists) {
-            // 新規アカウント作成時は初期資金を100円に設定
-            await userRef.set({
-                password: p, balance: 100, wagered: 0, vault: 0,
-                rpgLevel: 1, rpgCoins: 0, rpgPotions: 2, jailUntil: null,
-                eqWName: "初期のナイフ (+0)", eqWAttr: "none", eqWAtk: 0,
-                eqAName: "旅人の服 (+0)", eqADef: 0,
-                eqCName: "お守り (+0)", eqCHp: 0,
-                lastLoginBonusDate: ""
-            });
-            currentBalance = 100;
-        } else {
-            if(doc.data().password !== p) return alert("パスワードが一致しません");
+        
+        if (isLoginMode) {
+            if (!doc.exists) {
+                return alert("アカウントが存在しません。新規登録を行ってください。");
+            }
+            if (doc.data().password !== p) {
+                return alert("パスワードが一致しません");
+            }
+            currentUser = u;
             currentBalance = doc.data().balance || 0;
             currentVipWager = doc.data().wagered || 0;
             currentVault = doc.data().vault || 0;
@@ -644,7 +649,36 @@
             pDefBonus = doc.data().eqADef || 0;
             pAccName = doc.data().eqCName || "お守り (+0)";
             pHpBonus = doc.data().eqCHp || 0;
+        } else {
+            if (doc.exists) {
+                return alert("そのユーザーIDは既に登録されています");
+            }
+            await userRef.set({
+                password: p, balance: 100, wagered: 0, vault: 0,
+                rpgLevel: 1, rpgCoins: 0, rpgPotions: 2, jailUntil: null,
+                eqWName: "初期のナイフ (+0)", eqWAttr: "none", eqWAtk: 0,
+                eqAName: "旅人の服 (+0)", eqADef: 0,
+                eqCName: "お守り (+0)", eqCHp: 0,
+                lastLoginBonusDate: ""
+            });
+            currentUser = u;
+            currentBalance = 100;
+            currentVipWager = 0;
+            currentVault = 0;
+            pLevel = 1;
+            pCoins = 0;
+            pPotions = 2;
+            pWeaponName = "初期のナイフ (+0)";
+            pWeaponAttr = "none";
+            pAtkBonus = 0;
+            pArmorName = "旅人の服 (+0)";
+            pDefBonus = 0;
+            pAccName = "お守り (+0)";
+            pHpBonus = 0;
         }
+
+        localStorage.setItem('koyocasino_uid', currentUser);
+        localStorage.setItem('koyocasino_pw', p);
 
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('main-content').classList.remove('hidden');
@@ -652,7 +686,6 @@
         document.getElementById('live-bet-ticker-bar').classList.remove('hidden');
         document.getElementById('display-username').innerText = currentUser;
         
-        // プレイヤー自身のステータスを自分で考えて調整したライン
         pMaxHP = 400 + pHpBonus;
         pHP = pMaxHP;
         pMP = 50;
@@ -708,12 +741,12 @@
         });
     }
 
-    async function changeBalance(amt, reason="") {
+    async function changeBalance(amt, reason="", isBet=false) {
         currentBalance += amt;
         if(currentBalance < 0) currentBalance = 0;
         document.getElementById('display-balance').innerText = Math.floor(currentBalance).toLocaleString();
         await db.collection('users_v2').doc(currentUser).update({ balance: currentBalance });
-        if(amt < 0) {
+        if(amt < 0 && isBet) {
             currentVipWager += Math.abs(amt);
             await db.collection('users_v2').doc(currentUser).update({ wagered: currentVipWager });
             updateVipProgressionUi();
@@ -761,11 +794,27 @@
         });
     }
 
+    function toggleIdeaFormUi() {
+        const type = document.getElementById('idea-type').value;
+        if (type === 'enemy') {
+            document.getElementById('idea-attr').classList.remove('hidden');
+            document.getElementById('idea-desc').classList.add('hidden');
+        } else {
+            document.getElementById('idea-attr').classList.add('hidden');
+            document.getElementById('idea-desc').classList.remove('hidden');
+        }
+    }
+
     async function submitRpgIdea() {
         const title = document.getElementById('idea-title').value.trim();
         const type = document.getElementById('idea-type').value;
-        const desc = document.getElementById('idea-desc').value.trim();
-        if(!title || !desc) return alert("名前と説明を入力してください");
+        let desc = "";
+        if (type === 'enemy') {
+            desc = document.getElementById('idea-attr').value;
+        } else {
+            desc = document.getElementById('idea-desc').value.trim();
+        }
+        if(!title || (type !== 'enemy' && !desc)) return alert("名前と説明を入力してください");
         
         await db.collection('rpg_ideas').add({
             username: currentUser, title: title, type: type, desc: desc, status: "pending", timestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -780,7 +829,7 @@
             approvedEnemies = []; approvedWeapons = []; approvedArmors = [];
             snap.forEach(doc => {
                 const data = doc.data();
-                if(data.type === 'enemy') approvedEnemies.push(data.title);
+                if(data.type === 'enemy') approvedEnemies.push({title: data.title, attr: data.desc || 'none'});
                 if(data.type === 'weapon') approvedWeapons.push({name: data.title, desc: data.desc});
                 if(data.type === 'armor') approvedArmors.push({name: data.title, desc: data.desc});
             });
@@ -836,12 +885,13 @@
 
         // 名前の選定（管理者が採用した案があれば優先登場）
         if(approvedEnemies.length > 0 && Math.random() < 0.4) {
-            eName = approvedEnemies[Math.floor(Math.random() * approvedEnemies.length)];
+            const chosen = approvedEnemies[Math.floor(Math.random() * approvedEnemies.length)];
+            eName = chosen.title;
+            eAttr = chosen.attr !== 'none' ? chosen.attr : attrTypes[Math.floor(Math.random() * attrTypes.length)];
         } else {
             eName = enemyNamesBase[Math.floor(Math.random() * enemyNamesBase.length)];
+            eAttr = attrTypes[Math.floor(Math.random() * attrTypes.length)];
         }
-        
-        eAttr = attrTypes[Math.floor(Math.random() * attrTypes.length)];
         
         const rareLabels = {common:"コモン", uncommon:"アンコモン", rare:"レア", epic:"激レア", ultrarare:"超激レア"};
         document.getElementById('rpg-e-name').innerHTML = `${eName} <span class="badge-element elem-${eAttr}">${eAttr.toUpperCase()}</span>`;
@@ -1076,6 +1126,40 @@
         }
     }
 
+    async function executeTipTransfer() {
+        const targetId = document.getElementById('tip-target-id').value.trim();
+        const amt = parseFloat(document.getElementById('tip-amount').value);
+        if (!targetId || isNaN(amt) || amt <= 0) {
+            return alert("有効な送金相手のIDと送金金額を入力してください");
+        }
+        if (targetId === currentUser) {
+            return alert("自分自身に送金することはできません");
+        }
+        if (currentBalance < amt) {
+            return alert("残高が不足しています");
+        }
+        const targetRef = db.collection('users_v2').doc(targetId);
+        const targetDoc = await targetRef.get();
+        if (!targetDoc.exists) {
+            return alert("指定されたユーザーIDが存在しません");
+        }
+        
+        await changeBalance(-amt, `チップ送金: to ${targetId}`);
+        const targetBalance = targetDoc.data().balance || 0;
+        await targetRef.update({ balance: targetBalance + amt });
+        
+        await db.collection('notifications').add({
+            username: targetId,
+            message: `💸 ${currentUser} から ￥${Math.floor(amt).toLocaleString()} のチップを受け取りました！`,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        alert(`￥${Math.floor(amt).toLocaleString()} を ${targetId} に送金しました。`);
+        closeSubModal('tip');
+        document.getElementById('tip-target-id').value = "";
+        document.getElementById('tip-amount').value = "";
+    }
+
     // --- 管理者パネル(Admin Panel) の超強化システム ---
     async function loginAdmin() {
         const p = document.getElementById('admin-password').value;
@@ -1211,6 +1295,22 @@
         if(g === 'bj' && currentRoom !== 'lobby') document.getElementById('bj-p2p-invite-container').classList.remove('hidden');
         
         document.getElementById('my-isolated-board').innerHTML = "";
+
+        if (g === 'roulette') {
+            const board = document.getElementById('my-isolated-board');
+            board.innerHTML = `
+                <h4 style="color:var(--gold); margin-bottom:8px;">🎡 ルーレット賭け先選択</h4>
+                <div class="roulette-container" style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 10px 0;">
+                    <canvas id="roulette-canvas" width="200" height="200" style="background: #0a1118; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: 4px solid #2f4553;"></canvas>
+                    <div class="roulette-bet-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; width: 100%; margin-top: 10px;">
+                        <button class="roulette-spot-btn" onclick="selectRouletteSpot('red')" style="background: var(--bg-input); border: 2px solid #2f4553; color: white; padding: 8px 4px; font-size: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; text-align: center;">🔴 赤 (2x)</button>
+                        <button class="roulette-spot-btn" onclick="selectRouletteSpot('black')" style="background: var(--bg-input); border: 2px solid #2f4553; color: white; padding: 8px 4px; font-size: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; text-align: center;">⚫ 黒 (2x)</button>
+                        <button class="roulette-spot-btn" onclick="selectRouletteSpot('number')" style="background: var(--bg-input); border: 2px solid #2f4553; color: white; padding: 8px 4px; font-size: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; text-align: center;">🔢 数字 (35x)</button>
+                    </div>
+                </div>
+            `;
+            drawRouletteWheel(0);
+        }
     }
 
     function adjustBetMultiplier(m) {
@@ -1243,7 +1343,7 @@
         if(isNaN(amt) || amt < 10) return alert("最低ベットは 10円 です");
         if(currentBalance < amt) return alert("残高が足りません");
 
-        await changeBalance(-amt, `ベット: ${selectedGame.toUpperCase()}`);
+        await changeBalance(-amt, `ベット: ${selectedGame.toUpperCase()}`, true);
         await broadcastLiveBetEvent(currentUser, amt, selectedGame.toUpperCase());
 
         if(selectedGame === 'mines') {
@@ -1479,100 +1579,208 @@
         const board = document.getElementById('my-isolated-board');
         if (!activeBjGame) return;
         let dealerCardsHtml = activeBjGame.dealerHand.map((c, i) => getCardHtml(c, i === 1 && activeBjGame.state === 'playing')).join('');
-        let playerCardsHtml = activeBjGame.playerHand.map(c => getCardHtml(c)).join('');
+        
         let dealerScore = activeBjGame.state === 'playing' ? "?" : calculateHandValue(activeBjGame.dealerHand);
-        let playerScore = calculateHandValue(activeBjGame.playerHand);
+        
+        let playerHandsHtml = activeBjGame.hands.map((hand, idx) => {
+            const cardsHtml = hand.map(c => getCardHtml(c)).join('');
+            const score = calculateHandValue(hand);
+            const isActive = idx === activeBjGame.activeHandIndex && activeBjGame.state === 'playing';
+            const statusStr = score > 21 ? " (バースト)" : (score === 21 && hand.length === 2 ? " (BJ)" : "");
+            const borderStyle = isActive ? "border: 2px solid var(--primary); padding: 5px; border-radius: 6px; background: rgba(0, 231, 1, 0.05);" : "padding: 5px;";
+            return `
+                <div style="${borderStyle} margin-bottom: 5px;">
+                    <div style="font-size: 11px; color: ${isActive ? 'var(--primary)' : 'var(--text-muted)'};">
+                        手札 ${idx + 1} (スコア: ${score})${statusStr} ${isActive ? '👈 プレイ中' : ''}
+                    </div>
+                    <div class="cards-flex">${cardsHtml}</div>
+                </div>
+            `;
+        }).join('');
+
         board.innerHTML = `
-            <h4 style="color:var(--primary); margin-bottom:8px;">🃏 BJ (ベット: ￥${activeBjGame.bet})</h4>
+            <h4 style="color:var(--primary); margin-bottom:8px;">🃏 BJ (ベット: 各￥${activeBjGame.bet})</h4>
             <div style="margin-bottom:10px;">
                 <div style="font-size:12px; color:var(--text-muted);">ディーラー (スコア: ${dealerScore})</div>
                 <div class="cards-flex">${dealerCardsHtml}</div>
             </div>
             <div style="margin-bottom:10px;">
-                <div style="font-size:12px; color:var(--text-muted);">プレイヤー (スコア: ${playerScore})</div>
-                <div class="cards-flex">${playerCardsHtml}</div>
+                ${playerHandsHtml}
             </div>
             <div id="bj-status-text" style="font-size:13px; font-weight:bold; color:var(--gold); text-align:center; margin-top:10px;"></div>
         `;
+
+        const activeHand = activeBjGame.hands[activeBjGame.activeHandIndex];
+        const splitBtn = document.getElementById('btn-bj-split');
+        if (splitBtn && activeBjGame.state === 'playing' && activeBjGame.hands.length === 1 && activeHand.length === 2 && activeHand[0].value === activeHand[1].value && currentBalance >= activeBjGame.bet) {
+            splitBtn.classList.remove('hidden');
+        } else if (splitBtn) {
+            splitBtn.classList.add('hidden');
+        }
     }
 
     async function initSinglePlayerBjGame(bet) {
-        document.getElementById('bj-controls').classList.remove('hidden');
+        document.getElementById('bj-controls').classList.add('hidden');
         const deck = createDeck();
-        const playerHand = [deck.pop(), deck.pop()];
-        const dealerHand = [deck.pop(), deck.pop()];
-        activeBjGame = { bet: bet, deck: deck, playerHand: playerHand, dealerHand: dealerHand, state: 'playing' };
+        const playerHand = [];
+        const dealerHand = [];
+        activeBjGame = { bet: bet, deck: deck, hands: [playerHand], activeHandIndex: 0, dealerHand: dealerHand, state: 'playing' };
+        
+        const board = document.getElementById('my-isolated-board');
+        board.innerHTML = `
+            <h4 style="color:var(--primary); margin-bottom:8px;">🃏 BJ (ベット: ￥${activeBjGame.bet})</h4>
+            <p style="font-size:12px; text-align:center; color:var(--text-muted);">カードを配っています...</p>
+        `;
+
+        const delay = (ms) => new Promise(res => setTimeout(res, ms));
+
+        activeBjGame.hands[0].push(activeBjGame.deck.pop());
         renderBjBoard();
-        const playerScore = calculateHandValue(playerHand);
+        await delay(600);
+
+        activeBjGame.dealerHand.push(activeBjGame.deck.pop());
+        renderBjBoard();
+        await delay(600);
+
+        activeBjGame.hands[0].push(activeBjGame.deck.pop());
+        renderBjBoard();
+        await delay(600);
+
+        activeBjGame.dealerHand.push(activeBjGame.deck.pop());
+        renderBjBoard();
+        await delay(600);
+
+        document.getElementById('bj-controls').classList.remove('hidden');
+
+        const playerScore = calculateHandValue(activeBjGame.hands[0]);
         if (playerScore === 21) { await resolveBjGame('stand'); }
     }
 
     async function resolveBjGame(action) {
         if (!activeBjGame) return;
-        if (action === 'hit') {
-            activeBjGame.playerHand.push(activeBjGame.deck.pop());
+        if (action === 'split') {
+            const currentHand = activeBjGame.hands[activeBjGame.activeHandIndex];
+            if (currentHand.length !== 2 || currentHand[0].value !== currentHand[1].value) return;
+            if (currentBalance < activeBjGame.bet) {
+                alert("残高が足りないためスプリットできません");
+                return;
+            }
+            await changeBalance(-activeBjGame.bet, "BJスプリット追加ベット", true);
+            const card1 = currentHand[0];
+            const card2 = currentHand[1];
+            activeBjGame.hands = [
+                [card1, activeBjGame.deck.pop()],
+                [card2, activeBjGame.deck.pop()]
+            ];
+            activeBjGame.activeHandIndex = 0;
+            document.getElementById('btn-bj-split').classList.add('hidden');
             renderBjBoard();
-            const score = calculateHandValue(activeBjGame.playerHand);
+        } else if (action === 'hit') {
+            const currentHand = activeBjGame.hands[activeBjGame.activeHandIndex];
+            currentHand.push(activeBjGame.deck.pop());
+            renderBjBoard();
+            const score = calculateHandValue(currentHand);
             if (score > 21) {
-                activeBjGame.state = 'busted';
-                document.getElementById('bj-controls').classList.add('hidden');
-                document.getElementById('bj-status-text').innerText = "💥 バースト！あなたの負けです。";
-                logRpg("🃏 カジノ速報：BJでバーストして没収されました");
-                activeBjGame = null;
+                if (activeBjGame.hands.length > 1 && activeBjGame.activeHandIndex < activeBjGame.hands.length - 1) {
+                    alert(`手札 ${activeBjGame.activeHandIndex + 1} がバーストしました。次の手札へ移ります。`);
+                    activeBjGame.activeHandIndex++;
+                    renderBjBoard();
+                } else {
+                    const allBusted = activeBjGame.hands.every(h => calculateHandValue(h) > 21);
+                    if (allBusted) {
+                        activeBjGame.state = 'busted';
+                        document.getElementById('bj-controls').classList.add('hidden');
+                        document.getElementById('bj-status-text').innerText = "💥 すべての手札がバースト！あなたの負けです。";
+                        logRpg("🃏 カジノ速報：BJでバーストして没収されました");
+                        activeBjGame = null;
+                    } else {
+                        await resolveBjDealerTurn();
+                    }
+                }
             }
         } else if (action === 'double') {
+            const currentHand = activeBjGame.hands[activeBjGame.activeHandIndex];
             const additionalBet = activeBjGame.bet;
             if (currentBalance < additionalBet) {
                 alert("残高が足りないためダブルダウンできません");
                 return;
             }
-            await changeBalance(-additionalBet, "BJダブルダウン追加ベット");
-            activeBjGame.bet += additionalBet;
-            activeBjGame.playerHand.push(activeBjGame.deck.pop());
+            await changeBalance(-additionalBet, "BJダブルダウン追加ベット", true);
+            currentHand.push(activeBjGame.deck.pop());
             renderBjBoard();
-            const score = calculateHandValue(activeBjGame.playerHand);
+            const score = calculateHandValue(currentHand);
             if (score > 21) {
-                activeBjGame.state = 'busted';
-                document.getElementById('bj-controls').classList.add('hidden');
-                document.getElementById('bj-status-text').innerText = "💥 バースト！あなたの負けです。";
-                logRpg("🃏 カジノ速報：BJでダブルダウン後にバーストしました");
-                activeBjGame = null;
+                if (activeBjGame.hands.length > 1 && activeBjGame.activeHandIndex < activeBjGame.hands.length - 1) {
+                    alert(`手札 ${activeBjGame.activeHandIndex + 1} がバーストしました。次の手札へ移ります。`);
+                    activeBjGame.activeHandIndex++;
+                    renderBjBoard();
+                } else {
+                    const allBusted = activeBjGame.hands.every(h => calculateHandValue(h) > 21);
+                    if (allBusted) {
+                        activeBjGame.state = 'busted';
+                        document.getElementById('bj-controls').classList.add('hidden');
+                        document.getElementById('bj-status-text').innerText = "💥 すべての手札がバースト！あなたの負けです。";
+                        logRpg("🃏 カジノ速報：BJでダブルダウン後にバーストしました");
+                        activeBjGame = null;
+                    } else {
+                        await resolveBjDealerTurn();
+                    }
+                }
+            } else {
+                if (activeBjGame.hands.length > 1 && activeBjGame.activeHandIndex < activeBjGame.hands.length - 1) {
+                    activeBjGame.activeHandIndex++;
+                    renderBjBoard();
+                } else {
+                    await resolveBjDealerTurn();
+                }
+            }
+        } else if (action === 'stand') {
+            if (activeBjGame.hands.length > 1 && activeBjGame.activeHandIndex < activeBjGame.hands.length - 1) {
+                activeBjGame.activeHandIndex++;
+                renderBjBoard();
             } else {
                 await resolveBjDealerTurn();
             }
-        } else if (action === 'stand') {
-            await resolveBjDealerTurn();
         }
     }
 
     async function resolveBjDealerTurn() {
         activeBjGame.state = 'dealer-turn';
         document.getElementById('bj-controls').classList.add('hidden');
+        const delay = (ms) => new Promise(res => setTimeout(res, ms));
         let dealerScore = calculateHandValue(activeBjGame.dealerHand);
         while (dealerScore < 17) {
             activeBjGame.dealerHand.push(activeBjGame.deck.pop());
             dealerScore = calculateHandValue(activeBjGame.dealerHand);
+            renderBjBoard();
+            await delay(800);
         }
-        renderBjBoard();
-        const playerScore = calculateHandValue(activeBjGame.playerHand);
-        let resultText = "";
-        let winAmt = 0;
-        if (dealerScore > 21) {
-            resultText = "🎉 ディーラーがバースト！あなたの勝ちです！";
-            winAmt = activeBjGame.bet * 2;
-        } else if (playerScore > dealerScore) {
-            const isNatural = playerScore === 21 && activeBjGame.playerHand.length === 2;
-            winAmt = isNatural ? activeBjGame.bet * 2.5 : activeBjGame.bet * 2;
-            resultText = isNatural ? "🃏 ナチュラルBJ！あなたの勝ちです！" : "🎉 あなたの勝ちです！";
-        } else if (playerScore < dealerScore) {
-            resultText = "💀 あなたの負けです。";
-            winAmt = 0;
-        } else {
-            resultText = "🤝 引き分け（プッシュ）です。";
-            winAmt = activeBjGame.bet;
-        }
-        document.getElementById('bj-status-text').innerText = resultText;
-        if (winAmt > 0) { await changeBalance(winAmt, "BJ払い戻し"); }
+        let totalWinAmt = 0;
+        let resultLines = [];
+        activeBjGame.hands.forEach((hand, idx) => {
+            const playerScore = calculateHandValue(hand);
+            let winAmt = 0;
+            let handResult = "";
+            if (playerScore > 21) {
+                handResult = `手札 ${idx + 1}: バースト (敗北)`;
+            } else if (dealerScore > 21) {
+                handResult = `手札 ${idx + 1}: ディーラーバースト (勝利!)`;
+                winAmt = activeBjGame.bet * 2;
+            } else if (playerScore > dealerScore) {
+                const isNatural = playerScore === 21 && hand.length === 2;
+                winAmt = isNatural ? activeBjGame.bet * 2.5 : activeBjGame.bet * 2;
+                handResult = `手札 ${idx + 1}: 勝利! ${isNatural ? '(BJ)' : ''}`;
+            } else if (playerScore < dealerScore) {
+                handResult = `手札 ${idx + 1}: 敗北`;
+            } else {
+                handResult = `手札 ${idx + 1}: 引き分け`;
+                winAmt = activeBjGame.bet;
+            }
+            totalWinAmt += winAmt;
+            resultLines.push(handResult);
+        });
+        document.getElementById('bj-status-text').innerHTML = resultLines.join('<br>') + `<br><span style="color:var(--primary); font-size:14px;">合計獲得: ￥${Math.floor(totalWinAmt).toLocaleString()}</span>`;
+        if (totalWinAmt > 0) { await changeBalance(totalWinAmt, "BJ払い戻し"); }
         activeBjGame = null;
     }
 
@@ -1602,12 +1810,18 @@
                 selectGameType('hilow');
                 return;
             }
+            const displayBoard = document.getElementById('my-isolated-board');
+            displayBoard.innerHTML = `
+                <h4 style="color:var(--primary);">📈 HIGH/LOW 判定中...</h4>
+                <div style="margin:10px 0; display:flex; justify-content:center;"><div class="card-back-mini"></div></div>
+            `;
+            await new Promise(res => setTimeout(res, 600));
+
             const nextCardNum = 1 + Math.floor(Math.random() * 13);
             const currentNum = activeHiLowGame.currentCard;
             let isWin = false;
             if(action === 'high' && nextCardNum >= currentNum) isWin = true;
             if(action === 'low' && nextCardNum <= currentNum) isWin = true;
-            const displayBoard = document.getElementById('my-isolated-board');
             const suits = ['♠', '♥', '♦', '♣'];
             const randomSuit = suits[Math.floor(Math.random() * suits.length)];
             const isRed = ['♥', '♦'].includes(randomSuit);
@@ -1633,20 +1847,87 @@
         }
     }
 
+    function drawDice(num, angle = 0) {
+        const canvas = document.getElementById('dice-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.save();
+        ctx.translate(w / 2, h / 2);
+        ctx.rotate(angle);
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = "#2f4553";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        const size = 70;
+        const r = 10;
+        ctx.roundRect(-size/2, -size/2, size, size, r);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = num === 1 ? "#fe2247" : "#111111";
+        const dotR = 6;
+        function drawDot(x, y) {
+            ctx.beginPath();
+            ctx.arc(x, y, dotR, 0, 2*Math.PI);
+            ctx.fill();
+        }
+        const offset = 18;
+        if (num === 1) {
+            ctx.beginPath();
+            ctx.arc(0, 0, dotR * 1.5, 0, 2*Math.PI);
+            ctx.fillStyle = "#fe2247";
+            ctx.fill();
+        } else if (num === 2) {
+            drawDot(-offset, -offset);
+            drawDot(offset, offset);
+        } else if (num === 3) {
+            drawDot(-offset, -offset);
+            drawDot(0, 0);
+            drawDot(offset, offset);
+        } else if (num === 4) {
+            drawDot(-offset, -offset);
+            drawDot(offset, -offset);
+            drawDot(-offset, offset);
+            drawDot(offset, offset);
+        } else if (num === 5) {
+            drawDot(-offset, -offset);
+            drawDot(offset, -offset);
+            drawDot(0, 0);
+            drawDot(-offset, offset);
+            drawDot(offset, offset);
+        } else if (num === 6) {
+            drawDot(-offset, -offset);
+            drawDot(offset, -offset);
+            drawDot(-offset, 0);
+            drawDot(offset, 0);
+            drawDot(-offset, offset);
+            drawDot(offset, offset);
+        }
+        ctx.restore();
+    }
+
     function runDiceGame(bet) {
         const mode = document.getElementById('dice-bet-mode').value;
         const board = document.getElementById('my-isolated-board');
-        let roll = 1;
+        board.innerHTML = `
+            <h4 style="color:var(--primary); margin-bottom:8px;">🎲 ダイスロール中...</h4>
+            <canvas id="dice-canvas" width="100" height="100" style="display:block; margin:10px auto; background:transparent;"></canvas>
+        `;
         let ticks = 0;
-        const maxTicks = 15;
-        function tick() {
+        let angle = 0;
+        let roll = 1;
+        const maxTicks = 20;
+        function rollTick() {
             roll = 1 + Math.floor(Math.random() * 6);
-            board.innerHTML = `<h4 style="color:var(--primary);">🎲 サイコロを振っています... [ ${roll} ]</h4>`;
+            angle += 0.3;
+            drawDice(roll, angle);
             ticks++;
-            if (ticks < maxTicks) { setTimeout(tick, 80); }
+            if (ticks < maxTicks) { setTimeout(rollTick, 60); }
             else { finishDiceGame(bet, mode, roll); }
         }
-        tick();
+        rollTick();
     }
 
     async function finishDiceGame(bet, mode, roll) {
@@ -1829,11 +2110,57 @@
         document.getElementById('menu-overlay').className = open ? "sidebar-overlay show" : "sidebar-overlay";
     }
 
-    function redeemCode() { alert("コードの認証に成功しました！残高を反映します。"); changeBalance(5000, "プロモコード適用"); }
-    function generatePromoCode() {
-        const code = "KOYO-" + Math.random().toString(36).substring(2, 7).toUpperCase();
-        document.getElementById('admin-codes-list').innerHTML += `<div>生成コード: ${code}</div>`;
+    async function redeemCode() {
+        const code = document.getElementById('charge-code').value.trim().toUpperCase();
+        if (!code) return alert("コードを入力してください");
+        
+        const codeRef = db.collection('promo_codes').doc(code);
+        const doc = await codeRef.get();
+        if (!doc.exists) {
+            return alert("無効なプロモコードです");
+        }
+        const data = doc.data();
+        if (data.status !== 'active') {
+            return alert("このコードは既に使用されています");
+        }
+        
+        await codeRef.update({
+            status: "used",
+            usedBy: currentUser,
+            usedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        await changeBalance(data.amount, "プロモコード適用");
+        
+        const historyList = document.getElementById('promo-history-list');
+        if (historyList) {
+            historyList.innerHTML = `<div class="history-item">コード: ${code} 使用 (￥${data.amount})</div>` + historyList.innerHTML;
+        }
+        
+        alert(`🎉 コードの認証に成功しました！残高に ￥${data.amount.toLocaleString()} を反映しました。`);
+        document.getElementById('charge-code').value = "";
     }
+
+    async function generatePromoCode() {
+        const amt = parseFloat(document.getElementById('admin-code-amount').value) || 5000;
+        const code = "KOYO-" + Math.random().toString(36).substring(2, 7).toUpperCase();
+        await db.collection('promo_codes').doc(code).set({
+            amount: amt,
+            status: "active",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        document.getElementById('admin-codes-list').innerHTML += `<div>生成コード: ${code} (￥${amt})</div>`;
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedUid = localStorage.getItem('koyocasino_uid');
+        const savedPw = localStorage.getItem('koyocasino_pw');
+        if (savedUid && savedPw) {
+            document.getElementById('auth-username').value = savedUid;
+            document.getElementById('auth-password').value = savedPw;
+            handleAuth();
+        }
+    });
 </script>
 
 </body>
