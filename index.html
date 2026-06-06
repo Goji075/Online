@@ -289,6 +289,11 @@
     <div class="modal-header"><h3>📋 ゲームデータ・計算式・ルール</h3><span style="cursor:pointer;" onclick="closeSubModal('rpgrule')">✕</span></div>
         
         <div style="background:var(--bg-input); padding:10px; border-radius:4px; border:1px solid #2f4553; margin-bottom:12px; font-size:13px; line-height:1.6;">
+            <strong style="color:var(--gold); font-size:14px;">💰 アカウント初期残高</strong><br>
+            ・新しくアカウントを作成した時の初期残高は <strong>1000円</strong> です。（※以前の仕様で100円だった既存アカウントも、ログイン時に自動的に1000円に補正されます）
+        </div>
+
+        <div style="background:var(--bg-input); padding:10px; border-radius:4px; border:1px solid #2f4553; margin-bottom:12px; font-size:13px; line-height:1.6;">
             <strong style="color:var(--gold); font-size:14px;">🧮 戦闘計算システム</strong><br>
             ・<strong>与ダメージ</strong>: (基礎攻撃力 + 武器攻撃力) × 属性相性倍率 × スキル倍率 × 乱数(0.9~1.1)<br>
             ・<strong>被ダメージ</strong>: (敵の攻撃力 × 40) / (基礎防御力 + 防具防御力) × 乱数(0.8~1.2)<br>
@@ -300,11 +305,16 @@
         </div>
 
         <div style="background:rgba(0,231,1,0.05); padding:10px; border-radius:4px; border:1px solid var(--primary); margin-bottom:12px; font-size:13px; line-height:1.6;">
-            <strong style="color:var(--primary); font-size:14px;">✨ 階層（レベル）アップシステム</strong><br>
+            <strong style="color:var(--primary); font-size:14px;">✨ 階層（レベル）アップとモンスターシステム</strong><br>
             ・敵モンスターを倒すと経験値（EXP）が手に入ります。強敵（レア度が高い敵）ほど多くの経験値を獲得できます。<br>
             ・必要経験値（現在のレベル × 40）に達すると、レベル（階層）がアップ！<br>
             ・<strong>レベルアップボーナス</strong>: <strong>基礎攻撃力 +5</strong>、<strong>最大HP +50</strong> が永続的に加算されます！<br>
-            ・戦闘に勝利するたびに、<strong>プレイヤーのHPとMPは100%全回復</strong>します。
+            ・戦闘に勝利するたびに、<strong>プレイヤーのHPとMPは100%全回復</strong>し、自動的に次の階層へ進みます。<br>
+            ・<strong>最高到達階層</strong>: 今までの最高到達階層（maxFloor）は保存され、階層ランキングにはこの最高到達階層が表示されます。<br>
+            ・<strong>モンスターのレア度と強さ</strong>: モンスターはレア度に応じて強さが大幅に異なります。<br>
+            　・🟢 <strong>コモン</strong>: レベル上昇も考慮して確実にワンパン（一撃）で倒せる強さです。<br>
+            　   （アンコモン、レア、激レアと上がるにつれて耐久力・攻撃力が段階的に強くなります）<br>
+            　・🟡 <strong>超激レア</strong>: 非常に耐久力・攻撃力が高く、スキルや回復薬を駆使しないと倒せない極めて強力な設定です。
         </div>
 
         <div style="background:var(--bg-input); padding:10px; border-radius:4px; border:1px solid #2f4553; margin-bottom:12px; font-size:13px; line-height:1.6;">
@@ -340,14 +350,14 @@
             <strong style="color:#e74c3c; font-size:14px;">⚔️ プレイヤー戦闘スキル</strong><br>
             戦闘中にMPを消費して強力なスキルを使用できます：<br>
             ・💖 <strong>ヒール (消費 15MP)</strong>: HPを150回復。一度使用すると3ターンのクールダウン（冷却時間）が必要です。<br>
-            ・💥 <strong>フルスイング (消費 10MP)</strong>: 敵に通常の1.5倍 of 物理ダメージを与えます。<br>
+            ・💥 <strong>フルスイング (消費 10MP)</strong>: 敵に通常の1.5倍の物理ダメージを与えます。<br>
             ・⚡ <strong>属性チャージ (消費 20MP)</strong>: 3ターンの間、有利属性の弱点特効倍率を1.1倍から<strong>1.3倍に強化</strong>します！
         </div>
 
         <div style="background:rgba(254,34,71,0.1); padding:10px; border-radius:4px; border:1px solid var(--accent); margin-bottom:12px; font-size:13px; line-height:1.6;">
             <strong style="color:var(--accent); font-size:14px;">💀 敗北と逃走ペナルティ</strong><br>
-            ・<strong>戦闘敗北時</strong>: プレイヤーのHPが0になると敗北となり、15分間RPGの探索が制限されます（カジノはプレイ可能）。残高から経過時間に応じた費用（最大1000円）を支払うことで、<strong>即時復活</strong>が可能です。<br>
-            ・<strong>戦闘逃走時</strong>: モンスターとの戦いから逃げ出した場合、90秒間RPGの探索が制限されます（逃走ペナルティは即時復活できません）。
+            ・<strong>戦闘敗北時（ゲームオーバー）</strong>: プレイヤーのHPが0になると敗北となり、<strong>探索中の階層が1階にリセットされます</strong>。また、15分間RPGの探索が制限されます（カジノはプレイ可能）。残高から経過時間に応じた費用（最大1000円）を支払うことで、<strong>即時復活</strong>（階層は1階から）が可能です。<br>
+            ・<strong>戦闘逃走時</strong>: モンスターとの戦いから逃げ出した場合、<strong>現在の階層が1つ下がります（最低1階まで）</strong>。また、90秒間RPGの探索が制限されます（逃走ペナルティは即時復活できません）。
         </div>
 
         <div style="background:var(--bg-input); padding:10px; border-radius:4px; border:1px solid #2f4553; font-size:13px; line-height:1.6;">
@@ -663,7 +673,7 @@
     // --- RPG用グローバルデータ ---
     let pHP = 400, pMaxHP = 400, pMP = 50, pMaxMP = 50;
     let pAtkBonus = 0, pDefBonus = 0, pHpBonus = 0;
-    let pLevel = 1, pFloor = 1, pCoins = 0, pPotions = 0, pExp = 0;
+    let pLevel = 1, pFloor = 1, pMaxFloor = 1, pCoins = 0, pPotions = 0, pExp = 0;
     let pInventory = []; // { id, name, type, stat, rarity, attr, equipped, plus }
     let pWeaponName = "初期のナイフ (+0)", pArmorName = "旅人の服 (+0)", pAccName = "お守り (+0)";
     let pWeaponAttr = "none";
@@ -744,10 +754,15 @@
             }
             currentUser = u;
             currentBalance = doc.data().balance || 0;
+            if (currentBalance === 100) {
+                currentBalance = 1000;
+                await userRef.update({ balance: 1000 });
+            }
             currentVipWager = doc.data().wagered || 0;
             currentVault = doc.data().vault || 0;
             pLevel = doc.data().rpgLevel || 1;
             pFloor = doc.data().rpgFloor || 1;
+            pMaxFloor = doc.data().maxFloor || doc.data().rpgFloor || 1;
             pExp = doc.data().rpgExp || 0;
             pInventory = doc.data().pInventory || [];
             pCoins = doc.data().rpgCoins || 0;
@@ -764,8 +779,8 @@
                 return alert("そのユーザーIDは既に登録されています");
             }
             await userRef.set({
-                password: p, balance: 100, wagered: 0, vault: 0,
-                rpgLevel: 1, rpgFloor: 1, rpgExp: 0, pInventory: [],
+                password: p, balance: 1000, wagered: 0, vault: 0,
+                rpgLevel: 1, rpgFloor: 1, maxFloor: 1, rpgExp: 0, pInventory: [],
                 rpgCoins: 0, rpgPotions: 2, jailUntil: null,
                 eqWName: "初期のナイフ (+0)", eqWAttr: "none", eqWAtk: 0,
                 eqAName: "旅人の服 (+0)", eqADef: 0,
@@ -773,11 +788,12 @@
                 lastLoginBonusDate: ""
             });
             currentUser = u;
-            currentBalance = 100;
+            currentBalance = 1000;
             currentVipWager = 0;
             currentVault = 0;
             pLevel = 1;
             pFloor = 1;
+            pMaxFloor = 1;
             pExp = 0;
             pCoins = 0;
             pPotions = 2;
@@ -891,7 +907,7 @@
     async function saveRpgProgress() {
         if(!currentUser) return;
         await db.collection('users_v2').doc(currentUser).update({
-            rpgLevel: pLevel, rpgFloor: pFloor, rpgExp: pExp,
+            rpgLevel: pLevel, rpgFloor: pFloor, maxFloor: pMaxFloor, rpgExp: pExp,
             pInventory: pInventory,
             rpgCoins: pCoins, rpgPotions: pPotions,
             eqWName: pWeaponName, eqWAttr: pWeaponAttr, eqWAtk: pAtkBonus,
@@ -1035,17 +1051,6 @@
         healCooldown = 0;
         chargeDuration = 0;
         
-        // 敵のステータス計算（階層 pFloor に依存）
-        // 敵を少し弱体化：HPの伸びを抑え、攻撃力の基礎値を下げる
-        const baseHP = 50 + (pFloor - 1) * 40;
-        const baseAtk = 80 + (pFloor - 1) * 70;
-        const flexHP = baseHP * (0.9 + Math.random() * 0.2);
-        const flexAtk = baseAtk * (0.9 + Math.random() * 0.2);
-        
-        eMaxHP = flexHP;
-        eHP = eMaxHP;
-        eAtk = flexAtk;
-        
         // レア度の抽選
         const roll = Math.random();
         if(roll < 0.015) { eRare = "ultrarare"; }
@@ -1053,6 +1058,36 @@
         else if(roll < 0.10) { eRare = "rare"; }
         else if(roll < 0.30) { eRare = "uncommon"; }
         else { eRare = "common"; }
+
+        // レア度に応じたステータス倍率の適用
+        // コモンなら確実にワンパン、超激レアは非常に倒すのが難しいバランスに調整
+        const rareHpMultipliers = {
+            common: 0.5,
+            uncommon: 1.2,
+            rare: 3.0,
+            epic: 8.0,
+            ultrarare: 30.0
+        };
+        const rareAtkMultipliers = {
+            common: 0.5,
+            uncommon: 1.0,
+            rare: 2.0,
+            epic: 5.0,
+            ultrarare: 20.0
+        };
+
+        const hpMul = rareHpMultipliers[eRare] || 1.0;
+        const atkMul = rareAtkMultipliers[eRare] || 1.0;
+
+        // 敵のステータス計算（階層 pFloor に依存し、レア度倍率を乗算）
+        const baseHP = (5 + (pFloor - 1) * 0.5) * hpMul;
+        const baseAtk = (2 + (pFloor - 1) * 0.5) * atkMul;
+        const flexHP = baseHP * (0.9 + Math.random() * 0.2);
+        const flexAtk = baseAtk * (0.9 + Math.random() * 0.2);
+        
+        eMaxHP = flexHP;
+        eHP = eMaxHP;
+        eAtk = flexAtk;
 
         // 名前の選定（管理者が採用した案があれば優先登場）
         if(approvedEnemies.length > 0 && Math.random() < 0.4) {
@@ -1102,9 +1137,17 @@
         if(type === 'run') {
             if (!confirm("本当に逃げますか？逃走すると90秒間再挑戦できなくなります。")) return;
             logRpg("🏃 ペナルティ：逃走したため、90秒間RPGエリアの探索が制限されます！");
+            
+            pFloor = Math.max(1, pFloor - 1);
+            logRpg(`📉 逃走により階層が低下した！ (現在: 第${pFloor}階層)`);
+            
             const jailTime = new Date(Date.now() + 90 * 1000);
-            await db.collection('users_v2').doc(currentUser).update({ jailUntil: jailTime.toISOString() });
-            alert("🏃 逃げ出しました！90秒間RPGへ再挑戦できなくなります！");
+            await db.collection('users_v2').doc(currentUser).update({ 
+                jailUntil: jailTime.toISOString(),
+                rpgFloor: pFloor
+            });
+            alert("🏃 逃げ出しました！階層が1つ下がり、90秒間RPGへ再挑戦できなくなります！");
+            updateDisplayUi();
             checkJailStatus();
             return;
         }
@@ -1257,18 +1300,18 @@
                 newItem.type = "weapon";
                 newItem.stat = Math.floor(pFloor * 1.2) + (1 + Math.floor(Math.random() * 5));
                 newItem.attr = rAttr;
-                dropMsg += `🗡️ 武器ドロップ: ${newItem.name} (+0) [${rAttr.toUpperCase()}]！\n`;
+                dropMsg += `🗡️ 武器ドロップ: ${newItem.name} (+${newItem.plus}) [${rAttr.toUpperCase()}] (ATK: +${newItem.stat})！\n`;
             } else if(eqRoll === 1) {
                 let aTitle = approvedArmors.length > 0 && Math.random() < 0.5 ? approvedArmors[Math.floor(Math.random() * approvedArmors.length)].name : "ルーンアーマー";
                 newItem.name = aTitle;
                 newItem.type = "armor";
                 newItem.stat = Math.floor(pFloor * 1.5) + (1 + Math.floor(Math.random() * 5));
-                dropMsg += `🛡️ 防具ドロップ: ${newItem.name} (+0)！\n`;
+                dropMsg += `🛡️ 防具ドロップ: ${newItem.name} (+${newItem.plus}) (DEF: +${newItem.stat})！\n`;
             } else {
                 newItem.name = "ハクスラ魔石の指輪";
                 newItem.type = "accessory";
                 newItem.stat = Math.floor(pFloor * 4) + (5 + Math.floor(Math.random() * 16));
-                dropMsg += `📿 装飾ドロップ: ${newItem.name} (+0)！\n`;
+                dropMsg += `📿 装飾ドロップ: ${newItem.name} (+${newItem.plus}) (HP: +${newItem.stat})！\n`;
             }
             pInventory.push(newItem);
             logRpg(`🎁 装備がドロップしました！インベントリを確認してください。`);
@@ -1278,6 +1321,9 @@
 
         // 階層を進める
         pFloor++;
+        if (pFloor > pMaxFloor) {
+            pMaxFloor = pFloor;
+        }
 
         // 戦闘が終了するごとにプレイヤーのHP・MPは自動全回復
         pMaxHP = 400 + (pLevel - 1) * 50 + pHpBonus;
@@ -1292,11 +1338,20 @@
 
     async function handleRpgDefeat() {
         logRpg(`💀 プレイヤーは力尽きた...！`);
+        
+        // 死亡ペナルティとして階層を1にリセット
+        pFloor = 1;
+        logRpg(`📉 階層が1にリセットされた！`);
+        
         // ゲームオーバーは15分間RPGをプレイ不可になり、カジノのみ可能になる
         const jailTime = new Date(Date.now() + 15 * 60 * 1000);
-        await db.collection('users_v2').doc(currentUser).update({ jailUntil: jailTime.toISOString() });
+        await db.collection('users_v2').doc(currentUser).update({ 
+            jailUntil: jailTime.toISOString(),
+            rpgFloor: pFloor
+        });
         
-        alert("💀 ゲームオーバー！15分間RPGへ再挑戦できなくなり、カジノしかプレイできないペナルティ状態になります！");
+        alert("💀 ゲームオーバー！階層が1にリセットされ、15分間RPGへ再挑戦できなくなり、カジノしかプレイできないペナルティ状態になります！");
+        updateDisplayUi();
         checkJailStatus();
     }
 
@@ -3242,7 +3297,7 @@
         
         // RPGかカジノかで切り替え
         const isRpg = document.getElementById('section-rpg').classList.contains('active-tab');
-        const sortField = isRpg ? 'rpgLevel' : 'balance';
+        const sortField = isRpg ? 'maxFloor' : 'balance';
         
         try {
             const snap = await db.collection('users_v2').orderBy(sortField, 'desc').limit(20).get();
@@ -3250,7 +3305,7 @@
             let rank = 1;
             snap.forEach(doc => {
                 const d = doc.data();
-                const val = isRpg ? `階層 ${d.rpgLevel}` : `￥${Math.floor(d.balance).toLocaleString()}`;
+                const val = isRpg ? `最高到達階層: ${d.maxFloor || d.rpgFloor || 1}階` : `￥${Math.floor(d.balance).toLocaleString()}`;
                 html += `
                     <div class="leaderboard-row ${rank <= 3 ? 'top-3' : ''}">
                         <div style="display:flex; align-items:center;">
