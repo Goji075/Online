@@ -738,9 +738,13 @@
         
         if (isLoginMode) {
             if (!doc.exists) {
+                localStorage.removeItem('koyocasino_uid');
+                localStorage.removeItem('koyocasino_pw');
                 return alert("アカウントが存在しません。新規登録を行ってください。");
             }
             if (doc.data().password !== p) {
+                localStorage.removeItem('koyocasino_uid');
+                localStorage.removeItem('koyocasino_pw');
                 return alert("パスワードが一致しません");
             }
             currentUser = u;
@@ -765,7 +769,7 @@
                 return alert("そのユーザーIDは既に登録されています");
             }
             await userRef.set({
-                password: p, balance: 100, wagered: 0, vault: 0,
+                password: p, balance: 1000, wagered: 0, vault: 0,
                 rpgLevel: 1, rpgFloor: 1, rpgExp: 0, pInventory: [],
                 rpgCoins: 0, rpgPotions: 2, jailUntil: null,
                 eqWName: "初期のナイフ (+0)", eqWAttr: "none", eqWAtk: 0,
@@ -774,7 +778,7 @@
                 lastLoginBonusDate: ""
             });
             currentUser = u;
-            currentBalance = 100;
+            currentBalance = 1000;
             currentVipWager = 0;
             currentVault = 0;
             pLevel = 1;
@@ -1396,6 +1400,8 @@
         if(confirm(`⚠️ 本当にあなたのアカウント [ ${currentUser} ] を完全に削除しますか？\nこの操作は取り消せません。`)) {
             try {
                 await db.collection('users_v2').doc(currentUser).delete();
+                localStorage.removeItem('koyocasino_uid');
+                localStorage.removeItem('koyocasino_pw');
                 alert("アカウントを削除しました。");
                 location.reload();
             } catch(e) {
