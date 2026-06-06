@@ -271,15 +271,25 @@
 </div>
 
 <div class="sub-modal" id="modal-rpgrule">
-    <div class="modal-header"><h3>📋 RPGデータ・詳細ルール</h3><span style="cursor:pointer;" onclick="closeSubModal('rpgrule')">✕</span></div>
+    <div class="modal-header"><h3>📋 RPGデータ・計算式・ルール</h3><span style="cursor:pointer;" onclick="closeSubModal('rpgrule')">✕</span></div>
     <div style="font-size:12px; line-height:1.6; display:flex; flex-direction:column; gap:10px;">
         <div><strong>🔥 属性相性の相関関係（ダメージ 1.1倍）</strong><br>
         <span class="badge-element elem-fire">火</span> → <span class="badge-element elem-wood">木</span> → <span class="badge-element elem-water">水</span> → <span class="badge-element elem-fire">火</span><br>
         <span class="badge-element elem-light">光</span> ⇄ <span class="badge-element elem-dark">暗</span> (お互いに有利)</div>
         
+        <div style="background:var(--bg-input); padding:8px; border-radius:4px; border:1px solid #2f4553;">
+            <strong>🧮 戦闘計算式マニュアル</strong><br>
+            ・<strong>与ダメージ</strong>: (基礎攻撃力25 + 武器加算) × 属性倍率 × スキル倍率 × 乱数(0.9~1.1)<br>
+            ・<strong>被ダメージ</strong>: (敵攻撃力 × 40) / (基礎防御力150 + 防具加算) × 乱数(0.8~1.2)<br>
+            ・<strong>装備の「+N」の意味</strong>: <br>
+            　🗡️ 武器(+N): 攻撃力がそのまま N 加算されます。<br>
+            　🛡️ 防具(+N): 防御力がそのまま N 加算されます。<br>
+            　📿 装飾(+N): 最大HPがそのまま N 加算されます。
+        </div>
+
         <div><strong>📊 ステータスの解説</strong><br>
-        ・💥 <strong>攻撃力</strong>: 敵に与えるダメージの基準値です。武器で強化されます。属性相性やスキルの倍率はこの値にかかります。<br>
-        ・🛡️ <strong>防御力</strong>: 敵から受けるダメージを軽減します。防具で強化されます。数値が高いほど、敵の攻撃を効率よくカットします。</div>
+        ・💥 <strong>攻撃力</strong>: 敵に与えるダメージの基準値。武器で強化。属性・スキル倍率の元。<br>
+        ・🛡️ <strong>防御力</strong>: 被ダメージを「除算」で軽減。数値が高いほど、1ポイントあたりの軽減効率は緩やかになりますが、着実にダメージを減らします。</div>
 
         <div><strong>💰 敵レア度とコイン倍率補正</strong><br>
         ・コモン (70%): 1.0倍 (5〜15円)<br>
@@ -289,9 +299,9 @@
         ・超激レア (1.5%): 5.0倍 (25〜75円)</div>
 
         <div><strong>⚔️ プレイヤー基本スキル</strong><br>
-        ・ヒール (消費15MP): HPを150回復。再使用に3ターンのクールダウンが必要。<br>
-        ・フルスイング (消費10MP): 敵に1.5倍物理攻撃。<br>
-        ・属性チャージ (消費20MP): 3ターンの間、有利属性の相性補正を1.1倍から「1.3倍」に大強化。</div>
+        ・ヒール (15MP): HPを150回復。3ターンCD。<br>
+        ・フルスイング (10MP): 1.5倍物理攻撃。<br>
+        ・属性チャージ (20MP): 3ターンの間、有利属性倍率を「1.3倍」に強化。</div>
     </div>
 </div>
 
@@ -434,7 +444,7 @@
             <div id="rpg-main-wrapper">
                 <div class="panel" style="padding:12px;">
                     <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:5px;">
-                        <div>⚔️ 挑戦レベル: <span id="rpg-player-lv" style="color:var(--gold);">1</span></div>
+                        <div>⚔️ 現在の階層: <span id="rpg-player-lv" style="color:var(--gold);">1</span></div>
                         <div>💰 所持金: ￥<span id="rpg-player-coins" style="color:var(--primary);">0</span></div>
                     </div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px; border-top:1px solid #2f4553; padding-top:6px;">
@@ -827,8 +837,9 @@
             document.getElementById('idea-attr').classList.remove('hidden');
             document.getElementById('idea-desc').classList.add('hidden');
         } else {
+            // 武器・防具・装飾すべて説明欄を隠す
             document.getElementById('idea-attr').classList.add('hidden');
-            document.getElementById('idea-desc').classList.remove('hidden');
+            document.getElementById('idea-desc').classList.add('hidden');
         }
     }
 
@@ -839,16 +850,16 @@
         if (type === 'enemy') {
             desc = document.getElementById('idea-attr').value;
         } else {
-            desc = document.getElementById('idea-desc').value.trim();
+            // 説明欄は不要になったため空文字
+            desc = "";
         }
-        if(!title || (type !== 'enemy' && !desc)) return alert("名前と説明を入力してください");
+        if(!title) return alert("名前を入力してください");
         
         await db.collection('rpg_ideas').add({
             username: currentUser, title: title, type: type, desc: desc, status: "pending", timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         alert("💡 提案を送信しました！管理者が採用するとゲームに自動実装されます。");
         document.getElementById('idea-title').value = "";
-        document.getElementById('idea-desc').value = "";
     }
 
     function listenApprovedDatabase() {
@@ -895,8 +906,9 @@
         chargeDuration = 0;
         
         // 敵のステータス計算（ご指定の数値を完全網羅）
-        const baseHP = 50 + (pLevel - 1) * 50;
-        const baseAtk = 100 + (pLevel - 1) * 100;
+        // 敵を少し弱体化：HPの伸びを抑え、攻撃力の基礎値を下げる
+        const baseHP = 50 + (pLevel - 1) * 40;
+        const baseAtk = 80 + (pLevel - 1) * 70;
         const flexHP = baseHP * (0.9 + Math.random() * 0.2);
         const flexAtk = baseAtk * (0.9 + Math.random() * 0.2);
         
@@ -1202,6 +1214,13 @@
         
         await changeBalance(-cost, "RPG即時復活");
         await db.collection('users_v2').doc(currentUser).update({ jailUntil: null });
+        
+        // HP/MPを全快させる
+        pMaxHP = 400 + pHpBonus;
+        pHP = pMaxHP;
+        pMP = 50;
+        updateDisplayUi();
+        
         alert("🎉 復活しました！HP全快で再挑戦します。");
         checkJailStatus();
     }
