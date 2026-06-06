@@ -289,61 +289,59 @@
     <div class="modal-header"><h3>📋 ゲームデータ・計算式・ルール</h3><span style="cursor:pointer;" onclick="closeSubModal('rpgrule')">✕</span></div>
         
         <div style="background:var(--bg-input); padding:10px; border-radius:4px; border:1px solid #2f4553; margin-bottom:12px; font-size:13px; line-height:1.6;">
-            <strong style="color:var(--gold); font-size:14px;">💰 アカウント初期残高</strong><br>
-            ・新しくアカウントを作成した時の初期残高は <strong>1000円</strong> です。（※以前の仕様で100円だった既存アカウントも、ログイン時に自動的に1000円に補正されます）
-        </div>
-
-        <div style="background:var(--bg-input); padding:10px; border-radius:4px; border:1px solid #2f4553; margin-bottom:12px; font-size:13px; line-height:1.6;">
-            <strong style="color:var(--gold); font-size:14px;">🧮 戦闘計算システム</strong><br>
-            ・<strong>与ダメージ</strong>: (基礎攻撃力 + 武器攻撃力) × 属性相性倍率 × スキル倍率 × 乱数(0.9~1.1)<br>
-            ・<strong>被ダメージ</strong>: (敵の攻撃力 × 40) / (基礎防御力 + 防具防御力) × 乱数(0.8~1.2)<br>
-            ※防御力は「除算」で被ダメージを軽減するため、防御力が高いほど安定してダメージを抑えられます。<br>
-            ・<strong>装備の部位と「+N」の効果</strong>:<br>
-            　🗡️ <strong>武器</strong>: 装備の基本攻撃力に加えて、強化値(+N)分だけ攻撃力がさらに上昇します。<br>
-            　🛡️ <strong>防具</strong>: 装備の基本防御力に加えて、強化値(+N)分だけ防御力がさらに上昇します。<br>
-            　📿 <strong>装飾</strong>: 装備の基本HPに加えて、強化値(+N)分だけ最大HPがさらに上昇します。
+            <strong style="color:var(--gold); font-size:14px;">🧮 戦闘計算・ステータスシステム (LINEボット準拠)</strong><br>
+            ・<strong>最大HP</strong>: 100 × (レベル)^0.73 ＋ 装備補正<br>
+            ・<strong>攻撃力</strong>: 5 × レベル ＋ 装備補正<br>
+            ・<strong>防御力 (DEF)</strong>: 150 × (レベル)^0.2 ＋ 装備補正<br>
+            ・<strong>与ダメージ</strong>: 攻撃力 × 属性相性倍率 × スキル倍率 × 乱数(0.9~1.1)<br>
+            ・<strong>被ダメージ</strong>: (敵の攻撃力 × 属性相性倍率) × (1.0 - 防御力 / (防御力 + 300)) × 乱数(0.8~1.2)<br>
+            　※防御力 (DEF) が高くなるほど被ダメージを割合カットします（例: DEF 300で50%カット、DEF 600で66%カット）。<br>
+            ・<strong>クリティカル発生率</strong>: 15% の確率で与ダメージが 1.5倍 になります！<br>
+            ・<strong>Sランク装備の特殊効果</strong>:<br>
+            　Sランク装備は、ステータスをそのまま加算するのではなく<strong>乗算（%倍率）</strong>でプレイヤー能力を大きく高めます。<br>
+            　（例: ステータス+50のSランク武器を装備すると、攻撃力が +50% (1.5倍) に跳ね上がります！）
         </div>
 
         <div style="background:rgba(0,231,1,0.05); padding:10px; border-radius:4px; border:1px solid var(--primary); margin-bottom:12px; font-size:13px; line-height:1.6;">
-            <strong style="color:var(--primary); font-size:14px;">✨ 階層（レベル）アップとモンスターシステム</strong><br>
-            ・敵モンスターを倒すと経験値（EXP）が手に入ります。強敵（レア度が高い敵）ほど多くの経験値を獲得できます。<br>
-            ・必要経験値（現在のレベル × 40）に達すると、レベル（階層）がアップ！<br>
-            ・<strong>レベルアップボーナス</strong>: <strong>基礎攻撃力 +5</strong>、<strong>最大HP +50</strong> が永続的に加算されます！<br>
+            <strong style="color:var(--primary); font-size:14px;">✨ レベル連動とモンスター・ドロップ仕様 (LINEボット準拠)</strong><br>
+            ・敵のレベルは現在の階層ではなく、<strong>プレイヤーの現在レベル付近 (pLevel ± 3)</strong> に自動連動します。<br>
+            ・敵を倒すと経験値 (EXP) が手に入ります。<br>
+            　獲得EXP = `3 * 敵レベル * (敵レベル/プレイヤーレベル)^1.1 * レア度倍率`<br>
+            ・<strong>必要経験値</strong>: `30 * 1.002^(レベル-1)` に達するとレベルアップ！ステータスが上昇します。<br>
             ・戦闘に勝利するたびに、<strong>プレイヤーのHPとMPは100%全回復</strong>し、自動的に次の階層へ進みます。<br>
-            ・<strong>最高到達階層</strong>: 今までの最高到達階層（maxFloor）は保存され、階層ランキングにはこの最高到達階層が表示されます。<br>
-            ・<strong>モンスターのレア度と強さ</strong>: モンスターはレア度に応じて強さが大幅に異なります。<br>
-            　・🟢 <strong>コモン</strong>: レベル上昇も考慮して確実にワンパン（一撃）で倒せる強さです。<br>
-            　   （アンコモン、レア、激レアと上がるにつれて耐久力・攻撃力が段階的に強くなります）<br>
-            　・🟡 <strong>超激レア</strong>: 非常に耐久力・攻撃力が高く、スキルや回復薬を駆使しないと倒せない極めて強力な設定です。
+            ・<strong>敵からの装備ドロップ</strong>:<br>
+            　撃破時にドロップする装備品は **Dランク、Cランク、Bランクのみ** となります。AランクやSランクは直接ドロップしません。<br>
+            ・<strong>モンスターのレア度と倍率</strong>:<br>
+            　・コモン: 1.0倍 / アンコモン: 1.5倍 / レア: 2.0倍 / 激レア: 3.0倍 / 超激レア: 5.0倍<br>
+            　※強さ、獲得経験値、ドロップマネーにこの倍率が掛かります。
         </div>
 
         <div style="background:var(--bg-input); padding:10px; border-radius:4px; border:1px solid #2f4553; margin-bottom:12px; font-size:13px; line-height:1.6;">
             <strong style="color:var(--gold); font-size:14px;">🛠️ 装備合成システム（合成のルール）</strong><br>
             インベントリの「合成」タブから、2つの装備を合成して強化できます。<br>
-            ・<strong>合成条件</strong>: 「ベース」となる装備と、それと<strong>同じ部位</strong>（武器同士、防具同士など）の「素材」となる装備が必要です。装備中のアイテムは合成に使えないため、事前にインベントリから「外す」必要があります。<br>
-            ・<strong>合成費用</strong>: 合成を実行するにはカジノ資金が必要です。<br>
-            　・基本費用はベース装備のレア度で決まります（コモン: 30円、アンコモン: 60円、レア: 150円、激レア: 400円、超激レア: 1000円）。<br>
-            　・さらに、ベース装備の現在の強化値に応じて、+1ごとに10円が追加されます。<br>
-            ・<strong>合成成功確率</strong>:<br>
-            　・ベースと素材のレア度が「同じ」：<strong>100% 成功</strong><br>
-            　・ベースの方がレア度が「高い」：<strong>60% 成功</strong><br>
-            　・ベースの方がレア度が「低い」：<strong>30% 成功</strong><br>
+            ・<strong>合成条件</strong>: 「ベース」となる装備と、それと<strong>同じ部位</strong>の「素材」となる装備が必要です。装備中のアイテムは合成に使えないため、事前に「外す」必要があります。<br>
+            ・<strong>合成費用</strong>: カジノ資金を消費します（ベースのランクと強化値に応じて増加）。<br>
+            ・<strong>合成成功確率</strong>: 同一ランク同士なら 100%、ベースのランクが高い場合は 60%、低い場合は 30% です。<br>
             ・<strong>成功時の効果</strong>:<br>
             　・強化値（プラス値）が <strong>+1</strong> されます。<br>
-            　・ステータス（攻撃力/防御力/HP）がベース装備のレア度に応じて上昇します（コモン: +2、アンコモン: +4、レア: +6、激レア: +8、超激レア: +10）。<br>
-            　・<strong>レア度昇格チャンス</strong>: 強化値が5の倍数（+5, +10など）に達した際、<strong>30%の確率でレア度が1ランク昇格</strong>します！<br>
-            ・<strong>失敗時のペナルティ</strong>: ベース装備は消滅せず無傷で残りますが、<strong>素材にした装備は消滅</strong>します。また、合成費用は成否に関わらず消費されます。
+            　・装備のステータスがランクに応じて上昇します。<br>
+            　・<strong>ランク昇格チャンス</strong>:<br>
+            　　合成成功時、<strong>10% の確率でランクが 1段階 昇格</strong>します！<br>
+            　　また、強化値が5の倍数（+5, +10など）に達した際は、<strong>30% の高確率で昇格</strong>します！<br>
+            　　ドロップで手に入れたD〜Bランクの装備も、合成を繰り返すことでAランクやSランクに昇格させることが可能です！
         </div>
 
         <div style="background:var(--bg-input); padding:10px; border-radius:4px; border:1px solid #2f4553; margin-bottom:12px; font-size:13px; line-height:1.6;">
-            <strong style="color:#3498db; font-size:14px;">🔥 属性の相性関係</strong><br>
-            モンスターと武器には属性が存在します（火・水・木・光・暗・無）。<br>
-            ・<strong>有利属性（ダメージ 1.1倍）</strong>:<br>
-            　・🔥 <strong>火属性</strong>は 🌲 <strong>木属性</strong>に有利<br>
-            　・🌲 <strong>木属性</strong>は 💧 <strong>水属性</strong>に有利<br>
-            　・💧 <strong>水属性</strong>は 🔥 <strong>火属性</strong>に有利<br>
-            　・☀️ <strong>光属性</strong>と 🌙 <strong>暗属性</strong>はお互いに弱点（相互に有利）<br>
-            ・無属性同士や相性のない属性は等倍（1.0倍）となります。
+            <strong style="color:#3498db; font-size:14px;">🔥 属性の相性関係 (LINEボット準拠)</strong><br>
+            モンスターとプレイヤー装備には属性が存在します（火・水・木・光・暗・無）。<br>
+            ・<strong>属性倍率関係</strong>:<br>
+            　・🔥 <strong>火属性</strong>は 🌲 <strong>木属性</strong>に強く (1.3倍)、💧 <strong>水属性</strong>に弱い (0.7倍)<br>
+            　・🌲 <strong>木属性</strong>は 💧 <strong>水属性</strong>に強く (1.3倍)、🔥 <strong>火属性</strong>に弱い (0.7倍)<br>
+            　・💧 <strong>水属性</strong>は 🔥 <strong>火属性</strong>に強く (1.3倍)、🌲 <strong>木属性</strong>に弱い (0.7倍)<br>
+            　・☀️ <strong>光属性</strong>と 🌙 <strong>暗属性</strong>はお互いに弱点（相互に 1.5倍 ダメージ）<br>
+            　・☀️ <strong>光</strong>・🌙 <strong>暗</strong>は 3属性（🔥💧🌲）に対して少し強い (1.1倍)<br>
+            　・無属性同士や相性のない属性は等倍（1.0倍）となります。<br>
+            　※敵の攻撃時も、敵の攻撃属性とプレイヤー武器の属性で同様の相性計算が行われます。
         </div>
 
         <div style="background:var(--bg-input); padding:10px; border-radius:4px; border:1px solid #2f4553; margin-bottom:12px; font-size:13px; line-height:1.6;">
@@ -677,9 +675,102 @@
     let pInventory = []; // { id, name, type, stat, rarity, attr, equipped, plus }
     let pWeaponName = "初期のナイフ (+0)", pArmorName = "旅人の服 (+0)", pAccName = "お守り (+0)";
     let pWeaponAttr = "none";
-    let eHP = 50, eMaxHP = 50, eAtk = 100, eName = "スライム", eAttr = "none", eRare = "common";
+    let eHP = 50, eMaxHP = 50, eAtk = 100, eName = "スライム", eAttr = "none", eRare = "common", eLevel = 1, isRpgActionProcessing = false;
     let healCooldown = 0, chargeDuration = 0;
     let approvedEnemies = [], approvedWeapons = [], approvedArmors = [];
+
+    // LINEボット準拠のゲーム設定 (倍率)
+    const SETTINGS = {
+        // プレイヤー基本ステータス (Lv.632で最大HP約12215となるよう調整)
+        PlayerHP_Base: 100,
+        PlayerHP_Exponent: 0.73,
+        PlayerATK_Base: 5,
+        PlayerDEF_Base: 150,
+        PlayerDEF_Exponent: 0.2,
+
+        // クリティカル
+        Crit_Chance: 0.15,
+        Crit_Multiplier: 1.5,
+
+        // 敵のステータス計算用
+        EnemyHP_Base: 15,
+        EnemyATK_Base: 5,
+        EnemyDEF_Base: 5,
+
+        // 経験値計算用 (Lv.614で1808 EXP獲得時に18レベルアップするよう調整)
+        Exp_Gain_Base: 3.0,
+        Exp_Gain_LevelRatio_Power: 1.1,
+        Exp_NextLv_Base: 30,
+        Exp_NextLv_Exponent: 1.002
+    };
+
+    function getRarityRankLabel(rarity) {
+        if (!rarity) return "Dランク";
+        const mapping = {
+            common: "Dランク", D: "Dランク",
+            uncommon: "Cランク", C: "Cランク",
+            rare: "Bランク", B: "Bランク",
+            epic: "Aランク", A: "Aランク",
+            ultrarare: "Sランク", S: "Sランク"
+        };
+        return mapping[rarity] || "Dランク";
+    }
+
+    function getRequiredExp(level) {
+        return Math.round(SETTINGS.Exp_NextLv_Base * Math.pow(SETTINGS.Exp_NextLv_Exponent, level - 1));
+    }
+
+    function getEquippedItems() {
+        return pInventory.filter(i => i.equipped);
+    }
+
+    function calculatePlayerStats() {
+        const lv = pLevel;
+        
+        let totalHp = SETTINGS.PlayerHP_Base * Math.pow(lv, SETTINGS.PlayerHP_Exponent);
+        let totalAtk = SETTINGS.PlayerATK_Base * lv;
+        let totalDef = SETTINGS.PlayerDEF_Base * Math.pow(lv, SETTINGS.PlayerDEF_Exponent);
+
+        let hpMultiplier = 1.0;
+        let atkMultiplier = 1.0;
+        let defMultiplier = 1.0;
+
+        const equipped = getEquippedItems();
+        equipped.forEach(item => {
+            if (!item) return;
+
+            // 定義不足のクリーンアップ
+            if (!item.rarity) item.rarity = 'common';
+            if (item.plus === undefined) item.plus = 0;
+
+            // Sランク（超激レア: ultrarare / Sランク）は乗算
+            if (item.rarity === 'ultrarare' || item.rarity === 'S') {
+                const statVal = (item.stat || 0) / 100;
+                switch (item.type) {
+                    case 'accessory': hpMultiplier += statVal; break;
+                    case 'weapon': atkMultiplier += statVal; break;
+                    case 'armor': defMultiplier += statVal; break;
+                }
+            } else { // Sランク以外は加算
+                const statVal = (item.stat || 0);
+                switch (item.type) {
+                    case 'accessory': totalHp += statVal; break;
+                    case 'weapon': totalAtk += statVal; break;
+                    case 'armor': totalDef += statVal; break;
+                }
+            }
+        });
+
+        totalHp *= hpMultiplier;
+        totalAtk *= atkMultiplier;
+        totalDef *= defMultiplier;
+
+        return {
+            maxHp: Math.round(totalHp),
+            atk: Math.round(totalAtk),
+            def: Math.round(totalDef)
+        };
+    }
 
     // --- 各ゲーム内部進行フラグ ---
     let activeMinesGame = null;
@@ -715,7 +806,7 @@
                 <button onclick="openSubModal('inventory')" style="background-color:var(--gold); color:#000; text-align:left;">🎒 インベントリ & 装備合成</button>
                 <button onclick="openSubModal('rpgrule')" style="background-color:#2980b9; color:#fff; text-align:left;">📋 RPGルール・属性相性を見る</button>
                 <button onclick="openSubModal('zukan')" style="background-color:#e67e22; color:#fff; text-align:left;">📖 敵キャラ図鑑 (Zukan)</button>
-                <button onclick="openSubModal('leaderboard')" style="background-color:#2ecc71; color:#000; text-align:left;">🏆 階層突破ランキング</button>
+                <button onclick="openSubModal('leaderboard', 'rpg')" style="background-color:#2ecc71; color:#000; text-align:left;">🏆 階層突破ランキング</button>
                 <button onclick="scrollToChat()" style="background-color:#34495e; color:#fff; text-align:left;">💬 グローバルチャット</button>
             `;
         } else {
@@ -723,7 +814,7 @@
                 <button onclick="openSubModal('vault')" style="background-color:var(--gold); color:#000; text-align:left;">💰 保管庫 (Vault) を開く</button>
                 <button onclick="openSubModal('vip')" style="background-color:#9b59b6; color:#fff; text-align:left;">👑 VIP 特典・ボーナス</button>
                 <button onclick="openSubModal('tip')" style="background-color:#3498db; color:#fff; text-align:left;">💸 友達にチップを送る</button>
-                <button onclick="openSubModal('leaderboard')" style="background-color:#2ecc71; color:#000; text-align:left;">🏆 カジノ所持金ランキング</button>
+                <button onclick="openSubModal('leaderboard', 'casino')" style="background-color:#2ecc71; color:#000; text-align:left;">🏆 カジノ所持金ランキング</button>
                 <button onclick="openSubModal('txhistory')" style="background-color:#2c3e50; color:#fff; text-align:left;">📜 取引履歴 (Logs)</button>
                 <button onclick="scrollToChat()" style="background-color:#34495e; color:#fff; text-align:left;">💬 グローバルチャット</button>
             `;
@@ -765,6 +856,19 @@
             pMaxFloor = doc.data().maxFloor || doc.data().rpgFloor || 1;
             pExp = doc.data().rpgExp || 0;
             pInventory = doc.data().pInventory || [];
+            pInventory.forEach(item => {
+                if (!item) return;
+                
+                // 表記の表記ゆれ (D, C, B, A, S -> common, uncommon, etc.) を補正して統一
+                if (item.rarity === 'D') item.rarity = 'common';
+                else if (item.rarity === 'C') item.rarity = 'uncommon';
+                else if (item.rarity === 'B') item.rarity = 'rare';
+                else if (item.rarity === 'A') item.rarity = 'epic';
+                else if (item.rarity === 'S') item.rarity = 'ultrarare';
+                
+                if (!item.rarity) item.rarity = 'common';
+                if (item.plus === undefined) item.plus = 0;
+            });
             pCoins = doc.data().rpgCoins || 0;
             pPotions = doc.data().rpgPotions || 0;
             pWeaponName = doc.data().eqWName || "初期のナイフ (+0)";
@@ -859,46 +963,54 @@
     function updateDisplayUi() {
         document.getElementById('display-balance').innerText = Math.floor(currentBalance).toLocaleString();
         
-        const baseAtk = 25 + (pLevel - 1) * 5;
-        document.getElementById('stat-atk-base').innerText = baseAtk;
-        document.getElementById('stat-def').innerText = 150 + pDefBonus;
+        const stats = calculatePlayerStats();
+        document.getElementById('stat-atk-base').innerText = stats.atk;
+        document.getElementById('stat-def').innerText = stats.def;
         document.getElementById('rpg-player-lv').innerText = pLevel;
         document.getElementById('rpg-player-floor').innerText = pFloor;
         document.getElementById('rpg-player-coins').innerText = Math.floor(currentBalance).toLocaleString();
         document.getElementById('rpg-count-potion').innerText = pPotions;
         
-        // EXP UI 更新 (大幅にレベルアップしやすく調整: 必要値を半分以下に)
-        const nextExp = pLevel * 40; 
+        // EXP UI 更新 (LINEボットの必要経験値計算式を適用)
+        const nextExp = getRequiredExp(pLevel);
         const expPct = Math.min(100, (pExp / nextExp) * 100);
         document.getElementById('rpg-exp-text').innerText = `${pExp} / ${nextExp}`;
         document.getElementById('rpg-exp-bar').style.width = `${expPct}%`;
 
-        const rarityLabels = {common:"コモン", uncommon:"アンコモン", rare:"レア", epic:"激レア", ultrarare:"超激レア"};
 
         // 武器
         const equippedWeapon = pInventory.find(i => i.type === 'weapon' && i.equipped);
         if (equippedWeapon) {
+            if (!equippedWeapon.rarity) equippedWeapon.rarity = 'common';
             const attrLabel = equippedWeapon.attr && equippedWeapon.attr !== 'none' ? ` [${equippedWeapon.attr.toUpperCase()}]` : "";
-            document.getElementById('eq-weapon').innerHTML = `${equippedWeapon.name} (+${equippedWeapon.plus || 0})${attrLabel} <span class="rarity-${equippedWeapon.rarity}" style="font-weight:bold;">(${rarityLabels[equippedWeapon.rarity]} | ATK: +${equippedWeapon.stat})</span>`;
+            const plusLabel = equippedWeapon.plus ? ` (+${equippedWeapon.plus})` : "";
+            document.getElementById('eq-weapon').innerHTML = `${equippedWeapon.name}${plusLabel}${attrLabel} <span class="rarity-${equippedWeapon.rarity}" style="font-weight:bold;">(${getRarityRankLabel(equippedWeapon.rarity)} | ATK: +${equippedWeapon.stat})</span>`;
         } else {
-            const attrLabel = pWeaponAttr !== 'none' ? ` [${pWeaponAttr.toUpperCase()}]` : "";
-            document.getElementById('eq-weapon').innerHTML = `${pWeaponName.split(" (+")[0]} (+0)${attrLabel} <span class="rarity-common" style="font-weight:bold;">(コモン | ATK: +0)</span>`;
+            const attrLabel = (pWeaponAttr && pWeaponAttr !== 'none') ? ` [${pWeaponAttr.toUpperCase()}]` : "";
+            const displayName = pWeaponName || "初期のナイフ";
+            document.getElementById('eq-weapon').innerHTML = `${displayName}${attrLabel} <span class="rarity-common" style="font-weight:bold;">(Dランク | ATK: +0)</span>`;
         }
 
         // 防具
         const equippedArmor = pInventory.find(i => i.type === 'armor' && i.equipped);
         if (equippedArmor) {
-            document.getElementById('eq-armor').innerHTML = `${equippedArmor.name} (+${equippedArmor.plus || 0}) <span class="rarity-${equippedArmor.rarity}" style="font-weight:bold;">(${rarityLabels[equippedArmor.rarity]} | DEF: +${equippedArmor.stat})</span>`;
+            if (!equippedArmor.rarity) equippedArmor.rarity = 'common';
+            const plusLabel = equippedArmor.plus ? ` (+${equippedArmor.plus})` : "";
+            document.getElementById('eq-armor').innerHTML = `${equippedArmor.name}${plusLabel} <span class="rarity-${equippedArmor.rarity}" style="font-weight:bold;">(${getRarityRankLabel(equippedArmor.rarity)} | DEF: +${equippedArmor.stat})</span>`;
         } else {
-            document.getElementById('eq-armor').innerHTML = `${pArmorName.split(" (+")[0]} (+0) <span class="rarity-common" style="font-weight:bold;">(コモン | DEF: +0)</span>`;
+            const displayName = pArmorName || "旅人の服";
+            document.getElementById('eq-armor').innerHTML = `${displayName} <span class="rarity-common" style="font-weight:bold;">(Dランク | DEF: +0)</span>`;
         }
 
         // 装飾
         const equippedAcc = pInventory.find(i => i.type === 'accessory' && i.equipped);
         if (equippedAcc) {
-            document.getElementById('eq-acc').innerHTML = `${equippedAcc.name} (+${equippedAcc.plus || 0}) <span class="rarity-${equippedAcc.rarity}" style="font-weight:bold;">(${rarityLabels[equippedAcc.rarity]} | HP: +${equippedAcc.stat})</span>`;
+            if (!equippedAcc.rarity) equippedAcc.rarity = 'common';
+            const plusLabel = equippedAcc.plus ? ` (+${equippedAcc.plus})` : "";
+            document.getElementById('eq-acc').innerHTML = `${equippedAcc.name}${plusLabel} <span class="rarity-${equippedAcc.rarity}" style="font-weight:bold;">(${getRarityRankLabel(equippedAcc.rarity)} | HP: +${equippedAcc.stat})</span>`;
         } else {
-            document.getElementById('eq-acc').innerHTML = `${pAccName.split(" (+")[0]} (+0) <span class="rarity-common" style="font-weight:bold;">(コモン | HP: +0)</span>`;
+            const displayName = pAccName || "お守り";
+            document.getElementById('eq-acc').innerHTML = `${displayName} <span class="rarity-common" style="font-weight:bold;">(Dランク | HP: +0)</span>`;
         }
         
         updateVipProgressionUi();
@@ -1053,41 +1165,32 @@
         
         // レア度の抽選
         const roll = Math.random();
-        if(roll < 0.015) { eRare = "ultrarare"; }
-        else if(roll < 0.05) { eRare = "epic"; }
-        else if(roll < 0.10) { eRare = "rare"; }
-        else if(roll < 0.30) { eRare = "uncommon"; }
-        else { eRare = "common"; }
+        if(roll < 0.02) { eRare = "ultrarare"; } // Sランク 2%
+        else if(roll < 0.07) { eRare = "epic"; } // Aランク 5%
+        else if(roll < 0.17) { eRare = "rare"; } // Bランク 10%
+        else if(roll < 0.37) { eRare = "uncommon"; } // Cランク 20%
+        else { eRare = "common"; } // Dランク 63%
 
-        // レア度に応じたステータス倍率の適用
-        // コモンなら確実にワンパン、超激レアは非常に倒すのが難しいバランスに調整
-        const rareHpMultipliers = {
-            common: 0.5,
-            uncommon: 1.2,
-            rare: 3.0,
-            epic: 8.0,
-            ultrarare: 30.0
-        };
-        const rareAtkMultipliers = {
-            common: 0.5,
-            uncommon: 1.0,
+        // LINEボット準拠の倍率設定
+        const rareMultipliers = {
+            common: 1.0,
+            uncommon: 1.5,
             rare: 2.0,
-            epic: 5.0,
-            ultrarare: 20.0
+            epic: 3.0,
+            ultrarare: 5.0
         };
+        const rarityMultiplier = rareMultipliers[eRare] || 1.0;
 
-        const hpMul = rareHpMultipliers[eRare] || 1.0;
-        const atkMul = rareAtkMultipliers[eRare] || 1.0;
+        // LINEボットに準拠した敵のレベル決定（階層ではなくプレイヤーレベル付近に連動）
+        eLevel = Math.max(1, Math.round(pLevel + (Math.random() * 6 - 3)));
 
-        // 敵のステータス計算（階層 pFloor に依存し、レア度倍率を乗算）
-        const baseHP = (5 + (pFloor - 1) * 0.5) * hpMul;
-        const baseAtk = (2 + (pFloor - 1) * 0.5) * atkMul;
-        const flexHP = baseHP * (0.9 + Math.random() * 0.2);
-        const flexAtk = baseAtk * (0.9 + Math.random() * 0.2);
+        // LINEボット準拠の敵ステータス計算
+        const baseHP = SETTINGS.EnemyHP_Base * eLevel * rarityMultiplier;
+        const baseAtk = SETTINGS.EnemyATK_Base * eLevel * rarityMultiplier * 0.8;
         
-        eMaxHP = flexHP;
+        eMaxHP = Math.round(baseHP);
         eHP = eMaxHP;
-        eAtk = flexAtk;
+        eAtk = Math.round(baseAtk);
 
         // 名前の選定（管理者が採用した案があれば優先登場）
         if(approvedEnemies.length > 0 && Math.random() < 0.4) {
@@ -1101,41 +1204,63 @@
         
         const rareLabels = {common:"コモン", uncommon:"アンコモン", rare:"レア", epic:"激レア", ultrarare:"超激レア"};
         document.getElementById('rpg-e-name').innerHTML = `${eName} <span class="badge-element elem-${eAttr}">${attrNamesKanji[eAttr]}</span>`;
-        document.getElementById('rpg-e-details').innerText = `階層: ${pFloor} | 属性: ${attrNamesKanji[eAttr]} | レア度: ${rareLabels[eRare]}`;
+        document.getElementById('rpg-e-details').innerText = `階層: ${pFloor} | Lv.${eLevel} | 属性: ${attrNamesKanji[eAttr]} | レア度: ${rareLabels[eRare]}`;
         
-        document.getElementById('rpg-log-box').innerHTML = `<div style="color:var(--gold);">⚔️ 【第${pFloor}階層】 レア度:${rareLabels[eRare]}の「${eName}」が立ちはだかった！</div>`;
+        document.getElementById('rpg-log-box').innerHTML = `<div style="color:var(--gold);">⚔️ 【第${pFloor}階層】 Lv.${eLevel} レア度:${rareLabels[eRare]} の「${eName}」が立ちはだかった！</div>`;
         updateRpgBars();
         saveBattleState();
+        isRpgActionProcessing = false;
+        setRpgButtonsDisabled(false);
     }
 
     async function restoreBattleState() {
         const snap = await db.collection('users_v2').doc(currentUser).get();
         if (snap.exists && snap.data().currentBattle) {
             const b = snap.data().currentBattle;
-            eName = b.eName; eHP = b.eHP; eMaxHP = b.eMaxHP; eAtk = b.eAtk; eAttr = b.eAttr; eRare = b.eRare;
+            eName = b.eName; eHP = b.eHP; eMaxHP = b.eMaxHP; eAtk = b.eAtk; eAttr = b.eAttr; eRare = b.eRare; eLevel = b.eLevel || 1;
             pHP = b.pHP; pMP = b.pMP; healCooldown = b.healCooldown; chargeDuration = b.chargeDuration;
             
             const rareLabels = {common:"コモン", uncommon:"アンコモン", rare:"レア", epic:"激レア", ultrarare:"超激レア"};
             document.getElementById('rpg-e-name').innerHTML = `${eName} <span class="badge-element elem-${eAttr}">${attrNamesKanji[eAttr]}</span>`;
-            document.getElementById('rpg-e-details').innerText = `階層: ${pFloor} | 属性: ${attrNamesKanji[eAttr]} | レア度: ${rareLabels[eRare]}`;
-            document.getElementById('rpg-log-box').innerHTML = `<div style="color:var(--gold);">⚔️ 【第${pFloor}階層】 冒険を再開しました（対 ${eName}）</div>`;
+            document.getElementById('rpg-e-details').innerText = `階層: ${pFloor} | Lv.${eLevel} | 属性: ${attrNamesKanji[eAttr]} | レア度: ${rareLabels[eRare]}`;
+            document.getElementById('rpg-log-box').innerHTML = `<div style="color:var(--gold);">⚔️ 【第${pFloor}階層】 冒険を再開しました（対 ${eName}、Lv.${eLevel}）</div>`;
             updateRpgBars();
             return true;
         }
         return false;
     }
 
-    function calcAttrMultiplier(pAtkAttr, targetAttr) {
-        if(pAtkAttr === "fire" && targetAttr === "wood") return 1.1;
-        if(pAtkAttr === "wood" && targetAttr === "water") return 1.1;
-        if(pAtkAttr === "water" && targetAttr === "fire") return 1.1;
-        if((pAtkAttr === "light" && targetAttr === "dark") || (pAtkAttr === "dark" && targetAttr === "light")) return 1.1;
-        return 1.0;
+    const ELEMENTAL_CHART = {
+        none: { none: 1.0, light: 1.0, dark: 1.0, fire: 1.0, water: 1.0, wood: 1.0 },
+        light: { none: 1.0, light: 1.0, dark: 1.5, fire: 1.1, water: 1.1, wood: 1.1 },
+        dark: { none: 1.0, light: 1.5, dark: 1.0, fire: 1.1, water: 1.1, wood: 1.1 },
+        fire: { none: 1.0, light: 1.0, dark: 1.0, fire: 1.0, water: 0.7, wood: 1.3 },
+        water: { none: 1.0, light: 1.0, dark: 1.0, fire: 1.3, water: 1.0, wood: 0.7 },
+        wood: { none: 1.0, light: 1.0, dark: 1.0, fire: 0.7, water: 1.3, wood: 1.0 }
+    };
+
+    function getElementalMultiplier(attackerElement, defenderElement) {
+        const att = attackerElement || 'none';
+        const def = defenderElement || 'none';
+        return ELEMENTAL_CHART[att]?.[def] || 1.0;
+    }
+
+    function setRpgButtonsDisabled(disabled) {
+        const grid = document.querySelector('.rpg-btn-grid');
+        if (!grid) return;
+        const buttons = grid.querySelectorAll('button');
+        buttons.forEach(btn => {
+            btn.disabled = disabled;
+        });
     }
 
     async function rpgAction(type) {
+        if (isRpgActionProcessing) return;
+
         if(type === 'run') {
             if (!confirm("本当に逃げますか？逃走すると90秒間再挑戦できなくなります。")) return;
+            isRpgActionProcessing = true;
+            setRpgButtonsDisabled(true);
             logRpg("🏃 ペナルティ：逃走したため、90秒間RPGエリアの探索が制限されます！");
             
             pFloor = Math.max(1, pFloor - 1);
@@ -1147,13 +1272,32 @@
                 rpgFloor: pFloor
             });
             alert("🏃 逃げ出しました！階層が1つ下がり、90秒間RPGへ再挑戦できなくなります！");
+            isRpgActionProcessing = false;
+            setRpgButtonsDisabled(false);
             updateDisplayUi();
             checkJailStatus();
             return;
         }
 
+        // バリデーションチェック (条件未達の時は無効化しない)
+        if(type === 'potion' && pPotions <= 0) {
+            return alert("回復薬がありません！ショップで購入するか敵からドロップさせてください");
+        }
+        if(type === 'skill-heal' && pMP < 15) {
+            return alert("MPが足りません");
+        }
+        if(type === 'skill-slash' && pMP < 10) {
+            return alert("MPが足りません");
+        }
+        if(type === 'skill-charge' && pMP < 20) {
+            return alert("MPが足りません");
+        }
+
+        // 行動開始（0.8秒クールタイム開始）
+        isRpgActionProcessing = true;
+        setRpgButtonsDisabled(true);
+
         if(type === 'potion') {
-            if(pPotions <= 0) return alert("回復薬がありません！ショップで購入するか敵からドロップさせてください");
             pPotions--;
             pHP = Math.min(pMaxHP, pHP + 200);
             logRpg(`🧪 回復薬を駆使した！プレイヤーのHPが200回復。`);
@@ -1162,11 +1306,11 @@
             return;
         }
 
-        let pDamage = 25 + (pLevel - 1) * 5 + pAtkBonus; // 基礎 + レベル上昇 + 武器
+        const playerStats = calculatePlayerStats();
+        let pDamage = playerStats.atk;
         let multiplier = 1.0;
 
         if(type === 'skill-heal') {
-            if(pMP < 15) return alert("MPが足りません");
             pMP -= 15;
             pHP = Math.min(pMaxHP, pHP + 150);
             healCooldown = 4; // 発動後3ターン使用不可(自身含め4)
@@ -1176,13 +1320,11 @@
             return;
         }
         if(type === 'skill-slash') {
-            if(pMP < 10) return alert("MPが足りません");
             pMP -= 10;
             multiplier *= 1.5;
             logRpg(`💥 スキル「フルスイング」を叩き込む！`);
         }
         if(type === 'skill-charge') {
-            if(pMP < 20) return alert("MPが足りません");
             pMP -= 20;
             chargeDuration = 3;
             logRpg(`⚡ スキル「属性チャージ」発動！3ターンの間、有利属性倍率が1.3倍に跳ね上がる！`);
@@ -1192,15 +1334,27 @@
         }
 
         // 属性判定
-        let baseAttrMul = calcAttrMultiplier(pWeaponAttr, eAttr);
+        let baseAttrMul = getElementalMultiplier(pWeaponAttr, eAttr);
         if(baseAttrMul > 1.0 && chargeDuration > 0) {
             baseAttrMul = 1.3; // 属性チャージの強化
         }
         multiplier *= baseAttrMul;
 
-        const finalPDamage = Math.max(5, Math.floor(pDamage * multiplier * (0.9 + Math.random() * 0.2)));
+        let finalPDamage = Math.floor(pDamage * multiplier * (0.9 + Math.random() * 0.2));
+        
+        // クリティカル判定 (LINEボット準拠)
+        let isCrit = false;
+        if (Math.random() < SETTINGS.Crit_Chance) {
+            finalPDamage = Math.round(finalPDamage * SETTINGS.Crit_Multiplier);
+            isCrit = true;
+        }
+        finalPDamage = Math.max(5, finalPDamage);
         eHP -= finalPDamage;
-        logRpg(`<span style="color:var(--primary);">⚔️ プレイヤーの攻撃！ ${eName}に ${finalPDamage} ダメージ！</span>` + (baseAttrMul > 1.0 ? " (弱点特効!)" : ""));
+        
+        let battleMsg = `<span style="color:var(--primary);">⚔️ プレイヤーの攻撃！ ${eName}に ${finalPDamage} ダメージ！</span>`;
+        if (isCrit) battleMsg = `💥 <strong>会心の一撃！</strong> ` + battleMsg;
+        if (baseAttrMul > 1.0) battleMsg += " (弱点特効!)";
+        logRpg(battleMsg);
 
         if(chargeDuration > 0) chargeDuration--;
         if(healCooldown > 0) healCooldown--;
@@ -1213,22 +1367,34 @@
     }
 
     function enemyTurn() {
-        // 敵の攻撃力100を活かし、防御力150の半減補正などを噛み合わせたご指定のバランスライン
-        const eBaseDmg = eAtk;
-        const playerTotalDef = 150 + pDefBonus;
+        const playerStats = calculatePlayerStats();
+        const playerTotalDef = playerStats.def;
 
-        // 被ダメージが約25〜35ダメージ付近になるように減算・除算式でコントロール
-        let eFinalDmg = Math.floor((eBaseDmg * 40) / playerTotalDef);
-        eFinalDmg = Math.max(15, Math.floor(eFinalDmg * (0.8 + Math.random() * 0.4)));
+        // LINEボット準拠の属性相性を敵の攻撃にも適用
+        const enemyAttackMultiplier = getElementalMultiplier(eAttr, pWeaponAttr);
+        let eFinalDmg = Math.round(eAtk * enemyAttackMultiplier);
+
+        // 防御力によるダメージ軽減率式: ダメージ = 攻撃力 * (1 - DEF / (DEF + 300))
+        // これにより防御力（DEF）が高くなるほど被ダメージが軽減される（DEF=300で50%軽減、DEF=600で66%軽減）
+        const dmgReduction = playerTotalDef / (playerTotalDef + 300);
+        eFinalDmg = Math.round(eFinalDmg * (1.0 - dmgReduction));
+
+        // 乱数と最低値補正 (LINEボット準拠の乱数 0.8~1.2倍)
+        eFinalDmg = Math.max(10, Math.round(eFinalDmg * (0.8 + Math.random() * 0.4)));
 
         pHP -= eFinalDmg;
-        logRpg(`<span style="color:var(--accent);">😈 ${eName}の反撃！ プレイヤーは ${eFinalDmg} のダメージを受けた。</span>`);
+        
+        let msg = `<span style="color:var(--accent);">😈 ${eName}の反撃！ プレイヤーは ${eFinalDmg} のダメージを受けた。</span>`;
+        if (enemyAttackMultiplier > 1.0) msg += " <span style='font-size:10px; color:var(--accent);'>(相手の攻撃は効果抜群だ！)</span>";
+        else if (enemyAttackMultiplier < 1.0) msg += " <span style='font-size:10px; color:var(--text-muted);'>(相手の攻撃は効果が今ひとつのようだ...)</span>";
+        logRpg(msg);
 
         if(pHP <= 0) {
             handleRpgDefeat();
         } else {
+            isRpgActionProcessing = false;
+            setRpgButtonsDisabled(false);
             updateRpgBars();
-            // 状態保存
             saveBattleState();
         }
     }
@@ -1237,7 +1403,7 @@
         if (!currentUser) return;
         await db.collection('users_v2').doc(currentUser).update({
             currentBattle: {
-                eName: eName, eHP: eHP, eMaxHP: eMaxHP, eAtk: eAtk, eAttr: eAttr, eRare: eRare,
+                eName: eName, eHP: eHP, eMaxHP: eMaxHP, eAtk: eAtk, eAttr: eAttr, eRare: eRare, eLevel: eLevel,
                 pHP: pHP, pMP: pMP, healCooldown: healCooldown, chargeDuration: chargeDuration
             }
         });
@@ -1249,35 +1415,46 @@
         // 状態クリア
         await db.collection('users_v2').doc(currentUser).update({ currentBattle: null });
 
-        // 経験値獲得 (大幅増量)
-        const rareExp = {common: 30, uncommon: 60, rare: 120, epic: 250, ultrarare: 600};
-        const gainedExp = rareExp[eRare] || 30;
+        // 経験値獲得 (LINEボット準拠)
+        const rareMultipliers = {
+            common: 1.0,
+            uncommon: 1.5,
+            rare: 2.0,
+            epic: 3.0,
+            ultrarare: 5.0
+        };
+        const rarityMultiplier = rareMultipliers[eRare] || 1.0;
+        const enemyLevel = eLevel;
+        const levelRatio = enemyLevel / pLevel;
+        const gain = SETTINGS.Exp_Gain_Base * enemyLevel * Math.pow(levelRatio, SETTINGS.Exp_Gain_LevelRatio_Power) * rarityMultiplier;
+        const gainedExp = Math.round(gain);
         pExp += gainedExp;
         logRpg(`✨ 経験値を ${gainedExp} 獲得した。`);
 
-        // 5〜15円の間をランダムドロップ
+        // お金(コイン)はLINEボットと切り離し（既存のカジノ残高経済を維持）
         const baseCoinDrop = 5 + Math.floor(Math.random() * 11);
-        const rareMultipliers = {common: 1.0, uncommon: 1.5, rare: 2.0, epic: 3.0, ultrarare: 5.0};
-        const finalCoinDrop = Math.floor(baseCoinDrop * rareMultipliers[eRare]);
-
+        const finalCoinDrop = Math.floor(baseCoinDrop * rarityMultiplier);
         await changeBalance(finalCoinDrop, "RPG敵撃破報酬");
-        logRpg(`🪙 レア度補正に基づき、 ￥${finalCoinDrop} を獲得した。`);
+        logRpg(`🪙 敵撃破により ￥${finalCoinDrop} を獲得した。`);
 
         let dropMsg = "";
         
-        // レベルアップ判定 (必要経験値: 現在のプレイヤーレベル * 40)
-        const nextExp = pLevel * 40;
-        if (pExp >= nextExp) {
-            pExp -= nextExp;
-            const oldAtk = 25 + (pLevel - 1) * 5;
-            const oldHp = 400 + (pLevel - 1) * 50 + pHpBonus;
+        // レベルアップ判定 (LINEボット準拠の必要経験値テーブル)
+        const oldStats = calculatePlayerStats();
+        let leveledUp = false;
+        let requiredExp = getRequiredExp(pLevel);
+        while (pExp >= requiredExp) {
+            leveledUp = true;
             pLevel++;
-            const newAtk = 25 + (pLevel - 1) * 5;
-            const newHp = 400 + (pLevel - 1) * 50 + pHpBonus;
-            
+            pExp -= requiredExp;
+            requiredExp = getRequiredExp(pLevel);
+        }
+        if (leveledUp) {
+            const newStats = calculatePlayerStats();
             dropMsg += `🎊 プレイヤーレベルアップ！ Lv.${pLevel} に到達！\n`;
-            dropMsg += `基礎攻撃力: ${oldAtk} ➔ ${newAtk} (+5)\n`;
-            dropMsg += `最大HP: ${oldHp} ➔ ${newHp} (+50)\n\n`;
+            dropMsg += `最大HP: ${oldStats.maxHp} ➔ ${newStats.maxHp}\n`;
+            dropMsg += `攻撃力: ${oldStats.atk} ➔ ${newStats.atk}\n`;
+            dropMsg += `防御力: ${oldStats.def} ➔ ${newStats.def}\n\n`;
         }
 
         // 5%の確率で回復薬ドロップ
@@ -1287,31 +1464,43 @@
             logRpg(`🧪 幸運！「冒険者の回復薬」がドロップした！`);
         }
 
-        // 10%の確率で装備ドロップ (確率アップ)
+        // 10%の確率で装備ドロップ
         if(Math.random() < 0.10) {
             const eqRoll = Math.floor(Math.random() * 3);
             const rAttr = attrTypes[Math.floor(Math.random() * attrTypes.length)];
             const itemId = Math.random().toString(36).substring(2, 9);
-            let newItem = { id: itemId, plus: 0, rarity: eRare, equipped: false };
+            
+            // 敵から落ちる武器はDCBランク（common, uncommon, rare）のみ
+            let droppedRarity;
+            const dropRoll = Math.random();
+            if (dropRoll < 0.60) {
+                droppedRarity = "common"; // Dランク
+            } else if (dropRoll < 0.90) {
+                droppedRarity = "uncommon"; // Cランク
+            } else {
+                droppedRarity = "rare"; // Bランク
+            }
+
+            let newItem = { id: itemId, plus: 0, rarity: droppedRarity, equipped: false };
 
             if(eqRoll === 0) {
                 let wTitle = approvedWeapons.length > 0 && Math.random() < 0.5 ? approvedWeapons[Math.floor(Math.random() * approvedWeapons.length)].name : "魔導の剣";
                 newItem.name = wTitle;
                 newItem.type = "weapon";
-                newItem.stat = Math.floor(pFloor * 1.2) + (1 + Math.floor(Math.random() * 5));
+                newItem.stat = Math.floor(eLevel * 1.2) + (1 + Math.floor(Math.random() * 5));
                 newItem.attr = rAttr;
-                dropMsg += `🗡️ 武器ドロップ: ${newItem.name} (+${newItem.plus}) [${rAttr.toUpperCase()}] (ATK: +${newItem.stat})！\n`;
+                dropMsg += `🗡️ 武器ドロップ: ${newItem.name} [${rAttr.toUpperCase()}] (ATK: +${newItem.stat})！\n`;
             } else if(eqRoll === 1) {
                 let aTitle = approvedArmors.length > 0 && Math.random() < 0.5 ? approvedArmors[Math.floor(Math.random() * approvedArmors.length)].name : "ルーンアーマー";
                 newItem.name = aTitle;
                 newItem.type = "armor";
-                newItem.stat = Math.floor(pFloor * 1.5) + (1 + Math.floor(Math.random() * 5));
-                dropMsg += `🛡️ 防具ドロップ: ${newItem.name} (+${newItem.plus}) (DEF: +${newItem.stat})！\n`;
+                newItem.stat = Math.floor(eLevel * 1.5) + (1 + Math.floor(Math.random() * 5));
+                dropMsg += `🛡️ 防具ドロップ: ${newItem.name} (DEF: +${newItem.stat})！\n`;
             } else {
                 newItem.name = "ハクスラ魔石の指輪";
                 newItem.type = "accessory";
-                newItem.stat = Math.floor(pFloor * 4) + (5 + Math.floor(Math.random() * 16));
-                dropMsg += `📿 装飾ドロップ: ${newItem.name} (+${newItem.plus}) (HP: +${newItem.stat})！\n`;
+                newItem.stat = Math.floor(eLevel * 4) + (5 + Math.floor(Math.random() * 16));
+                dropMsg += `📿 装飾ドロップ: ${newItem.name} (HP: +${newItem.stat})！\n`;
             }
             pInventory.push(newItem);
             logRpg(`🎁 装備がドロップしました！インベントリを確認してください。`);
@@ -1325,8 +1514,9 @@
             pMaxFloor = pFloor;
         }
 
-        // 戦闘が終了するごとにプレイヤーのHP・MPは自動全回復
-        pMaxHP = 400 + (pLevel - 1) * 50 + pHpBonus;
+        // 戦闘終了時にHP・MPを全回復 (LINEボットおよびゲーム仕様に準拠)
+        const stats = calculatePlayerStats();
+        pMaxHP = stats.maxHp;
         pHP = pMaxHP;
         pMP = 50;
 
@@ -1353,6 +1543,8 @@
         alert("💀 ゲームオーバー！階層が1にリセットされ、15分間RPGへ再挑戦できなくなり、カジノしかプレイできないペナルティ状態になります！");
         updateDisplayUi();
         checkJailStatus();
+        isRpgActionProcessing = false;
+        setRpgButtonsDisabled(false);
     }
 
     async function checkJailStatus() {
@@ -1427,7 +1619,8 @@
         await db.collection('users_v2').doc(currentUser).update({ jailUntil: null });
         
         // HP/MPを全快させる
-        pMaxHP = 400 + pHpBonus;
+        const stats = calculatePlayerStats();
+        pMaxHP = stats.maxHp;
         pHP = pMaxHP;
         pMP = 50;
         updateDisplayUi();
@@ -1597,13 +1790,13 @@
         filtered.forEach(item => {
             const card = document.createElement('div');
             card.className = `eq-card ${item.equipped ? 'equipped' : ''}`;
-            const rarityLabels = {common:"コモン", uncommon:"アンコモン", rare:"レア", epic:"激レア", ultrarare:"超激レア"};
             const attrLabel = item.attr && item.attr !== 'none' ? ` [${item.attr.toUpperCase()}]` : "";
+            const plusLabel = item.plus ? ` (+${item.plus})` : "";
             
             card.innerHTML = `
                 <div style="flex:1;">
-                    <div class="rarity-${item.rarity}" style="font-weight:bold; font-size:13px;">${item.name} (+${item.plus || 0})${attrLabel}</div>
-                    <div style="font-size:10px; color:var(--text-muted);">${rarityLabels[item.rarity]} | ステータス: +${item.stat}</div>
+                    <div class="rarity-${item.rarity}" style="font-weight:bold; font-size:13px;">${item.name}${plusLabel}${attrLabel}</div>
+                    <div style="font-size:10px; color:var(--text-muted);">${getRarityRankLabel(item.rarity)} | ステータス: +${item.stat}</div>
                 </div>
                 <div style="width:80px; text-align:right;">
                     ${item.equipped ? 
@@ -1625,16 +1818,23 @@
         item.equipped = true;
         
         if (item.type === 'weapon') {
-            pWeaponName = `${item.name} (+${item.plus || 0})`;
+            const plusStr = item.plus ? ` (+${item.plus})` : "";
+            pWeaponName = `${item.name}${plusStr}`;
             pWeaponAttr = item.attr || 'none';
             pAtkBonus = item.stat;
         } else if (item.type === 'armor') {
-            pArmorName = `${item.name} (+${item.plus || 0})`;
+            const plusStr = item.plus ? ` (+${item.plus})` : "";
+            pArmorName = `${item.name}${plusStr}`;
             pDefBonus = item.stat;
         } else if (item.type === 'accessory') {
-            pAccName = `${item.name} (+${item.plus || 0})`;
+            const plusStr = item.plus ? ` (+${item.plus})` : "";
+            pAccName = `${item.name}${plusStr}`;
             pHpBonus = item.stat;
         }
+        
+        const stats = calculatePlayerStats();
+        pMaxHP = stats.maxHp;
+        pHP = Math.min(pMaxHP, pHP);
         
         updateDisplayUi();
         renderInventory();
@@ -1649,16 +1849,20 @@
         item.equipped = false;
         
         if (item.type === 'weapon') {
-            pWeaponName = "初期のナイフ (+0)";
+            pWeaponName = "初期のナイフ";
             pWeaponAttr = "none";
             pAtkBonus = 0;
         } else if (item.type === 'armor') {
-            pArmorName = "旅人の服 (+0)";
+            pArmorName = "旅人の服";
             pDefBonus = 0;
         } else if (item.type === 'accessory') {
-            pAccName = "お守り (+0)";
+            pAccName = "お守り";
             pHpBonus = 0;
         }
+        
+        const stats = calculatePlayerStats();
+        pMaxHP = stats.maxHp;
+        pHP = Math.min(pMaxHP, pHP);
         
         updateDisplayUi();
         renderInventory();
@@ -1710,14 +1914,16 @@
                 
                 let upgradeChanceText = "";
                 if (nextPlus % 5 === 0 && baseRarityIdx < rarities.length - 1) {
-                    const nextRarity = rarities[baseRarityIdx + 1].toUpperCase();
-                    upgradeChanceText = `<br><span style="color:var(--primary); font-weight:bold;">🌟 レア度昇格チャンス! (30%の確率で ${nextRarity} へ昇格)</span>`;
+                    const nextRarity = rarities[baseRarityIdx + 1];
+                    const nextRankLabel = getRarityRankLabel(nextRarity);
+                    upgradeChanceText = `<br><span style="color:var(--primary); font-weight:bold;">🌟 ランク昇格チャンス! (30%の確率で ${nextRankLabel} へ昇格)</span>`;
                 }
                 
+                const plusLabel = base.plus ? ` (+${base.plus})` : "";
                 previewHtml = `
                     <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:6px; margin-top:10px; font-size:12px; border:1px solid #2f4553; text-align:left;">
                         <div style="font-weight:bold; color:var(--primary); margin-bottom:5px; text-align:center;">📊 合成予測プレビュー</div>
-                        <div><strong>強化対象:</strong> ${base.name} (+${base.plus}) ➔ (+${nextPlus})</div>
+                        <div><strong>強化対象:</strong> ${base.name}${plusLabel} ➔ (+${nextPlus})</div>
                         <div><strong>効果変化:</strong> +${base.stat} ➔ <span style="color:var(--primary); font-weight:bold;">+${nextStat}</span> (+${statIncrease}上昇)</div>
                         <div><strong>成功確率:</strong> <span style="color:var(--gold); font-weight:bold;">${rate}%</span></div>
                         ${upgradeChanceText}
@@ -1782,7 +1988,8 @@
                 else synthesisMaterialId = item.id;
                 renderSynthesisUi();
             };
-            btn.innerHTML = `<div class="rarity-${item.rarity}" style="font-size:12px;">${item.name} (+${item.plus || 0})</div><div style="font-size:10px; color:var(--text-muted);">+${item.stat}</div>`;
+            const plusLabel = item.plus ? ` (+${item.plus})` : "";
+            btn.innerHTML = `<div class="rarity-${item.rarity}" style="font-size:12px;">${item.name}${plusLabel}</div><div style="font-size:10px; color:var(--text-muted);">+${item.stat}</div>`;
             selectionArea.appendChild(btn);
         });
     }
@@ -1847,14 +2054,19 @@
             base.plus++;
             base.stat += (baseRarityIdx + 1) * 2; // レア度に応じて加算値増加
             
-            // レア度昇格チャンス (+5, +10... ごとに)
-            if (base.plus % 5 === 0 && baseRarityIdx < rarities.length - 1) {
-                if (Math.random() < 0.3) {
+            // ランク昇格チャンス (通常時10%、強化値が5の倍数に達した時は30%の確率で昇格)
+            let rankUpOccurred = false;
+            if (baseRarityIdx < rarities.length - 1) {
+                const upgradeChance = (base.plus % 5 === 0) ? 0.30 : 0.10;
+                if (Math.random() < upgradeChance) {
                     base.rarity = rarities[baseRarityIdx + 1];
-                    alert(`🌟 奇跡！ ${base.name} が ${rarities[baseRarityIdx + 1].toUpperCase()} に昇格しました！`);
+                    rankUpOccurred = true;
+                    alert(`🌟 ランク昇格！ ${base.name} が ${getRarityRankLabel(base.rarity)} へ昇格しました！`);
                 }
             }
-            alert(`✅ 合成成功！ ${base.name} が +${base.plus} に強化されました。`);
+            if (!rankUpOccurred) {
+                alert(`✅ 合成成功！ ${base.name} が +${base.plus} に強化されました。`);
+            }
         } else {
             alert(`❌ 合成失敗... 素材が消滅しました。`);
         }
