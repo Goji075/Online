@@ -277,12 +277,16 @@
         <span class="badge-element elem-fire">火</span> → <span class="badge-element elem-wood">木</span> → <span class="badge-element elem-water">水</span> → <span class="badge-element elem-fire">火</span><br>
         <span class="badge-element elem-light">光</span> ⇄ <span class="badge-element elem-dark">暗</span> (お互いに有利)</div>
         
+        <div><strong>📊 ステータスの解説</strong><br>
+        ・💥 <strong>攻撃力</strong>: 敵に与えるダメージの基準値です。武器で強化されます。属性相性やスキルの倍率はこの値にかかります。<br>
+        ・🛡️ <strong>防御力</strong>: 敵から受けるダメージを軽減します。防具で強化されます。数値が高いほど、敵の攻撃を効率よくカットします。</div>
+
         <div><strong>💰 敵レア度とコイン倍率補正</strong><br>
-        ・コモン (70%): 1.0倍 (5〜15枚)<br>
-        ・アンコモン (20%): 1.5倍 (7〜22枚)<br>
-        ・レア (5%): 2.0倍 (10〜30枚)<br>
-        ・激レア (3.5%): 3.0倍 (15〜45枚)<br>
-        ・超激レア (1.5%): 5.0倍 (25〜75枚)</div>
+        ・コモン (70%): 1.0倍 (5〜15円)<br>
+        ・アンコモン (20%): 1.5倍 (7〜22円)<br>
+        ・レア (5%): 2.0倍 (10〜30円)<br>
+        ・激レア (3.5%): 3.0倍 (15~45円)<br>
+        ・超激レア (1.5%): 5.0倍 (25〜75円)</div>
 
         <div><strong>⚔️ プレイヤー基本スキル</strong><br>
         ・ヒール (消費15MP): HPを150回復。再使用に3ターンのクールダウンが必要。<br>
@@ -474,7 +478,7 @@
                 <div class="panel">
                     <h3 style="font-size:14px; margin-bottom:8px; color:var(--gold);">🛒 アイテムショップ</h3>
                     <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:10px; border-radius:6px;">
-                        <div style="font-size:12px;">🧪 <strong>冒険者の回復薬</strong> (HPを200即座に回復)<br><span style="color:var(--gold);">価格: 20枚</span></div>
+                        <div style="font-size:12px;">🧪 <strong>冒険者の回復薬</strong> (HPを200即座に回復)<br><span style="color:var(--gold);">価格: 20円</span></div>
                         <button onclick="buyPotion()" style="width:auto; padding:6px 12px; font-size:12px;">1個購入</button>
                     </div>
                 </div>
@@ -705,7 +709,12 @@
         listenGlobalLiveBets();
         listenApprovedDatabase();
         checkNotifications();
-        initNewRpgFight();
+        
+        // RPG状態の復元または新規開始
+        const restored = await restoreBattleState();
+        if (!restored) {
+            initNewRpgFight();
+        }
         buildSidebarMenu('game');
     }
 
@@ -878,6 +887,8 @@
         box.scrollTop = box.scrollHeight;
     }
 
+    const attrNamesKanji = {fire: "火", water: "水", wood: "木", light: "光", dark: "暗", none: "無"};
+
     function initNewRpgFight() {
         // クールダウンリセット
         healCooldown = 0;
@@ -912,11 +923,29 @@
         }
         
         const rareLabels = {common:"コモン", uncommon:"アンコモン", rare:"レア", epic:"激レア", ultrarare:"超激レア"};
-        document.getElementById('rpg-e-name').innerHTML = `${eName} <span class="badge-element elem-${eAttr}">${eAttr.toUpperCase()}</span>`;
-        document.getElementById('rpg-e-details').innerText = `階層: ${pLevel} | 属性: ${eAttr.toUpperCase()} | 希少度: ${rareLabels[eRare]}`;
+        document.getElementById('rpg-e-name').innerHTML = `${eName} <span class="badge-element elem-${eAttr}">${attrNamesKanji[eAttr]}</span>`;
+        document.getElementById('rpg-e-details').innerText = `階層: ${pLevel} | 属性: ${attrNamesKanji[eAttr]} | レア度: ${rareLabels[eRare]}`;
         
-        document.getElementById('rpg-log-box').innerHTML = `<div style="color:var(--gold);">⚔️ 【階層 ${pLevel}】 ${rareLabels[eRare]}の野生の「${eName}」が立ちはだかった！</div>`;
+        document.getElementById('rpg-log-box').innerHTML = `<div style="color:var(--gold);">⚔️ 【第${pLevel}階層】 レア度:${rareLabels[eRare]}の「${eName}」が立ちはだかった！</div>`;
         updateRpgBars();
+        saveBattleState();
+    }
+
+    async function restoreBattleState() {
+        const snap = await db.collection('users_v2').doc(currentUser).get();
+        if (snap.exists && snap.data().currentBattle) {
+            const b = snap.data().currentBattle;
+            eName = b.eName; eHP = b.eHP; eMaxHP = b.eMaxHP; eAtk = b.eAtk; eAttr = b.eAttr; eRare = b.eRare;
+            pHP = b.pHP; pMP = b.pMP; healCooldown = b.healCooldown; chargeDuration = b.chargeDuration;
+            
+            const rareLabels = {common:"コモン", uncommon:"アンコモン", rare:"レア", epic:"激レア", ultrarare:"超激レア"};
+            document.getElementById('rpg-e-name').innerHTML = `${eName} <span class="badge-element elem-${eAttr}">${attrNamesKanji[eAttr]}</span>`;
+            document.getElementById('rpg-e-details').innerText = `階層: ${pLevel} | 属性: ${attrNamesKanji[eAttr]} | レア度: ${rareLabels[eRare]}`;
+            document.getElementById('rpg-log-box').innerHTML = `<div style="color:var(--gold);">⚔️ 【第${pLevel}階層】 冒険を再開しました（対 ${eName}）</div>`;
+            updateRpgBars();
+            return true;
+        }
+        return false;
     }
 
     function calcAttrMultiplier(pAtkAttr, targetAttr) {
@@ -929,6 +958,7 @@
 
     async function rpgAction(type) {
         if(type === 'run') {
+            if (!confirm("本当に逃げますか？逃走すると90秒間再挑戦できなくなります。")) return;
             logRpg("🏃 ペナルティ：逃走したため、90秒間RPGエリアの探索が制限されます！");
             const jailTime = new Date(Date.now() + 90 * 1000);
             await db.collection('users_v2').doc(currentUser).update({ jailUntil: jailTime.toISOString() });
@@ -943,7 +973,7 @@
             pHP = Math.min(pMaxHP, pHP + 200);
             logRpg(`🧪 回復薬を駆使した！プレイヤーのHPが200回復。`);
             updateDisplayUi();
-            enemyTurn();
+            setTimeout(enemyTurn, 800);
             return;
         }
 
@@ -957,7 +987,7 @@
             healCooldown = 4; // 発動後3ターン使用不可(自身含め4)
             logRpg(`💖 スキル「ヒール」発動！HPが150回復した。`);
             updateRpgBars();
-            enemyTurn();
+            setTimeout(enemyTurn, 800);
             return;
         }
         if(type === 'skill-slash') {
@@ -972,7 +1002,7 @@
             chargeDuration = 3;
             logRpg(`⚡ スキル「属性チャージ」発動！3ターンの間、有利属性倍率が1.3倍に跳ね上がる！`);
             updateRpgBars();
-            enemyTurn();
+            setTimeout(enemyTurn, 800);
             return;
         }
 
@@ -985,7 +1015,7 @@
 
         const finalPDamage = Math.max(5, Math.floor(pDamage * multiplier * (0.9 + Math.random() * 0.2)));
         eHP -= finalPDamage;
-        logRpg(`⚔️ プレイヤーの攻撃！ ${eName}に ${finalPDamage} ダメージ！` + (baseAttrMul > 1.0 ? " (弱点特効!)" : ""));
+        logRpg(`<span style="color:var(--primary);">⚔️ プレイヤーの攻撃！ ${eName}に ${finalPDamage} ダメージ！</span>` + (baseAttrMul > 1.0 ? " (弱点特効!)" : ""));
 
         if(chargeDuration > 0) chargeDuration--;
         if(healCooldown > 0) healCooldown--;
@@ -993,7 +1023,7 @@
         if(eHP <= 0) {
             await handleRpgVictory();
         } else {
-            enemyTurn();
+            setTimeout(enemyTurn, 800);
         }
     }
 
@@ -1001,62 +1031,86 @@
         // 敵の攻撃力100を活かし、防御力150の半減補正などを噛み合わせたご指定のバランスライン
         const eBaseDmg = eAtk;
         const playerTotalDef = 150 + pDefBonus;
-        
+
         // 被ダメージが約25〜35ダメージ付近になるように減算・除算式でコントロール
         let eFinalDmg = Math.floor((eBaseDmg * 40) / playerTotalDef);
         eFinalDmg = Math.max(15, Math.floor(eFinalDmg * (0.8 + Math.random() * 0.4)));
-        
+
         pHP -= eFinalDmg;
-        logRpg(`😈 ${eName}の反撃！ プレイヤーは ${eFinalDmg} のダメージを受けた。`);
+        logRpg(`<span style="color:var(--accent);">😈 ${eName}の反撃！ プレイヤーは ${eFinalDmg} のダメージを受けた。</span>`);
 
         if(pHP <= 0) {
             handleRpgDefeat();
         } else {
             updateRpgBars();
+            // 状態保存
+            saveBattleState();
         }
+    }
+
+    async function saveBattleState() {
+        if (!currentUser) return;
+        await db.collection('users_v2').doc(currentUser).update({
+            currentBattle: {
+                eName: eName, eHP: eHP, eMaxHP: eMaxHP, eAtk: eAtk, eAttr: eAttr, eRare: eRare,
+                pHP: pHP, pMP: pMP, healCooldown: healCooldown, chargeDuration: chargeDuration
+            }
+        });
     }
 
     async function handleRpgVictory() {
         logRpg(`🎉 勝利！ ${eName}を撃破した！`);
-        
-        // 5〜15コインの間をランダムドロップ
+
+        // 状態クリア
+        await db.collection('users_v2').doc(currentUser).update({ currentBattle: null });
+
+        // 5〜15円の間をランダムドロップ
         const baseCoinDrop = 5 + Math.floor(Math.random() * 11);
         const rareMultipliers = {common: 1.0, uncommon: 1.5, rare: 2.0, epic: 3.0, ultrarare: 5.0};
         const finalCoinDrop = Math.floor(baseCoinDrop * rareMultipliers[eRare]);
-        
-        await changeBalance(finalCoinDrop, "RPG敵撃破報酬");
-        logRpg(`🪙 敵から経済インフレを防ぐレア度補正倍率に基づき、 ￥${finalCoinDrop} を獲得した。`);
 
+        await changeBalance(finalCoinDrop, "RPG敵撃破報酬");
+        logRpg(`🪙 レア度補正に基づき、 ￥${finalCoinDrop} を獲得した。`);
+
+        let dropMsg = "";
         // 5%の確率で回復薬ドロップ
         if(Math.random() < 0.05) {
             pPotions++;
-            logRpg(`🧪 幸運！5%の確率を潜り抜け「冒険者の回復薬」がドロップした！`);
+            dropMsg += "🧪 冒険者の回復薬を獲得！\n";
+            logRpg(`🧪 幸運！「冒険者の回復薬」がドロップした！`);
         }
 
         // 5%の確率で武器・防具・装備の3種類のうち1つがドロップ
         if(Math.random() < 0.05) {
             const eqRoll = Math.floor(Math.random() * 3);
             const rAttr = attrTypes[Math.floor(Math.random() * attrTypes.length)];
-            
+
             if(eqRoll === 0) {
                 let wTitle = approvedWeapons.length > 0 && Math.random() < 0.5 ? approvedWeapons[Math.floor(Math.random() * approvedWeapons.length)].name : "魔導の剣";
                 pAtkBonus = Math.floor(pLevel * 1.2) + (1 + Math.floor(Math.random() * 5));
                 pWeaponName = `${wTitle} (+${pAtkBonus})`;
                 pWeaponAttr = rAttr;
-                logRpg(`🗡️ 武器ドロップ！ 「${pWeaponName}」[属性: ${rAttr.toUpperCase()}]を即座に装備した！`);
+                dropMsg += `🗡️ 武器: ${pWeaponName} [${rAttr.toUpperCase()}] を装備しました！\n`;
+                logRpg(`🗡️ 武器ドロップ！ 「${pWeaponName}」[属性: ${rAttr.toUpperCase()}]を装備した！`);
             } else if(eqRoll === 1) {
                 let aTitle = approvedArmors.length > 0 && Math.random() < 0.5 ? approvedArmors[Math.floor(Math.random() * approvedArmors.length)].name : "ルーンアーマー";
                 pDefBonus = Math.floor(pLevel * 1.5) + (1 + Math.floor(Math.random() * 5));
                 pArmorName = `${aTitle} (+${pDefBonus})`;
-                logRpg(`🛡️ 防具ドロップ！ 「${pArmorName}」を即座に装備した！`);
+                dropMsg += `🛡️ 防具: ${pArmorName} を装備しました！\n`;
+                logRpg(`🛡️ 防具ドロップ！ 「${pArmorName}」を装備した！`);
             } else {
                 pHpBonus = Math.floor(pLevel * 4) + (5 + Math.floor(Math.random() * 16));
                 pAccName = `ハクスラ魔石の指輪 (+${pHpBonus})`;
-                logRpg(`📿 装飾ドロップ！ 「${pAccName}」を即座に装着！最大HPがさらに向上。`);
+                dropMsg += `📿 装飾: ${pAccName} を装着しました！\n`;
+                logRpg(`📿 装飾ドロップ！ 「${pAccName}」を装着！`);
             }
         }
 
         pLevel++;
+        let popupMsg = `🎊 階層突破！ 第${pLevel}階層へ進みます。\n`;
+        if (dropMsg) popupMsg += `\n【ドロップアイテム】\n${dropMsg}`;
+        alert(popupMsg);
+
         // 戦闘が終了するごとにプレイヤーのHP・MPは自動全回復
         pMaxHP = 400 + pHpBonus;
         pHP = pMaxHP;
@@ -1064,8 +1118,8 @@
 
         updateDisplayUi();
         await saveRpgProgress();
-        
-        setTimeout(() => { initNewRpgFight(); }, 1800);
+
+        setTimeout(() => { initNewRpgFight(); }, 1200);
     }
 
     async function handleRpgDefeat() {
@@ -2250,10 +2304,18 @@
         if (!container) return;
         container.innerHTML = `<p style="font-size:12px; color:var(--text-muted); text-align:center;">履歴を読み込み中...</p>`;
         try {
-            const snap = await db.collection('tx_logs').where('username', '==', currentUser).orderBy('timestamp', 'desc').limit(30).get();
+            // orderByを使用すると複合インデックスが必要になるため、クライアント側でソート
+            const snap = await db.collection('tx_logs').where('username', '==', currentUser).get();
+            let logs = [];
+            snap.forEach(doc => logs.push({id: doc.id, ...doc.data()}));
+            logs.sort((a, b) => {
+                const ta = a.timestamp ? a.timestamp.toMillis() : 0;
+                const tb = b.timestamp ? b.timestamp.toMillis() : 0;
+                return tb - ta;
+            });
+            
             let html = "";
-            snap.forEach(doc => {
-                const d = doc.data();
+            logs.slice(0, 30).forEach(d => {
                 const date = d.timestamp ? d.timestamp.toDate().toLocaleString() : "---";
                 const color = d.amount >= 0 ? 'var(--primary)' : 'var(--accent)';
                 html += `
@@ -2268,6 +2330,7 @@
             });
             container.innerHTML = html || '<p style="text-align:center; font-size:12px;">履歴はありません</p>';
         } catch (e) {
+            console.error(e);
             container.innerHTML = '<p style="text-align:center; font-size:12px; color:var(--accent);">履歴の取得に失敗しました</p>';
         }
     }
@@ -2293,9 +2356,10 @@
         attrTypes.forEach(attr => zukanData[attr] = []);
         zukanData['none'] = [];
 
-        // 固定敵
-        enemyNamesBase.forEach(name => {
-            zukanData['none'].push(name);
+        // 固定敵を属性に割り振り（便宜上ランダムだが本来は固定）
+        enemyNamesBase.forEach((name, idx) => {
+            const attr = attrTypes[idx % attrTypes.length];
+            zukanData[attr].push(name);
         });
 
         // 承認済み敵
@@ -2312,7 +2376,7 @@
                 const uniqueNames = [...new Set(names)];
                 html += `
                     <div style="background:var(--bg-input); padding:10px; border-radius:8px; border-left:4px solid var(--primary); margin-bottom:10px;">
-                        <h4 class="badge-element elem-${attr}" style="margin-bottom:8px; display:inline-block; font-size:14px; padding:4px 8px; color:#fff;">${attr.toUpperCase()} 属性</h4>
+                        <h4 class="badge-element elem-${attr}" style="margin-bottom:8px; display:inline-block; font-size:14px; padding:4px 8px; color:#fff;">${attrNamesKanji[attr]} 属性</h4>
                         <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px;">
                             ${uniqueNames.map(n => `<div style="font-size:12px; color:#fff;">・${n}</div>`).join('')}
                         </div>
@@ -2366,20 +2430,27 @@
         if (!container) return;
         
         try {
-            const snap = await db.collection('promo_codes').where('usedBy', '==', currentUser).orderBy('usedAt', 'desc').get();
-            if (snap.empty) {
+            const snap = await db.collection('promo_codes').where('usedBy', '==', currentUser).get();
+            let history = [];
+            snap.forEach(doc => history.push({id: doc.id, ...doc.data()}));
+            history.sort((a, b) => {
+                const ta = a.usedAt ? a.usedAt.toMillis() : 0;
+                const tb = b.usedAt ? b.usedAt.toMillis() : 0;
+                return tb - ta;
+            });
+
+            if (history.length === 0) {
                 container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">履歴はありません。</p>`;
                 return;
             }
             
             let html = "";
-            snap.forEach(doc => {
-                const d = doc.data();
+            history.forEach(d => {
                 const date = d.usedAt ? d.usedAt.toDate().toLocaleString() : "---";
                 html += `
                     <div class="history-item">
                         <div style="display:flex; justify-content:space-between;">
-                            <strong>コード: ${doc.id}</strong>
+                            <strong>コード: ${d.id}</strong>
                             <span style="color:var(--primary); font-weight:bold;">￥${d.amount.toLocaleString()}</span>
                         </div>
                         <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">使用日時: ${date}</div>
@@ -2388,6 +2459,7 @@
             });
             container.innerHTML = html;
         } catch (e) {
+            console.error(e);
             container.innerHTML = `<p style="font-size:12px; color:var(--accent);">履歴の取得に失敗しました。</p>`;
         }
     }
