@@ -202,11 +202,15 @@
 </div>
 
 <div class="sub-modal" id="modal-profile">
-    <div class="modal-header"><h3>👤 プロフィール設定</h3><span style="cursor:pointer;" onclick="closeSubModal('profile')">✕</span></div>
+    <div class="modal-header"><h3>👤 ユーザーIDの変更</h3><span style="cursor:pointer;" onclick="closeSubModal('profile')">✕</span></div>
     <div style="margin-bottom:15px;">
-        <label style="font-size:11px; color:var(--text-muted);">新しい表示名 (名前変更には 100円 必要です)</label>
-        <input type="text" id="profile-display-name" placeholder="新しい名前を入力">
-        <button onclick="changeDisplayName()" style="background-color:var(--primary); color:#000;">表示名を変更する (￥100)</button>
+        <p style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">
+            ※ユーザーIDを変更すると、現在のデータが新しいIDに移行されます。<br>
+            ※変更後は自動的にログアウトされ、再ログインが必要になります。
+        </p>
+        <label style="font-size:11px; color:var(--gold);">新しいユーザーID (変更費用: ￥100)</label>
+        <input type="text" id="profile-display-name" placeholder="新しいIDを入力">
+        <button onclick="changeUserId()" style="background-color:var(--primary); color:#000;">IDを変更して再起動 (￥100)</button>
     </div>
 </div>
 
@@ -273,18 +277,31 @@
 
 <div class="sub-modal" id="modal-inventory">
     <div class="modal-header"><h3>🎒 インベントリ & 装備合成</h3><span style="cursor:pointer;" onclick="closeSubModal('inventory')">✕</span></div>
-    <div style="display:flex; gap:5px; margin-bottom:15px;">
+    <div style="display:flex; gap:5px; margin-bottom:10px;">
         <button onclick="switchInventoryTab('weapon')" class="inventory-tab-btn active" id="inv-tab-weapon" style="padding:8px; font-size:12px;">武器</button>
         <button onclick="switchInventoryTab('armor')" class="inventory-tab-btn" id="inv-tab-armor" style="padding:8px; font-size:12px;">防具</button>
         <button onclick="switchInventoryTab('accessory')" class="inventory-tab-btn" id="inv-tab-accessory" style="padding:8px; font-size:12px;">装飾</button>
         <button onclick="switchInventoryTab('synthesis')" class="inventory-tab-btn" id="inv-tab-synthesis" style="background:var(--gold); color:#000; padding:8px; font-size:12px;">合成</button>
     </div>
+    
+    <!-- ランク別サブフィルター -->
+    <div id="inventory-rarity-filters" style="display:flex; gap:4px; margin-bottom:15px;">
+        <button onclick="switchInventoryRarityTab('all')" class="rarity-filter-btn active" id="rarity-filter-all">ALL</button>
+        <button onclick="switchInventoryRarityTab('ultrarare')" class="rarity-filter-btn" id="rarity-filter-ultrarare">S</button>
+        <button onclick="switchInventoryRarityTab('epic')" class="rarity-filter-btn" id="rarity-filter-epic">A</button>
+        <button onclick="switchInventoryRarityTab('rare')" class="rarity-filter-btn" id="rarity-filter-rare">B</button>
+        <button onclick="switchInventoryRarityTab('uncommon')" class="rarity-filter-btn" id="rarity-filter-uncommon">C</button>
+        <button onclick="switchInventoryRarityTab('common')" class="rarity-filter-btn" id="rarity-filter-common">D</button>
+    </div>
+    
     <div id="inventory-list-area" style="max-height:350px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
 </div>
 
 <style>
     .inventory-tab-btn { background: var(--bg-input); color: var(--text-muted); border: 1px solid #2f4553; flex: 1; }
     .inventory-tab-btn.active { border-color: var(--primary); color: var(--primary); background: rgba(0,231,1,0.05); }
+    .rarity-filter-btn { flex: 1; padding: 6px 0; font-size: 11px; font-weight: bold; background: var(--bg-input); color: var(--text-muted); border: 1px solid #2f4553; border-radius: 4px; cursor: pointer; }
+    .rarity-filter-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(243,156,18,0.1); }
     .eq-card { background: var(--bg-input); padding: 10px; border-radius: 6px; border: 1px solid #2f4553; display: flex; justify-content: space-between; align-items: center; }
     .eq-card.equipped { border-color: var(--primary); background: rgba(0,231,1,0.05); }
     .rarity-common { color: #fff; }
@@ -695,7 +712,6 @@
 
     // --- ゲーム用ステータス変数 ---
     let currentUser = null;
-    let currentDisplayName = null;
     let currentBalance = 0;
     let currentRoom = "lobby";
     let selectedGame = "mines";
@@ -874,7 +890,6 @@
             }
             currentUser = u;
             const data = doc.data();
-            currentDisplayName = data.displayName || u;
             currentBalance = data.balance || 0;
             if (currentBalance === 100) {
                 currentBalance = 1000;
@@ -916,7 +931,7 @@
 
             await userRef.set({
                 password: p, balance: 1000, wagered: 0, vault: 0,
-                displayName: u, classId: classId, attendanceNum: attendanceNum,
+                classId: classId, attendanceNum: attendanceNum,
                 rpgLevel: 1, rpgFloor: 1, maxFloor: 1, rpgExp: 0, pInventory: [],
                 rpgCoins: 0, rpgPotions: 2, jailUntil: null,
                 eqWName: "Dランク武器", eqWAttr: "none", eqWAtk: 0,
@@ -925,7 +940,6 @@
                 lastLoginBonusDate: ""
             });
             currentUser = u;
-            currentDisplayName = u;
             currentBalance = 1000;
             currentVipWager = 0;
             currentVault = 0;
@@ -957,7 +971,7 @@
         document.getElementById('main-content').classList.remove('hidden');
         document.getElementById('app-nav').classList.remove('hidden');
         document.getElementById('live-bet-ticker-bar').classList.remove('hidden');
-        document.getElementById('display-username').innerText = currentDisplayName;
+        document.getElementById('display-username').innerText = currentUser;
         
         const stats = calculatePlayerStats();
         pHP = stats.maxHp;
@@ -1678,19 +1692,53 @@
         saveRpgProgress();
     }
 
-    async function changeDisplayName() {
-        const newName = document.getElementById('profile-display-name').value.trim();
-        if (!newName) return alert("新しい名前を入力してください");
-        if (currentBalance < 100) return alert("残高が足りません (名前変更には100円必要です)");
+    async function changeUserId() {
+        const newUid = document.getElementById('profile-display-name').value.trim();
+        if (!newUid) return alert("新しいユーザーIDを入力してください");
+        if (newUid === currentUser) return alert("現在のIDと同じです");
+        if (currentBalance < 100) return alert("残高が足りません (ID変更には100円必要です)");
         
-        if (confirm(`100円を支払って表示名を「${newName}」に変更しますか？`)) {
-            await changeBalance(-100, "表示名変更費用");
-            currentDisplayName = newName;
-            await db.collection('users_v2').doc(currentUser).update({ displayName: newName });
-            document.getElementById('display-username').innerText = currentDisplayName;
-            alert("表示名を変更しました！");
-            closeSubModal('profile');
-            document.getElementById('profile-display-name').value = "";
+        // IDに特殊文字やスペースが含まれていないかチェック
+        if (!/^[a-zA-Z0-9ぁ-んァ-ヶー一-龠]+$/.test(newUid)) {
+            return alert("ユーザーIDに使用できない文字が含まれています。");
+        }
+
+        const newUserRef = db.collection('users_v2').doc(newUid);
+        const newDoc = await newUserRef.get();
+        if (newDoc.exists) {
+            return alert("そのユーザーIDは既に使われています。別のIDを入力してください。");
+        }
+
+        if (confirm(`100円を支払ってユーザーIDを「${currentUser}」から「${newUid}」に変更しますか？\n変更後、自動的に再ログインされます。`)) {
+            try {
+                // 1. 現在のデータを取得
+                const oldUserRef = db.collection('users_v2').doc(currentUser);
+                const oldDoc = await oldUserRef.get();
+                const data = oldDoc.data();
+
+                // 2. 資金を減らして新しいドキュメントを作成
+                data.balance -= 100;
+                await newUserRef.set(data);
+
+                // 3. 古いドキュメントを削除
+                await oldUserRef.delete();
+
+                // 4. クライアント側の情報を更新
+                currentUser = newUid;
+                currentBalance = data.balance;
+                localStorage.setItem('koyocasino_uid', newUid);
+                
+                document.getElementById('display-username').innerText = currentUser;
+                alert("ユーザーIDを変更しました！");
+                closeSubModal('profile');
+                document.getElementById('profile-display-name').value = "";
+                
+                // 再起動に近い状態でリロード
+                location.reload();
+            } catch (e) {
+                console.error("User ID migration error:", e);
+                alert("変更中にエラーが発生しました: " + e.message);
+            }
         }
     }
 
@@ -1767,7 +1815,7 @@
                 div.innerHTML = `
                     <div style="display:flex; flex-direction:column; gap:8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
-                            <div><strong>👤 ${doc.id}</strong> (${data.displayName || '名無し'})</div>
+                            <div><strong>👤 ${doc.id}</strong></div>
                             <div>
                                 ￥<input type="number" class="admin-money-input" id="cash-${doc.id}" value="${Math.floor(data.balance)}">
                                 <button onclick="updatePlayerCashAdmin('${doc.id}')" style="width:auto; padding:4px 8px; font-size:11px; background:var(--gold); margin-left:4px;">修正</button>
@@ -1839,10 +1887,27 @@
 
     // --- 🎒 インベントリ & 合成ロジック ---
     let currentInvTab = 'weapon';
+    let currentInvRarityFilter = 'all';
+
     function switchInventoryTab(tab) {
         currentInvTab = tab;
         document.querySelectorAll('.inventory-tab-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById('inv-tab-' + tab).classList.add('active');
+        
+        const filterArea = document.getElementById('inventory-rarity-filters');
+        if (tab === 'synthesis') {
+            filterArea.classList.add('hidden');
+        } else {
+            filterArea.classList.remove('hidden');
+        }
+        
+        renderInventory();
+    }
+
+    function switchInventoryRarityTab(rarity) {
+        currentInvRarityFilter = rarity;
+        document.querySelectorAll('.rarity-filter-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('rarity-filter-' + rarity).classList.add('active');
         renderInventory();
     }
 
@@ -1856,7 +1921,13 @@
             return;
         }
 
-        const filtered = pInventory.filter(item => item.type === currentInvTab);
+        let filtered = pInventory.filter(item => item.type === currentInvTab);
+        
+        // ランクフィルター適用
+        if (currentInvRarityFilter !== 'all') {
+            filtered = filtered.filter(item => item.rarity === currentInvRarityFilter);
+        }
+
         if (filtered.length === 0) {
             area.innerHTML = `<p style="text-align:center; color:var(--text-muted); font-size:12px; margin-top:20px;">アイテムがありません</p>`;
             return;
@@ -2182,6 +2253,8 @@
         }, 30000);
     }
 
+    let duelInviteTimeout = null;
+
     async function invitePlayerToDuel(targetUid) {
         const gameTypeStr = prompt(
             `⚔️ 対戦するゲームを選択してください（番号を入力）：\n` +
@@ -2208,18 +2281,67 @@
 
         if (confirm(`￥${amt.toLocaleString()} をベットして ${targetUid} に「${gameNames[gameType]}」の対戦招待を送りますか？`)) {
             await changeBalance(-amt, `対戦招待ベット: to ${targetUid}`, true);
-            await db.collection('duels').add({
+            
+            const duelRef = await db.collection('duels').add({
                 host: currentUser,
                 guest: targetUid,
                 bet: amt,
                 status: 'invited',
                 gameType: gameType,
-                host_roll: null,
-                guest_roll: null,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
-            alert("✉️ 招待を送信しました。相手の返答を待ちましょう！");
+            
+            const duelId = duelRef.id;
+            renderDuelWaitingRoom(duelId, targetUid, gameNames[gameType], amt);
+            
+            // 60秒タイムアウト
+            duelInviteTimeout = setTimeout(async () => {
+                const snap = await db.collection('duels').doc(duelId).get();
+                if (snap.exists && snap.data().status === 'invited') {
+                    await db.collection('duels').doc(duelId).update({ status: 'timeout' });
+                }
+            }, 60000);
         }
+    }
+
+    function renderDuelWaitingRoom(duelId, opponent, gameName, bet) {
+        const board = document.getElementById('my-isolated-board');
+        let timeLeft = 60;
+        
+        board.innerHTML = `
+            <div style="text-align:center; padding:20px; border: 2px dashed var(--gold); border-radius: 12px; background: rgba(26, 44, 56, 0.9);">
+                <h3 style="color:var(--gold); margin-bottom:10px;">⌛ 対戦相手の承認待ち...</h3>
+                <p style="font-size:13px; color:#fff; margin-bottom:15px;">
+                    相手: <strong>${opponent}</strong><br>
+                    ゲーム: ${gameName} | 賭け金: ￥${bet.toLocaleString()}
+                </p>
+                <div style="font-size:24px; font-weight:bold; color:var(--primary); margin-bottom:10px;" id="duel-wait-timer">01:00</div>
+                <p style="font-size:11px; color:var(--accent); font-weight:bold; margin-bottom:20px;">
+                    ⚠️ この画面を閉じたり、他のページへ移動しないでください！<br>
+                    閉じると承認されても対戦が開始されません。
+                </p>
+                <button onclick="cancelDuelInvite('${duelId}')" style="background:var(--accent); color:#fff; padding:10px; width:auto; font-size:13px;">招待をキャンセルして返金</button>
+            </div>
+        `;
+
+        const timerInterval = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                return;
+            }
+            const m = Math.floor(timeLeft / 60);
+            const s = timeLeft % 60;
+            document.getElementById('duel-wait-timer').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        }, 1000);
+        
+        // snapshot listener で状態が変わったらインターバルを止めるために board に IDを保存
+        board.dataset.activeDuelTimerId = timerInterval;
+    }
+
+    async function cancelDuelInvite(duelId) {
+        if (!confirm("招待をキャンセルして全額返金を受けますか？")) return;
+        await db.collection('duels').doc(duelId).update({ status: 'cancelled' });
     }
 
     function listenToDuelInvites() {
@@ -2294,6 +2416,13 @@
             updateData.turn = 'host';
         }
 
+        // 強制的にゲームタブに切り替え
+        switchTab('game');
+        selectedGame = gameType;
+        document.querySelectorAll('.game-menu-v2 .game-btn-full').forEach(el => el.classList.remove('active'));
+        const btnMap = {mines:'menu-mines', bj:'menu-bj', dice:'menu-dice'};
+        if(btnMap[gameType]) document.getElementById(btnMap[gameType]).classList.add('active');
+
         await db.collection('duels').doc(duelId).update(updateData);
     }
 
@@ -2327,18 +2456,45 @@
             const d = doc.data();
             const duelId = doc.id;
             
-            if (d.status === 'rejected') {
+            // 招待拒否、タイムアウト、キャンセルの処理
+            if (['rejected', 'timeout', 'cancelled'].includes(d.status)) {
                 if (d.host === currentUser) {
-                    alert(`❌ ${d.guest} に対戦招待を拒否されました。ベット額 ￥${d.bet} が返金されました。`);
-                    await changeBalance(d.bet, "対戦招待拒否による返金");
+                    const board = document.getElementById('my-isolated-board');
+                    if (board.dataset.activeDuelTimerId) {
+                        clearInterval(parseInt(board.dataset.activeDuelTimerId));
+                        delete board.dataset.activeDuelTimerId;
+                    }
+                    if (duelInviteTimeout) {
+                        clearTimeout(duelInviteTimeout);
+                        duelInviteTimeout = null;
+                    }
+                    
+                    let msg = "";
+                    if (d.status === 'rejected') msg = `❌ ${d.guest} に対戦招待を拒否されました。`;
+                    else if (d.status === 'timeout') msg = `⌛ 対戦招待がタイムアウトしました。`;
+                    else if (d.status === 'cancelled') msg = `🔙 招待をキャンセルしました。`;
+                    
+                    alert(`${msg}\nベット額 ￥${d.bet.toLocaleString()} が返金されました。`);
+                    await changeBalance(d.bet, "対戦招待不成立による返金");
+                    board.innerHTML = "";
                 }
+                // ドキュメント削除（ゲスト側かホスト側いずれかがこの snapshot を受けて実行）
                 await db.collection('duels').doc(duelId).delete().catch(()=>{});
                 return;
             }
             
             if (d.status === 'playing') {
-                const opponent = d.host === currentUser ? d.guest : d.host;
                 const board = document.getElementById('my-isolated-board');
+                if (board.dataset.activeDuelTimerId) {
+                    clearInterval(parseInt(board.dataset.activeDuelTimerId));
+                    delete board.dataset.activeDuelTimerId;
+                }
+                if (duelInviteTimeout) {
+                    clearTimeout(duelInviteTimeout);
+                    duelInviteTimeout = null;
+                }
+
+                const opponent = d.host === currentUser ? d.guest : d.host;
                 const gameType = d.gameType || 'dice';
                 
                 if (gameType === 'dice') {
