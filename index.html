@@ -201,6 +201,15 @@
     <button onclick="toggleSidebar(false)" class="secondary" style="margin-top:auto;">閉じる</button>
 </div>
 
+<div class="sub-modal" id="modal-profile">
+    <div class="modal-header"><h3>👤 プロフィール設定</h3><span style="cursor:pointer;" onclick="closeSubModal('profile')">✕</span></div>
+    <div style="margin-bottom:15px;">
+        <label style="font-size:11px; color:var(--text-muted);">新しい表示名 (名前変更には 100円 必要です)</label>
+        <input type="text" id="profile-display-name" placeholder="新しい名前を入力">
+        <button onclick="changeDisplayName()" style="background-color:var(--primary); color:#000;">表示名を変更する (￥100)</button>
+    </div>
+</div>
+
 <div class="sub-modal" id="modal-vault">
     <div class="modal-header"><h3>💰 保管庫 (Vault)</h3><span style="cursor:pointer;" onclick="closeSubModal('vault')">✕</span></div>
     <div style="background:var(--bg-main); padding:12px; border-radius:6px; margin-bottom:15px; text-align:center;">
@@ -289,31 +298,28 @@
     <div class="modal-header"><h3>📋 ゲームデータ・計算式・ルール</h3><span style="cursor:pointer;" onclick="closeSubModal('rpgrule')">✕</span></div>
         
         <div style="background:var(--bg-input); padding:10px; border-radius:4px; border:1px solid #2f4553; margin-bottom:12px; font-size:13px; line-height:1.6;">
-            <strong style="color:var(--gold); font-size:14px;">🧮 戦闘計算・ステータスシステム (LINEボット準拠)</strong><br>
+            <strong style="color:var(--gold); font-size:14px;">🧮 戦闘計算・ステータスシステム</strong><br>
             ・<strong>最大HP</strong>: 100 × (レベル)^0.73 ＋ 装備補正<br>
             ・<strong>攻撃力</strong>: 5 × レベル ＋ 装備補正<br>
             ・<strong>防御力 (DEF)</strong>: 150 × (レベル)^0.2 ＋ 装備補正<br>
             ・<strong>与ダメージ</strong>: 攻撃力 × 属性相性倍率 × スキル倍率 × 乱数(0.9~1.1)<br>
-            ・<strong>被ダメージ</strong>: (敵の攻撃力 × 属性相性倍率) × (1.0 - 防御力 / (防御力 + 300)) × 乱数(0.8~1.2)<br>
-            　※防御力 (DEF) が高くなるほど被ダメージを割合カットします（例: DEF 300で50%カット、DEF 600で66%カット）。<br>
+            ・<strong>被ダメージ</strong>: 敵の攻撃力 × (1.0 - 防御力 / (防御力 + 300)) × 乱数(0.8~1.2)<br>
             ・<strong>クリティカル発生率</strong>: 15% の確率で与ダメージが 1.5倍 になります！<br>
-            ・<strong>Sランク装備の特殊効果</strong>:<br>
-            　Sランク装備は、ステータスをそのまま加算するのではなく<strong>乗算（%倍率）</strong>でプレイヤー能力を大きく高めます。<br>
-            　（例: ステータス+50のSランク武器を装備すると、攻撃力が +50% (1.5倍) に跳ね上がります！）
+            ・<strong>装備のステータス補正</strong>:<br>
+            　全ランクの装備は、ステータスを加算ではなく<strong>乗算（%倍率）</strong>で高めます。<br>
+            　武器は攻撃力、防具は防御力、装飾品は最大HPを強化します。<br>
+            　（D: +10% / C: +20% / B: +30% / A: +40% / S: +50%）
         </div>
 
         <div style="background:rgba(0,231,1,0.05); padding:10px; border-radius:4px; border:1px solid var(--primary); margin-bottom:12px; font-size:13px; line-height:1.6;">
-            <strong style="color:var(--primary); font-size:14px;">✨ レベル連動とモンスター・ドロップ仕様 (LINEボット準拠)</strong><br>
-            ・敵のレベルは現在の階層ではなく、<strong>プレイヤーの現在レベル付近 (pLevel ± 3)</strong> に自動連動します。<br>
-            ・敵を倒すと経験値 (EXP) が手に入ります。<br>
-            　獲得EXP = `3 * 敵レベル * (敵レベル/プレイヤーレベル)^1.1 * レア度倍率`<br>
-            ・<strong>必要経験値</strong>: `30 * 1.002^(レベル-1)` に達するとレベルアップ！ステータスが上昇します。<br>
-            ・戦闘に勝利するたびに、<strong>プレイヤーのHPとMPは100%全回復</strong>し、自動的に次の階層へ進みます。<br>
+            <strong style="color:var(--primary); font-size:14px;">✨ 階層とボス・ドロップ仕様</strong><br>
+            ・敵のレベルは<strong>プレイヤーレベル付近</strong>に自動連動します。<br>
+            ・<strong>50階層ごとのボス</strong>: 50、100、150...階層には強力なボスが出現します！<br>
+            　ボスは非常に強力ですが、撃破時に<strong>D〜Bランクの装備が確定ドロップ</strong>します。<br>
             ・<strong>敵からの装備ドロップ</strong>:<br>
-            　撃破時にドロップする装備品は **Dランク、Cランク、Bランクのみ** となります。AランクやSランクは直接ドロップしません。<br>
-            ・<strong>モンスターのレア度と倍率</strong>:<br>
-            　・コモン: 1.0倍 / アンコモン: 1.5倍 / レア: 2.0倍 / 激レア: 3.0倍 / 超激レア: 5.0倍<br>
-            　※強さ、獲得経験値、ドロップマネーにこの倍率が掛かります。
+            　通常敵を倒した際、10%の確率で装備をドロップします。ドロップ品はD〜Bランクのみです。<br>
+            ・<strong>モンスターのレア度</strong>:<br>
+            　コモン(1.0倍) / アンコモン(1.5倍) / レア(2.0倍) / 激レア(3.0倍) / 超激レア(5.0倍) / ボス(7.5倍)
         </div>
 
         <div style="background:var(--bg-input); padding:10px; border-radius:4px; border:1px solid #2f4553; margin-bottom:12px; font-size:13px; line-height:1.6;">
@@ -374,6 +380,20 @@
         <h2 id="auth-title">ログイン</h2>
         <input type="text" id="auth-username" placeholder="ユーザーID (英数字)">
         <input type="password" id="auth-password" placeholder="パスワード">
+        
+        <div id="auth-register-fields" class="hidden">
+            <div style="display:flex; gap:10px; margin-bottom:12px;">
+                <select id="auth-class" style="flex:1; margin-bottom:0;">
+                    <option value="" disabled selected>クラス選択</option>
+                    <script>
+                        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                        for(let l of letters) document.write(`<option value="${l}">${l}組</option>`);
+                    </script>
+                </select>
+                <input type="number" id="auth-number" placeholder="出席番号(01-99)" min="1" max="99" style="flex:1; margin-bottom:0;" onchange="if(this.value && this.value < 10) this.value = '0' + parseInt(this.value)">
+            </div>
+        </div>
+
         <button id="btn-auth-primary" onclick="handleAuth()">ログイン</button>
         <button class="secondary" id="btn-auth-toggle" onclick="toggleAuthMode()">新規登録はこちら</button>
     </div>
@@ -576,10 +596,24 @@
                 </div>
 
                 <div class="panel">
-                    <h3 style="font-size:14px; margin-bottom:8px; color:var(--gold);">🛒 アイテムショップ</h3>
-                    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:10px; border-radius:6px;">
-                        <div style="font-size:12px;">🧪 <strong>冒険者の回復薬</strong> (HPを200即座に回復)<br><span style="color:var(--gold);">価格: 20円</span></div>
-                        <button onclick="buyPotion()" style="width:auto; padding:6px 12px; font-size:12px;">1個購入</button>
+                    <h3 style="font-size:14px; margin-bottom:8px; color:var(--gold);">🛒 ショップ</h3>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:10px; border-radius:6px;">
+                            <div style="font-size:12px;">🧪 <strong>冒険者の回復薬</strong> (最大HPの20%回復)<br><span style="color:var(--gold);">価格: 100円</span></div>
+                            <button onclick="buyPotion()" style="width:auto; padding:6px 12px; font-size:12px;">1個購入</button>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:10px; border-radius:6px;">
+                            <div style="font-size:12px;">🗡️ <strong>Dランク装備箱</strong> (ランダムなDランク品)<br><span style="color:var(--gold);">価格: 250円</span></div>
+                            <button onclick="buyEquipment('common', 250)" style="width:auto; padding:6px 12px; font-size:12px;">購入</button>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:10px; border-radius:6px;">
+                            <div style="font-size:12px;">🛡️ <strong>Cランク装備箱</strong> (ランダムなCランク品)<br><span style="color:var(--gold);">価格: 500円</span></div>
+                            <button onclick="buyEquipment('uncommon', 500)" style="width:auto; padding:6px 12px; font-size:12px;">購入</button>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:10px; border-radius:6px;">
+                            <div style="font-size:12px;">📿 <strong>Bランク装備箱</strong> (ランダムなBランク品)<br><span style="color:var(--gold);">価格: 1000円</span></div>
+                            <button onclick="buyEquipment('rare', 1000)" style="width:auto; padding:6px 12px; font-size:12px;">購入</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -661,6 +695,7 @@
 
     // --- ゲーム用ステータス変数 ---
     let currentUser = null;
+    let currentDisplayName = null;
     let currentBalance = 0;
     let currentRoom = "lobby";
     let selectedGame = "mines";
@@ -727,9 +762,10 @@
     function calculatePlayerStats() {
         const lv = pLevel;
         
-        let totalHp = SETTINGS.PlayerHP_Base * Math.pow(lv, SETTINGS.PlayerHP_Exponent);
-        let totalAtk = SETTINGS.PlayerATK_Base * lv;
-        let totalDef = SETTINGS.PlayerDEF_Base * Math.pow(lv, SETTINGS.PlayerDEF_Exponent);
+        // 基礎ステータス (Lv連動)
+        let baseHp = SETTINGS.PlayerHP_Base * Math.pow(lv, SETTINGS.PlayerHP_Exponent);
+        let baseAtk = SETTINGS.PlayerATK_Base * lv;
+        let baseDef = SETTINGS.PlayerDEF_Base * Math.pow(lv, SETTINGS.PlayerDEF_Exponent);
 
         let hpMultiplier = 1.0;
         let atkMultiplier = 1.0;
@@ -739,36 +775,27 @@
         equipped.forEach(item => {
             if (!item) return;
 
-            // 定義不足のクリーンアップ
-            if (!item.rarity) item.rarity = 'common';
-            if (item.plus === undefined) item.plus = 0;
+            // レア度に応じた倍率設定
+            const multipliers = {
+                common: 0.10,    // D: +10%
+                uncommon: 0.20,  // C: +20%
+                rare: 0.30,      // B: +30%
+                epic: 0.40,      // A: +40%
+                ultrarare: 0.50  // S: +50%
+            };
+            const bonus = multipliers[item.rarity] || 0.10;
 
-            // Sランク（超激レア: ultrarare / Sランク）は乗算
-            if (item.rarity === 'ultrarare' || item.rarity === 'S') {
-                const statVal = (item.stat || 0) / 100;
-                switch (item.type) {
-                    case 'accessory': hpMultiplier += statVal; break;
-                    case 'weapon': atkMultiplier += statVal; break;
-                    case 'armor': defMultiplier += statVal; break;
-                }
-            } else { // Sランク以外は加算
-                const statVal = (item.stat || 0);
-                switch (item.type) {
-                    case 'accessory': totalHp += statVal; break;
-                    case 'weapon': totalAtk += statVal; break;
-                    case 'armor': totalDef += statVal; break;
-                }
+            switch (item.type) {
+                case 'accessory': hpMultiplier += bonus; break;
+                case 'weapon': atkMultiplier += bonus; break;
+                case 'armor': defMultiplier += bonus; break;
             }
         });
 
-        totalHp *= hpMultiplier;
-        totalAtk *= atkMultiplier;
-        totalDef *= defMultiplier;
-
         return {
-            maxHp: Math.round(totalHp),
-            atk: Math.round(totalAtk),
-            def: Math.round(totalDef)
+            maxHp: Math.round(baseHp * hpMultiplier),
+            atk: Math.round(baseAtk * atkMultiplier),
+            def: Math.round(baseDef * defMultiplier)
         };
     }
 
@@ -808,6 +835,7 @@
                 <button onclick="openSubModal('zukan')" style="background-color:#e67e22; color:#fff; text-align:left;">📖 敵キャラ図鑑 (Zukan)</button>
                 <button onclick="openSubModal('leaderboard', 'rpg')" style="background-color:#2ecc71; color:#000; text-align:left;">🏆 階層突破ランキング</button>
                 <button onclick="scrollToChat()" style="background-color:#34495e; color:#fff; text-align:left;">💬 グローバルチャット</button>
+                <button onclick="openSubModal('profile')" style="background-color:#1abc9c; color:#fff; text-align:left;">👤 プロフィール設定</button>
             `;
         } else {
             area.innerHTML = `
@@ -817,6 +845,7 @@
                 <button onclick="openSubModal('leaderboard', 'casino')" style="background-color:#2ecc71; color:#000; text-align:left;">🏆 カジノ所持金ランキング</button>
                 <button onclick="openSubModal('txhistory')" style="background-color:#2c3e50; color:#fff; text-align:left;">📜 取引履歴 (Logs)</button>
                 <button onclick="scrollToChat()" style="background-color:#34495e; color:#fff; text-align:left;">💬 グローバルチャット</button>
+                <button onclick="openSubModal('profile')" style="background-color:#1abc9c; color:#fff; text-align:left;">👤 プロフィール設定</button>
             `;
         }
     }
@@ -844,54 +873,59 @@
                 return alert("パスワードが一致しません");
             }
             currentUser = u;
-            currentBalance = doc.data().balance || 0;
+            const data = doc.data();
+            currentDisplayName = data.displayName || u;
+            currentBalance = data.balance || 0;
             if (currentBalance === 100) {
                 currentBalance = 1000;
                 await userRef.update({ balance: 1000 });
             }
-            currentVipWager = doc.data().wagered || 0;
-            currentVault = doc.data().vault || 0;
-            pLevel = doc.data().rpgLevel || 1;
-            pFloor = doc.data().rpgFloor || 1;
-            pMaxFloor = doc.data().maxFloor || doc.data().rpgFloor || 1;
-            pExp = doc.data().rpgExp || 0;
-            pInventory = doc.data().pInventory || [];
+            currentVipWager = data.wagered || 0;
+            currentVault = data.vault || 0;
+            pLevel = data.rpgLevel || 1;
+            pFloor = data.rpgFloor || 1;
+            pMaxFloor = data.maxFloor || data.rpgFloor || 1;
+            pExp = data.rpgExp || 0;
+            pInventory = data.pInventory || [];
             pInventory.forEach(item => {
                 if (!item) return;
-                
-                // 表記の表記ゆれ (D, C, B, A, S -> common, uncommon, etc.) を補正して統一
                 if (item.rarity === 'D') item.rarity = 'common';
                 else if (item.rarity === 'C') item.rarity = 'uncommon';
                 else if (item.rarity === 'B') item.rarity = 'rare';
                 else if (item.rarity === 'A') item.rarity = 'epic';
                 else if (item.rarity === 'S') item.rarity = 'ultrarare';
-                
                 if (!item.rarity) item.rarity = 'common';
-                if (item.plus === undefined) item.plus = 0;
             });
-            pCoins = doc.data().rpgCoins || 0;
-            pPotions = doc.data().rpgPotions || 0;
-            pWeaponName = doc.data().eqWName || "初期のナイフ (+0)";
-            pWeaponAttr = doc.data().eqWAttr || "none";
-            pAtkBonus = doc.data().eqWAtk || 0;
-            pArmorName = doc.data().eqAName || "旅人の服 (+0)";
-            pDefBonus = doc.data().eqADef || 0;
-            pAccName = doc.data().eqCName || "お守り (+0)";
-            pHpBonus = doc.data().eqCHp || 0;
+            pCoins = data.rpgCoins || 0;
+            pPotions = data.rpgPotions || 0;
+            pWeaponName = data.eqWName || "Dランク武器";
+            pWeaponAttr = data.eqWAttr || "none";
+            pAtkBonus = data.eqWAtk || 0;
+            pArmorName = data.eqAName || "Dランク防具";
+            pDefBonus = data.eqADef || 0;
+            pAccName = data.eqCName || "Dランク装飾";
+            pHpBonus = data.eqCHp || 0;
         } else {
             if (doc.exists) {
                 return alert("そのユーザーIDは既に登録されています");
             }
+            const classId = document.getElementById('auth-class').value;
+            let attendanceNum = document.getElementById('auth-number').value;
+            if(!classId || !attendanceNum) return alert("クラスと出席番号を入力してください");
+            attendanceNum = attendanceNum.toString().padStart(2, '0');
+
             await userRef.set({
                 password: p, balance: 1000, wagered: 0, vault: 0,
+                displayName: u, classId: classId, attendanceNum: attendanceNum,
                 rpgLevel: 1, rpgFloor: 1, maxFloor: 1, rpgExp: 0, pInventory: [],
                 rpgCoins: 0, rpgPotions: 2, jailUntil: null,
-                eqWName: "初期のナイフ (+0)", eqWAttr: "none", eqWAtk: 0,
-                eqAName: "旅人の服 (+0)", eqADef: 0,
-                eqCName: "お守り (+0)", eqCHp: 0,
+                eqWName: "Dランク武器", eqWAttr: "none", eqWAtk: 0,
+                eqAName: "Dランク防具", eqADef: 0,
+                eqCName: "Dランク装飾", eqCHp: 0,
                 lastLoginBonusDate: ""
             });
             currentUser = u;
+            currentDisplayName = u;
             currentBalance = 1000;
             currentVipWager = 0;
             currentVault = 0;
@@ -901,19 +935,18 @@
             pExp = 0;
             pCoins = 0;
             pPotions = 2;
-            pWeaponName = "初期のナイフ (+0)";
+            pWeaponName = "Dランク武器";
             pWeaponAttr = "none";
             pAtkBonus = 0;
-            pArmorName = "旅人の服 (+0)";
+            pArmorName = "Dランク防具";
             pDefBonus = 0;
-            pAccName = "お守り (+0)";
+            pAccName = "Dランク装飾";
             pHpBonus = 0;
         }
 
         localStorage.setItem('koyocasino_uid', currentUser);
         localStorage.setItem('koyocasino_pw', p);
 
-        // オンライン状態を更新し、定期生存報告(Heartbeat)を開始
         await db.collection('users_v2').doc(currentUser).update({
             isOnline: true,
             lastActive: firebase.firestore.FieldValue.serverTimestamp()
@@ -924,10 +957,10 @@
         document.getElementById('main-content').classList.remove('hidden');
         document.getElementById('app-nav').classList.remove('hidden');
         document.getElementById('live-bet-ticker-bar').classList.remove('hidden');
-        document.getElementById('display-username').innerText = currentUser;
+        document.getElementById('display-username').innerText = currentDisplayName;
         
-        pMaxHP = 400 + (pLevel - 1) * 50 + pHpBonus;
-        pHP = pMaxHP;
+        const stats = calculatePlayerStats();
+        pHP = stats.maxHp;
         pMP = 50;
 
         updateDisplayUi();
@@ -937,7 +970,6 @@
         listenApprovedDatabase();
         checkNotifications();
         
-        // RPG状態の復元または新規開始
         const restored = await restoreBattleState();
         if (!restored) {
             initNewRpgFight();
@@ -949,14 +981,17 @@
         const t = document.getElementById('auth-title');
         const btn = document.getElementById('btn-auth-primary');
         const sub = document.getElementById('btn-auth-toggle');
+        const regFields = document.getElementById('auth-register-fields');
         if(t.innerText === "ログイン") {
             t.innerText = "新規アカウント登録";
             btn.innerText = "登録して開始";
             sub.innerText = "すでにアカウントをお持ちの方";
+            regFields.classList.remove('hidden');
         } else {
             t.innerText = "ログイン";
             btn.innerText = "ログイン";
             sub.innerText = "新規登録はこちら";
+            regFields.classList.add('hidden');
         }
     }
 
@@ -971,46 +1006,41 @@
         document.getElementById('rpg-player-coins').innerText = Math.floor(currentBalance).toLocaleString();
         document.getElementById('rpg-count-potion').innerText = pPotions;
         
-        // EXP UI 更新 (LINEボットの必要経験値計算式を適用)
         const nextExp = getRequiredExp(pLevel);
         const expPct = Math.min(100, (pExp / nextExp) * 100);
         document.getElementById('rpg-exp-text').innerText = `${pExp} / ${nextExp}`;
         document.getElementById('rpg-exp-bar').style.width = `${expPct}%`;
 
+        const rarityMap = {common: 'D', uncommon: 'C', rare: 'B', epic: 'A', ultrarare: 'S'};
+        const percentMap = {common: '10%', uncommon: '20%', rare: '30%', epic: '40%', ultrarare: '50%'};
 
         // 武器
         const equippedWeapon = pInventory.find(i => i.type === 'weapon' && i.equipped);
         if (equippedWeapon) {
-            if (!equippedWeapon.rarity) equippedWeapon.rarity = 'common';
             const attrLabel = equippedWeapon.attr && equippedWeapon.attr !== 'none' ? ` [${equippedWeapon.attr.toUpperCase()}]` : "";
-            const plusLabel = equippedWeapon.plus ? ` (+${equippedWeapon.plus})` : "";
-            document.getElementById('eq-weapon').innerHTML = `${equippedWeapon.name}${plusLabel}${attrLabel} <span class="rarity-${equippedWeapon.rarity}" style="font-weight:bold;">(${getRarityRankLabel(equippedWeapon.rarity)} | ATK: +${equippedWeapon.stat})</span>`;
+            const rarity = equippedWeapon.rarity || 'common';
+            document.getElementById('eq-weapon').innerHTML = `${equippedWeapon.name}${attrLabel} <span class="rarity-${rarity}" style="font-weight:bold;">(${rarityMap[rarity]}ランク | 攻撃力: +${percentMap[rarity]})</span>`;
         } else {
             const attrLabel = (pWeaponAttr && pWeaponAttr !== 'none') ? ` [${pWeaponAttr.toUpperCase()}]` : "";
-            const displayName = pWeaponName || "初期のナイフ";
-            document.getElementById('eq-weapon').innerHTML = `${displayName}${attrLabel} <span class="rarity-common" style="font-weight:bold;">(Dランク | ATK: +0)</span>`;
+            document.getElementById('eq-weapon').innerHTML = `素手${attrLabel} <span class="rarity-common" style="font-weight:bold;">(Dランク | 攻撃力: +0%)</span>`;
         }
 
         // 防具
         const equippedArmor = pInventory.find(i => i.type === 'armor' && i.equipped);
         if (equippedArmor) {
-            if (!equippedArmor.rarity) equippedArmor.rarity = 'common';
-            const plusLabel = equippedArmor.plus ? ` (+${equippedArmor.plus})` : "";
-            document.getElementById('eq-armor').innerHTML = `${equippedArmor.name}${plusLabel} <span class="rarity-${equippedArmor.rarity}" style="font-weight:bold;">(${getRarityRankLabel(equippedArmor.rarity)} | DEF: +${equippedArmor.stat})</span>`;
+            const rarity = equippedArmor.rarity || 'common';
+            document.getElementById('eq-armor').innerHTML = `${equippedArmor.name} <span class="rarity-${rarity}" style="font-weight:bold;">(${rarityMap[rarity]}ランク | 防御力: +${percentMap[rarity]})</span>`;
         } else {
-            const displayName = pArmorName || "旅人の服";
-            document.getElementById('eq-armor').innerHTML = `${displayName} <span class="rarity-common" style="font-weight:bold;">(Dランク | DEF: +0)</span>`;
+            document.getElementById('eq-armor').innerHTML = `普段着 <span class="rarity-common" style="font-weight:bold;">(Dランク | 防御力: +0%)</span>`;
         }
 
         // 装飾
         const equippedAcc = pInventory.find(i => i.type === 'accessory' && i.equipped);
         if (equippedAcc) {
-            if (!equippedAcc.rarity) equippedAcc.rarity = 'common';
-            const plusLabel = equippedAcc.plus ? ` (+${equippedAcc.plus})` : "";
-            document.getElementById('eq-acc').innerHTML = `${equippedAcc.name}${plusLabel} <span class="rarity-${equippedAcc.rarity}" style="font-weight:bold;">(${getRarityRankLabel(equippedAcc.rarity)} | HP: +${equippedAcc.stat})</span>`;
+            const rarity = equippedAcc.rarity || 'common';
+            document.getElementById('eq-acc').innerHTML = `${equippedAcc.name} <span class="rarity-${rarity}" style="font-weight:bold;">(${rarityMap[rarity]}ランク | 最大HP: +${percentMap[rarity]})</span>`;
         } else {
-            const displayName = pAccName || "お守り";
-            document.getElementById('eq-acc').innerHTML = `${displayName} <span class="rarity-common" style="font-weight:bold;">(Dランク | HP: +0)</span>`;
+            document.getElementById('eq-acc').innerHTML = `なし <span class="rarity-common" style="font-weight:bold;">(Dランク | 最大HP: +0%)</span>`;
         }
         
         updateVipProgressionUi();
@@ -1159,32 +1189,26 @@
     const attrNamesKanji = {fire: "火", water: "水", wood: "木", light: "光", dark: "暗", none: "無"};
 
     function initNewRpgFight() {
-        // クールダウンリセット
         healCooldown = 0;
         chargeDuration = 0;
         
-        // レア度の抽選
-        const roll = Math.random();
-        if(roll < 0.02) { eRare = "ultrarare"; } // Sランク 2%
-        else if(roll < 0.07) { eRare = "epic"; } // Aランク 5%
-        else if(roll < 0.17) { eRare = "rare"; } // Bランク 10%
-        else if(roll < 0.37) { eRare = "uncommon"; } // Cランク 20%
-        else { eRare = "common"; } // Dランク 63%
+        let rarityMultiplier = 1.0;
+        const isBossFloor = (pFloor % 50 === 0);
 
-        // LINEボット準拠の倍率設定
-        const rareMultipliers = {
-            common: 1.0,
-            uncommon: 1.5,
-            rare: 2.0,
-            epic: 3.0,
-            ultrarare: 5.0
-        };
-        const rarityMultiplier = rareMultipliers[eRare] || 1.0;
+        if (isBossFloor) {
+            eRare = "boss";
+            rarityMultiplier = 5.0 * 1.5; // 超激レアの1.5倍
+        } else {
+            const roll = Math.random();
+            if(roll < 0.02) { eRare = "ultrarare"; rarityMultiplier = 5.0; }
+            else if(roll < 0.07) { eRare = "epic"; rarityMultiplier = 3.0; }
+            else if(roll < 0.17) { eRare = "rare"; rarityMultiplier = 2.0; }
+            else if(roll < 0.37) { eRare = "uncommon"; rarityMultiplier = 1.5; }
+            else { eRare = "common"; rarityMultiplier = 1.0; }
+        }
 
-        // LINEボットに準拠した敵のレベル決定（階層ではなくプレイヤーレベル付近に連動）
         eLevel = Math.max(1, Math.round(pLevel + (Math.random() * 6 - 3)));
 
-        // LINEボット準拠の敵ステータス計算
         const baseHP = SETTINGS.EnemyHP_Base * eLevel * rarityMultiplier;
         const baseAtk = SETTINGS.EnemyATK_Base * eLevel * rarityMultiplier * 0.8;
         
@@ -1192,7 +1216,6 @@
         eHP = eMaxHP;
         eAtk = Math.round(baseAtk);
 
-        // 名前の選定（管理者が採用した案があれば優先登場）
         if(approvedEnemies.length > 0 && Math.random() < 0.4) {
             const chosen = approvedEnemies[Math.floor(Math.random() * approvedEnemies.length)];
             eName = chosen.title;
@@ -1202,11 +1225,12 @@
             eAttr = attrTypes[Math.floor(Math.random() * attrTypes.length)];
         }
         
-        const rareLabels = {common:"コモン", uncommon:"アンコモン", rare:"レア", epic:"激レア", ultrarare:"超激レア"};
+        const rareLabels = {common:"コモン", uncommon:"アンコモン", rare:"レア", epic:"激レア", ultrarare:"超激レア", boss:"BOSS"};
         document.getElementById('rpg-e-name').innerHTML = `${eName} <span class="badge-element elem-${eAttr}">${attrNamesKanji[eAttr]}</span>`;
         document.getElementById('rpg-e-details').innerText = `階層: ${pFloor} | Lv.${eLevel} | 属性: ${attrNamesKanji[eAttr]} | レア度: ${rareLabels[eRare]}`;
         
-        document.getElementById('rpg-log-box').innerHTML = `<div style="color:var(--gold);">⚔️ 【第${pFloor}階層】 Lv.${eLevel} レア度:${rareLabels[eRare]} の「${eName}」が立ちはだかった！</div>`;
+        const bossMsg = isBossFloor ? `<div style="color:var(--accent); font-size:16px; font-weight:bold; text-align:center;">⚠️ WARNING: BOSS APPEARED ⚠️</div>` : "";
+        document.getElementById('rpg-log-box').innerHTML = `${bossMsg}<div style="color:var(--gold);">⚔️ 【第${pFloor}階層】 Lv.${eLevel} レア度:${rareLabels[eRare]} の「${eName}」が立ちはだかった！</div>`;
         updateRpgBars();
         saveBattleState();
         isRpgActionProcessing = false;
@@ -1279,42 +1303,36 @@
             return;
         }
 
-        // バリデーションチェック (条件未達の時は無効化しない)
-        if(type === 'potion' && pPotions <= 0) {
-            return alert("回復薬がありません！ショップで購入するか敵からドロップさせてください");
-        }
-        if(type === 'skill-heal' && pMP < 15) {
-            return alert("MPが足りません");
-        }
-        if(type === 'skill-slash' && pMP < 10) {
-            return alert("MPが足りません");
-        }
-        if(type === 'skill-charge' && pMP < 20) {
-            return alert("MPが足りません");
-        }
+        const stats = calculatePlayerStats();
 
-        // 行動開始（0.8秒クールタイム開始）
+        // バリデーションチェック
+        if(type === 'potion' && pPotions <= 0) return alert("回復薬がありません");
+        if(type === 'skill-heal' && pMP < 15) return alert("MPが足りません");
+        if(type === 'skill-slash' && pMP < 10) return alert("MPが足りません");
+        if(type === 'skill-charge' && pMP < 20) return alert("MPが足りません");
+
         isRpgActionProcessing = true;
         setRpgButtonsDisabled(true);
 
         if(type === 'potion') {
             pPotions--;
-            pHP = Math.min(pMaxHP, pHP + 200);
-            logRpg(`🧪 回復薬を駆使した！プレイヤーのHPが200回復。`);
+            const healAmt = Math.floor(stats.maxHp * 0.20);
+            pHP = Math.min(stats.maxHp, pHP + healAmt);
+            logRpg(`🧪 回復薬を駆使した！プレイヤーのHPが ${healAmt} 回復。`);
             updateDisplayUi();
             setTimeout(enemyTurn, 800);
             return;
         }
 
-        const playerStats = calculatePlayerStats();
-        let pDamage = playerStats.atk;
+        let pDamage = stats.atk;
         let multiplier = 1.0;
 
         if(type === 'skill-heal') {
             pMP -= 15;
-            pHP = Math.min(pMaxHP, pHP + 150);
-            healCooldown = 4; // 発動後3ターン使用不可(自身含め4)
-            logRpg(`💖 スキル「ヒール」発動！HPが150回復した。`);
+            const healAmt = Math.floor(stats.maxHp * 0.15);
+            pHP = Math.min(stats.maxHp, pHP + healAmt);
+            healCooldown = 4;
+            logRpg(`💖 スキル「ヒール」発動！HPが ${healAmt} 回復した。`);
             updateRpgBars();
             setTimeout(enemyTurn, 800);
             return;
@@ -1333,16 +1351,17 @@
             return;
         }
 
-        // 属性判定
-        let baseAttrMul = getElementalMultiplier(pWeaponAttr, eAttr);
+        // 属性判定 (プレイヤー攻撃時のみ適用)
+        const equippedWeapon = pInventory.find(i => i.type === 'weapon' && i.equipped);
+        const playerAttr = equippedWeapon ? equippedWeapon.attr : 'none';
+        let baseAttrMul = getElementalMultiplier(playerAttr, eAttr);
         if(baseAttrMul > 1.0 && chargeDuration > 0) {
-            baseAttrMul = 1.3; // 属性チャージの強化
+            baseAttrMul = 1.3;
         }
         multiplier *= baseAttrMul;
 
         let finalPDamage = Math.floor(pDamage * multiplier * (0.9 + Math.random() * 0.2));
         
-        // クリティカル判定 (LINEボット準拠)
         let isCrit = false;
         if (Math.random() < SETTINGS.Crit_Chance) {
             finalPDamage = Math.round(finalPDamage * SETTINGS.Crit_Multiplier);
@@ -1370,23 +1389,16 @@
         const playerStats = calculatePlayerStats();
         const playerTotalDef = playerStats.def;
 
-        // LINEボット準拠の属性相性を敵の攻撃にも適用
-        const enemyAttackMultiplier = getElementalMultiplier(eAttr, pWeaponAttr);
-        let eFinalDmg = Math.round(eAtk * enemyAttackMultiplier);
+        let eFinalDmg = eAtk;
 
-        // 防御力によるダメージ軽減率式: ダメージ = 攻撃力 * (1 - DEF / (DEF + 300))
-        // これにより防御力（DEF）が高くなるほど被ダメージが軽減される（DEF=300で50%軽減、DEF=600で66%軽減）
         const dmgReduction = playerTotalDef / (playerTotalDef + 300);
         eFinalDmg = Math.round(eFinalDmg * (1.0 - dmgReduction));
 
-        // 乱数と最低値補正 (LINEボット準拠の乱数 0.8~1.2倍)
         eFinalDmg = Math.max(10, Math.round(eFinalDmg * (0.8 + Math.random() * 0.4)));
 
         pHP -= eFinalDmg;
         
         let msg = `<span style="color:var(--accent);">😈 ${eName}の反撃！ プレイヤーは ${eFinalDmg} のダメージを受けた。</span>`;
-        if (enemyAttackMultiplier > 1.0) msg += " <span style='font-size:10px; color:var(--accent);'>(相手の攻撃は効果抜群だ！)</span>";
-        else if (enemyAttackMultiplier < 1.0) msg += " <span style='font-size:10px; color:var(--text-muted);'>(相手の攻撃は効果が今ひとつのようだ...)</span>";
         logRpg(msg);
 
         if(pHP <= 0) {
@@ -1412,34 +1424,27 @@
     async function handleRpgVictory() {
         logRpg(`🎉 勝利！ ${eName}を撃破した！`);
         
-        // 状態クリア
         await db.collection('users_v2').doc(currentUser).update({ currentBattle: null });
 
-        // 経験値獲得 (LINEボット準拠)
-        const rareMultipliers = {
-            common: 1.0,
-            uncommon: 1.5,
-            rare: 2.0,
-            epic: 3.0,
-            ultrarare: 5.0
-        };
-        const rarityMultiplier = rareMultipliers[eRare] || 1.0;
+        // ボス報酬調整 (アンコモン相当)
+        let rewardsMultiplier = 1.0;
+        const rareMultipliers = {common: 1.0, uncommon: 1.5, rare: 2.0, epic: 3.0, ultrarare: 5.0, boss: 1.5};
+        rewardsMultiplier = rareMultipliers[eRare] || 1.0;
+
         const enemyLevel = eLevel;
         const levelRatio = enemyLevel / pLevel;
-        const gain = SETTINGS.Exp_Gain_Base * enemyLevel * Math.pow(levelRatio, SETTINGS.Exp_Gain_LevelRatio_Power) * rarityMultiplier;
+        const gain = SETTINGS.Exp_Gain_Base * enemyLevel * Math.pow(levelRatio, SETTINGS.Exp_Gain_LevelRatio_Power) * rewardsMultiplier;
         const gainedExp = Math.round(gain);
         pExp += gainedExp;
         logRpg(`✨ 経験値を ${gainedExp} 獲得した。`);
 
-        // お金(コイン)はLINEボットと切り離し（既存のカジノ残高経済を維持）
         const baseCoinDrop = 5 + Math.floor(Math.random() * 11);
-        const finalCoinDrop = Math.floor(baseCoinDrop * rarityMultiplier);
+        const finalCoinDrop = Math.floor(baseCoinDrop * rewardsMultiplier);
         await changeBalance(finalCoinDrop, "RPG敵撃破報酬");
         logRpg(`🪙 敵撃破により ￥${finalCoinDrop} を獲得した。`);
 
         let dropMsg = "";
         
-        // レベルアップ判定 (LINEボット準拠の必要経験値テーブル)
         const oldStats = calculatePlayerStats();
         let leveledUp = false;
         let requiredExp = getRequiredExp(pLevel);
@@ -1630,12 +1635,63 @@
     }
 
     async function buyPotion() {
-        if(currentBalance < 20) return alert("カジノ残高が足りません");
-        await changeBalance(-20, "回復薬購入");
+        if(currentBalance < 100) return alert("カジノ残高が足りません");
+        await changeBalance(-100, "回復薬購入");
         pPotions++;
         logRpg("🛒 ショップで「冒険者の回復薬」を1個購入しました。");
         updateDisplayUi();
         saveRpgProgress();
+    }
+
+    async function buyEquipment(rarity, cost) {
+        if(currentBalance < cost) return alert("カジノ残高が足りません");
+        if(pInventory.length >= 50) return alert("インベントリがいっぱいです（最大50個）");
+        
+        await changeBalance(-cost, `${getRarityRankLabel(rarity)}装備購入`);
+        
+        const eqRoll = Math.floor(Math.random() * 3);
+        const type = eqRoll === 0 ? 'weapon' : (eqRoll === 1 ? 'armor' : 'accessory');
+        const itemId = Math.random().toString(36).substring(2, 9);
+        const rarityMap = {common: 'D', uncommon: 'C', rare: 'B'};
+        const typeNames = {weapon: '武器', armor: '防具', accessory: '装飾'};
+        
+        let newItem = { 
+            id: itemId, 
+            name: `${rarityMap[rarity]}ランク${typeNames[type]}`, 
+            type: type, 
+            rarity: rarity, 
+            equipped: false 
+        };
+
+        if(type === 'weapon') {
+            // ショップ武器は光と闇以外 (火・水・木・無)
+            const basicAttrs = ["fire", "water", "wood", "none"];
+            const rAttr = basicAttrs[Math.floor(Math.random() * basicAttrs.length)];
+            newItem.attr = rAttr;
+            alert(`🛒 ${newItem.name} [${attrNamesKanji[rAttr]}] を購入しました！`);
+        } else {
+            alert(`🛒 ${newItem.name} を購入しました！`);
+        }
+
+        pInventory.push(newItem);
+        updateDisplayUi();
+        saveRpgProgress();
+    }
+
+    async function changeDisplayName() {
+        const newName = document.getElementById('profile-display-name').value.trim();
+        if (!newName) return alert("新しい名前を入力してください");
+        if (currentBalance < 100) return alert("残高が足りません (名前変更には100円必要です)");
+        
+        if (confirm(`100円を支払って表示名を「${newName}」に変更しますか？`)) {
+            await changeBalance(-100, "表示名変更費用");
+            currentDisplayName = newName;
+            await db.collection('users_v2').doc(currentUser).update({ displayName: newName });
+            document.getElementById('display-username').innerText = currentDisplayName;
+            alert("表示名を変更しました！");
+            closeSubModal('profile');
+            document.getElementById('profile-display-name').value = "";
+        }
     }
 
     async function deleteCurrentAccount() {
@@ -1709,18 +1765,37 @@
                 const div = document.createElement('div');
                 div.className = "admin-user-row";
                 div.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                        <div><strong>👤 ${doc.id}</strong> (RPG階層: ${data.rpgLevel || 1})</div>
-                        <div>
-                            ￥<input type="number" class="admin-money-input" id="cash-${doc.id}" value="${Math.floor(data.balance)}">
-                            <button onclick="updatePlayerCashAdmin('${doc.id}')" style="width:auto; padding:4px 8px; font-size:11px; background:var(--gold); margin-left:4px;">修正</button>
-                            <button onclick="purgeUserAccountAdmin('${doc.id}')" style="width:auto; padding:4px 8px; font-size:11px; background:var(--accent); color:#fff; margin-left:4px;">追放</button>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+                            <div><strong>👤 ${doc.id}</strong> (${data.displayName || '名無し'})</div>
+                            <div>
+                                ￥<input type="number" class="admin-money-input" id="cash-${doc.id}" value="${Math.floor(data.balance)}">
+                                <button onclick="updatePlayerCashAdmin('${doc.id}')" style="width:auto; padding:4px 8px; font-size:11px; background:var(--gold); margin-left:4px;">修正</button>
+                                <button onclick="purgeUserAccountAdmin('${doc.id}')" style="width:auto; padding:4px 8px; font-size:11px; background:var(--accent); color:#fff; margin-left:4px;">追放</button>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center; font-size:12px; color:var(--text-muted);">
+                            <span>クラス:</span>
+                            <input type="text" id="admin-class-${doc.id}" value="${data.classId || ''}" style="width:30px; padding:2px; margin-bottom:0; background:var(--bg-input); border:1px solid #2f4553; color:#fff; text-align:center;">
+                            <span>出席番号:</span>
+                            <input type="text" id="admin-num-${doc.id}" value="${data.attendanceNum || ''}" style="width:40px; padding:2px; margin-bottom:0; background:var(--bg-input); border:1px solid #2f4553; color:#fff; text-align:center;">
+                            <button onclick="updateUserClassAdmin('${doc.id}')" style="width:auto; padding:4px 8px; font-size:11px; background:var(--primary); color:#000;">更新</button>
+                            <span style="margin-left:auto;">RPG階層: ${data.rpgFloor || 1} (Lv.${data.rpgLevel || 1})</span>
                         </div>
                     </div>
                 `;
                 list.appendChild(div);
             });
         });
+    }
+
+    async function updateUserClassAdmin(uid) {
+        const c = document.getElementById(`admin-class-${uid}`).value.toUpperCase().trim();
+        let n = document.getElementById(`admin-num-${uid}`).value.trim();
+        if(!c || !n) return alert("クラスと番号を入力してください");
+        n = n.padStart(2, '0');
+        await db.collection('users_v2').doc(uid).update({ classId: c, attendanceNum: n });
+        alert(`${uid} の所属情報を更新しました。`);
     }
 
     async function updatePlayerCashAdmin(uid) {
@@ -1787,26 +1862,49 @@
             return;
         }
 
+        const rarityMap = {common: 'D', uncommon: 'C', rare: 'B', epic: 'A', ultrarare: 'S'};
+        const percentMap = {accessory: '最大HP', weapon: '攻撃力', armor: '防御力'};
+        const valMap = {common: '10%', uncommon: '20%', rare: '30%', epic: '40%', ultrarare: '50%'};
+
         filtered.forEach(item => {
             const card = document.createElement('div');
             card.className = `eq-card ${item.equipped ? 'equipped' : ''}`;
             const attrLabel = item.attr && item.attr !== 'none' ? ` [${item.attr.toUpperCase()}]` : "";
-            const plusLabel = item.plus ? ` (+${item.plus})` : "";
+            const rarity = item.rarity || 'common';
             
             card.innerHTML = `
                 <div style="flex:1;">
-                    <div class="rarity-${item.rarity}" style="font-weight:bold; font-size:13px;">${item.name}${plusLabel}${attrLabel}</div>
-                    <div style="font-size:10px; color:var(--text-muted);">${getRarityRankLabel(item.rarity)} | ステータス: +${item.stat}</div>
+                    <div class="rarity-${rarity}" style="font-weight:bold; font-size:13px;">${item.name}${attrLabel}</div>
+                    <div style="font-size:10px; color:var(--text-muted);">${rarityMap[rarity]}ランク | ${percentMap[item.type]}: +${valMap[rarity]}</div>
                 </div>
-                <div style="width:80px; text-align:right;">
+                <div style="display:flex; flex-direction:column; gap:4px; width:80px; text-align:right;">
                     ${item.equipped ? 
-                    `<span style="color:var(--primary); font-size:11px; font-weight:bold; display:block; margin-bottom:4px;">装備中</span>
+                    `<span style="color:var(--primary); font-size:11px; font-weight:bold; display:block;">装備中</span>
                      <button onclick="unequipItemFromInv('${item.id}')" style="padding:4px 6px; font-size:10px; background:var(--accent); color:#fff; cursor:pointer;">外す</button>` : 
                     `<button onclick="equipItemFromInv('${item.id}')" style="padding:6px; font-size:11px; cursor:pointer;">装備する</button>`}
+                    <button onclick="renameEquipment('${item.id}')" style="padding:4px 6px; font-size:10px; background:var(--bg-input); color:var(--text-muted); border:1px solid #2f4553; cursor:pointer;">名前変更</button>
                 </div>
             `;
             area.appendChild(card);
         });
+    }
+
+    async function renameEquipment(id) {
+        const item = pInventory.find(i => i.id === id);
+        if (!item) return;
+        if (currentBalance < 100) return alert("残高が足りません (100円必要です)");
+        
+        const newName = prompt("新しい装備名を入力してください:", item.name);
+        if (newName === null || newName.trim() === "") return;
+        
+        if (confirm(`100円を支払って「${item.name}」を「${newName}」に改名しますか？`)) {
+            await changeBalance(-100, "装備名変更費用");
+            item.name = newName;
+            renderInventory();
+            updateDisplayUi();
+            await saveRpgProgress();
+            alert("改名しました！");
+        }
     }
 
     async function equipItemFromInv(id) {
@@ -1874,26 +1972,17 @@
     let synthesisMaterialId = null;
 
     function getSynthesisCost(base) {
-        const rarities = ["common", "uncommon", "rare", "epic", "ultrarare"];
-        const baseRarityIdx = rarities.indexOf(base.rarity);
-        const baseCosts = [30, 60, 150, 400, 1000];
-        const cost = baseCosts[baseRarityIdx] + (base.plus || 0) * 10;
-        return cost;
+        const costs = {common: 100, uncommon: 250, rare: 500, epic: 1000};
+        return costs[base.rarity] || 100;
     }
 
-    function getSynthesisSuccessRate(base, material) {
-        const rarities = ["common", "uncommon", "rare", "epic", "ultrarare"];
-        const baseRarityIdx = rarities.indexOf(base.rarity);
-        const matRarityIdx = rarities.indexOf(material.rarity);
-        if (baseRarityIdx === matRarityIdx) return 1.0;
-        else if (baseRarityIdx > matRarityIdx) return 0.6;
-        else return 0.3;
+    function getSynthesisSuccessRate(base) {
+        const rates = {common: 1.0, uncommon: 0.6, rare: 0.25, epic: 0.10};
+        return rates[base.rarity] || 1.0;
     }
 
     function renderSynthesisUi() {
         const area = document.getElementById('inventory-list-area');
-        
-        // プレビュー構築
         let previewHtml = "";
         let costHtml = "";
         let executeBtnDisabled = "disabled";
@@ -1904,29 +1993,16 @@
             
             if (base && material && base.type === material.type) {
                 const rarities = ["common", "uncommon", "rare", "epic", "ultrarare"];
-                const baseRarityIdx = rarities.indexOf(base.rarity);
+                const nextRarity = rarities[rarities.indexOf(base.rarity) + 1];
                 const cost = getSynthesisCost(base);
-                const rate = getSynthesisSuccessRate(base, material) * 100;
+                const rate = getSynthesisSuccessRate(base) * 100;
                 
-                const nextPlus = base.plus + 1;
-                const statIncrease = (baseRarityIdx + 1) * 2;
-                const nextStat = base.stat + statIncrease;
-                
-                let upgradeChanceText = "";
-                if (nextPlus % 5 === 0 && baseRarityIdx < rarities.length - 1) {
-                    const nextRarity = rarities[baseRarityIdx + 1];
-                    const nextRankLabel = getRarityRankLabel(nextRarity);
-                    upgradeChanceText = `<br><span style="color:var(--primary); font-weight:bold;">🌟 ランク昇格チャンス! (30%の確率で ${nextRankLabel} へ昇格)</span>`;
-                }
-                
-                const plusLabel = base.plus ? ` (+${base.plus})` : "";
                 previewHtml = `
                     <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:6px; margin-top:10px; font-size:12px; border:1px solid #2f4553; text-align:left;">
                         <div style="font-weight:bold; color:var(--primary); margin-bottom:5px; text-align:center;">📊 合成予測プレビュー</div>
-                        <div><strong>強化対象:</strong> ${base.name}${plusLabel} ➔ (+${nextPlus})</div>
-                        <div><strong>効果変化:</strong> +${base.stat} ➔ <span style="color:var(--primary); font-weight:bold;">+${nextStat}</span> (+${statIncrease}上昇)</div>
+                        <div><strong>強化対象:</strong> ${base.name}</div>
+                        <div><strong>成功時の結果:</strong> ${getRarityRankLabel(nextRarity)}へ昇格</div>
                         <div><strong>成功確率:</strong> <span style="color:var(--gold); font-weight:bold;">${rate}%</span></div>
-                        ${upgradeChanceText}
                     </div>
                 `;
                 
@@ -1976,20 +2052,35 @@
             return;
         }
 
+        const rarityMap = {common: 'D', uncommon: 'C', rare: 'B', epic: 'A', ultrarare: 'S'};
+
         items.forEach(item => {
             if (slot === 'material' && synthesisBaseId === item.id) return;
             if (slot === 'base' && synthesisMaterialId === item.id) return;
+            
+            // 素材選択時のみ制約をかける
+            if (slot === 'material' && synthesisBaseId) {
+                const base = pInventory.find(i => i.id === synthesisBaseId);
+                if (item.type !== base.type) return; // 同じ部位のみ
+                if (item.rarity !== base.rarity) return; // 同じレア度のみ
+                if (item.type === 'weapon' && item.attr !== base.attr) return; // 武器は同じ属性のみ
+            }
+
             const btn = document.createElement('div');
             btn.className = "eq-card";
             btn.style.marginBottom = "5px";
             btn.style.cursor = "pointer";
             btn.onclick = () => {
-                if (slot === 'base') synthesisBaseId = item.id;
-                else synthesisMaterialId = item.id;
+                if (slot === 'base') {
+                    synthesisBaseId = item.id;
+                    synthesisMaterialId = null; // ベース変えたら素材リセット
+                } else {
+                    synthesisMaterialId = item.id;
+                }
                 renderSynthesisUi();
             };
-            const plusLabel = item.plus ? ` (+${item.plus})` : "";
-            btn.innerHTML = `<div class="rarity-${item.rarity}" style="font-size:12px;">${item.name}${plusLabel}</div><div style="font-size:10px; color:var(--text-muted);">+${item.stat}</div>`;
+            const attrLabel = item.attr && item.attr !== 'none' ? ` [${item.attr.toUpperCase()}]` : "";
+            btn.innerHTML = `<div class="rarity-${item.rarity}" style="font-size:12px;">${item.name}${attrLabel}</div><div style="font-size:10px; color:var(--text-muted);">${rarityMap[item.rarity]}ランク</div>`;
             selectionArea.appendChild(btn);
         });
     }
@@ -1999,7 +2090,8 @@
             const item = pInventory.find(i => i.id === synthesisBaseId);
             if (item) {
                 const slot = document.getElementById('syn-base-slot');
-                slot.innerHTML = `<div class="rarity-${item.rarity}" style="font-size:9px; font-weight:bold; text-align:center; padding: 2px;">${item.name}</div><div style="font-size:11px; font-weight:bold;">+${item.plus}</div><div style="font-size:8px; color:var(--accent);">[解除]</div>`;
+                const rarityMap = {common: 'D', uncommon: 'C', rare: 'B', epic: 'A', ultrarare: 'S'};
+                slot.innerHTML = `<div class="rarity-${item.rarity}" style="font-size:9px; font-weight:bold; text-align:center; padding: 2px;">${item.name}</div><div style="font-size:11px; font-weight:bold;">${rarityMap[item.rarity]}</div><div style="font-size:8px; color:var(--accent);">[解除]</div>`;
                 slot.style.borderColor = 'var(--gold)';
                 slot.onclick = () => {
                     synthesisBaseId = null;
@@ -2008,13 +2100,16 @@
             }
         } else {
             const slot = document.getElementById('syn-base-slot');
+            slot.innerHTML = `<span style="font-size:20px;">＋</span><span style="font-size:9px; color:var(--text-muted);">ベース</span>`;
+            slot.style.borderColor = '#2f4553';
             slot.onclick = () => selectSynItem('base');
         }
         if (synthesisMaterialId) {
             const item = pInventory.find(i => i.id === synthesisMaterialId);
             if (item) {
                 const slot = document.getElementById('syn-material-slot');
-                slot.innerHTML = `<div class="rarity-${item.rarity}" style="font-size:9px; font-weight:bold; text-align:center; padding: 2px;">${item.name}</div><div style="font-size:11px; font-weight:bold;">+${item.plus}</div><div style="font-size:8px; color:var(--accent);">[解除]</div>`;
+                const rarityMap = {common: 'D', uncommon: 'C', rare: 'B', epic: 'A', ultrarare: 'S'};
+                slot.innerHTML = `<div class="rarity-${item.rarity}" style="font-size:9px; font-weight:bold; text-align:center; padding: 2px;">${item.name}</div><div style="font-size:11px; font-weight:bold;">${rarityMap[item.rarity]}</div><div style="font-size:8px; color:var(--accent);">[解除]</div>`;
                 slot.style.borderColor = 'var(--gold)';
                 slot.onclick = () => {
                     synthesisMaterialId = null;
@@ -2023,6 +2118,8 @@
             }
         } else {
             const slot = document.getElementById('syn-material-slot');
+            slot.innerHTML = `<span style="font-size:20px;">＋</span><span style="font-size:9px; color:var(--text-muted);">素材</span>`;
+            slot.style.borderColor = '#2f4553';
             slot.onclick = () => selectSynItem('material');
         }
     }
@@ -2033,40 +2130,28 @@
         const material = pInventory.find(i => i.id === synthesisMaterialId);
 
         if (!base || !material) return;
-        if (base.type !== material.type) return alert("同じ種類の装備（武器同士など）しか合成できません");
+        if (base.type !== material.type) return alert("同じ種類の装備しか合成できません");
+        if (base.rarity !== material.rarity) return alert("同じランクの装備しか合成できません");
+        if (base.type === 'weapon' && base.attr !== material.attr) return alert("同じ属性の武器しか合成できません");
+        if (base.rarity === 'ultrarare') return alert("Sランクはこれ以上合成できません");
 
         const cost = getSynthesisCost(base);
         if (currentBalance < cost) return alert(`残高が足りません。合成には ￥${cost} 必要です。`);
 
-        const rate = getSynthesisSuccessRate(base, material);
+        const rate = getSynthesisSuccessRate(base);
         if (!confirm(`￥${cost} を支払って合成を実行しますか？（成功確率: ${rate * 100}%）`)) return;
 
         // 費用支払い
         await changeBalance(-cost, "装備合成費用");
 
         const rarities = ["common", "uncommon", "rare", "epic", "ultrarare"];
-        const baseRarityIdx = rarities.indexOf(base.rarity);
-
-        // 合成成功判定
         const success = Math.random() < rate;
 
         if (success) {
-            base.plus++;
-            base.stat += (baseRarityIdx + 1) * 2; // レア度に応じて加算値増加
-            
-            // ランク昇格チャンス (通常時10%、強化値が5の倍数に達した時は30%の確率で昇格)
-            let rankUpOccurred = false;
-            if (baseRarityIdx < rarities.length - 1) {
-                const upgradeChance = (base.plus % 5 === 0) ? 0.30 : 0.10;
-                if (Math.random() < upgradeChance) {
-                    base.rarity = rarities[baseRarityIdx + 1];
-                    rankUpOccurred = true;
-                    alert(`🌟 ランク昇格！ ${base.name} が ${getRarityRankLabel(base.rarity)} へ昇格しました！`);
-                }
-            }
-            if (!rankUpOccurred) {
-                alert(`✅ 合成成功！ ${base.name} が +${base.plus} に強化されました。`);
-            }
+            const oldRarity = base.rarity;
+            base.rarity = rarities[rarities.indexOf(oldRarity) + 1];
+            base.name = getRarityRankLabel(base.rarity) + (base.type === 'weapon' ? '武器' : (base.type === 'armor' ? '防具' : '装飾'));
+            alert(`🌟 ランク昇格！ ${getRarityRankLabel(base.rarity)} へ昇格しました！`);
         } else {
             alert(`❌ 合成失敗... 素材が消滅しました。`);
         }
@@ -2593,6 +2678,17 @@
 
     // --- 🎰 カジノ従来ゲームロジック復元・維持一式 ---
     function selectGameType(g) {
+        // プレイ中の誤操作防止
+        if (activeMinesGame && activeMinesGame.state === 'playing') {
+            return alert("マインズをプレイ中です。キャッシュアウトするか、勝負が決まるまで他のゲームには変更できません。");
+        }
+        if (activeHiLowGame) {
+            return alert("ハイローをプレイ中です。キャッシュアウトするか、勝負が決まるまで他のゲームには変更できません。");
+        }
+        if (activeBjGame && (activeBjGame.state === 'playing' || activeBjGame.state === 'dealer-turn')) {
+            return alert("ブラックジャックをプレイ中です。勝負が決まるまで他のゲームには変更できません。");
+        }
+
         selectedGame = g;
         document.querySelectorAll('.game-menu-v2 .game-btn-full').forEach(el => el.classList.remove('active'));
         const btnMap = {mines:'menu-mines', bj:'menu-bj', hilow:'menu-hilow', roulette:'menu-roulette', dice:'menu-dice'};
