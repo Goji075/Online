@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Koyocasino - Elite 3G Ultimate Evolution</title>
+    <title>Koyocasino</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
@@ -2286,6 +2286,7 @@
     // --- ⚔️ 対戦 (Duel Market) システム ---
     let onlineUsersUnsubscribe = null;
     let duelInvitesUnsubscribe = null;
+    let activeDuelUnsubscribe = null;
 
     function startHeartbeat() {
         // 30秒ごとにオンライン生存確認を更新
@@ -2371,7 +2372,7 @@
                     ⚠️ この画面を閉じたり、他のページへ移動しないでください！<br>
                     閉じると承認されても対戦が開始されません。
                 </p>
-                <button onclick="cancelDuelInvite('${duelId}')" style="background:var(--accent); color:#fff; padding:12px; width:auto; font-size:14px; font-weight:bold; border-radius:6px; cursor:pointer;">招待をキャンセルして返金</button>
+                <button onclick="cancelDuelInvite('${duelId}', this)" style="background:var(--accent); color:#fff; padding:12px; width:auto; font-size:14px; font-weight:bold; border-radius:6px; cursor:pointer;">招待をキャンセルして返金</button>
             </div>
         `;
 
@@ -2398,11 +2399,12 @@
         board.dataset.activeDuelTimerId = timerInterval;
     }
 
-    async function cancelDuelInvite(duelId) {
+    async function cancelDuelInvite(duelId, btn) {
         if (!confirm("招待をキャンセルして全額返金を受けますか？")) return;
-        const btn = event.target;
-        btn.disabled = true;
-        btn.innerText = "キャンセル中...";
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = "キャンセル中...";
+        }
         await db.collection('duels').doc(duelId).update({ status: 'cancelled' });
     }
 
