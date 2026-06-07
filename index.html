@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Koyocasino</title>
+    <title>Koyocasino - Elite 3G Ultimate Evolution</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
@@ -827,6 +827,10 @@
 
     // 認証と初期化
     function switchTab(tabId) {
+        if (activeDuelId && tabId !== 'game') {
+            alert("対戦中は他の画面に切り替えられません。");
+            return;
+        }
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab'));
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         const target = document.getElementById('section-' + tabId);
@@ -1105,6 +1109,10 @@
 
     // --- 🔔 お知らせ & 採否判定データベース同期 ---
     function openNotifModal() {
+        if (activeDuelId) {
+            alert("対戦中はお知らせを開けません。");
+            return;
+        }
         openSubModal('notif');
         document.getElementById('bell-badge').classList.add('hidden');
         // 全て既読にする処理（簡易的に最終確認時間を保存するなど）
@@ -2287,6 +2295,8 @@
     let onlineUsersUnsubscribe = null;
     let duelInvitesUnsubscribe = null;
     let activeDuelUnsubscribe = null;
+    let activeDuelId = null;
+    let activeDuelData = null;
 
     function startHeartbeat() {
         // 30秒ごとにオンライン生存確認を更新
@@ -2303,6 +2313,10 @@
     let duelInviteTimeout = null;
 
     async function invitePlayerToDuel(targetUid) {
+        if (activeDuelId || duelInviteTimeout) {
+            alert("すでに対戦中、または対戦相手の承認待ちです。");
+            return;
+        }
         const gameTypeStr = prompt(
             `⚔️ 対戦するゲームを選択してください（番号を入力）：\n` +
             `1: 💣 マインズ (交互に選択し爆弾で即負け・爆弾3個固定)\n` +
@@ -2437,6 +2451,10 @@
     }
 
     async function acceptDuelInvite(duelId, bet) {
+        if (activeDuelId) {
+            alert("すでに対戦中のため、新しい対戦を承認できません。");
+            return;
+        }
         if (currentBalance < bet) {
             alert("残高が足りないため、対戦を承認できません。");
             return;
@@ -2523,6 +2541,8 @@
             
             // 招待拒否、タイムアウト、キャンセルの処理
             if (['rejected', 'timeout', 'cancelled'].includes(d.status)) {
+                activeDuelId = null;
+                activeDuelData = null;
                 if (d.host === currentUser) {
                     const board = document.getElementById('my-isolated-board');
                     if (board.dataset.activeDuelTimerId) {
@@ -2549,6 +2569,8 @@
             }
             
             if (d.status === 'playing') {
+                activeDuelId = duelId;
+                activeDuelData = d;
                 const board = document.getElementById('my-isolated-board');
                 if (board.dataset.activeDuelTimerId) {
                     clearInterval(parseInt(board.dataset.activeDuelTimerId));
@@ -2649,7 +2671,7 @@
                             }
                         }
                         
-                        const clickAction = (myTurn && !isRevealed) ? `onclick="handleDuelMinesClick('${duelId}', ${i})"` : "";
+                        const clickAction = (myTurn && !isRevealed) ? `onclick="handleDuelMinesClick(this, '${duelId}', ${i})"` : "";
                         gridHtml += `<div class="${tileClass}" style="${style} aspect-ratio: 1;" ${clickAction}>${tileText}</div>`;
                     }
                     
@@ -2669,6 +2691,8 @@
             }
             
             if (d.status === 'finished') {
+                activeDuelId = null;
+                activeDuelData = null;
                 if (handledDuelIds.has(duelId)) return;
                 handledDuelIds.add(duelId);
                 showDuelResultV3(duelId, d);
@@ -2677,9 +2701,8 @@
     }
 
     window.handleDuelBjAction = async function(duelId, action) {
-        const doc = await db.collection('duels').doc(duelId).get();
-        if (!doc.exists) return;
-        const d = doc.data();
+        if (!activeDuelData) return;
+        const d = activeDuelData;
         
         const isHost = d.host === currentUser;
         let hand = isHost ? d.host_hand : d.guest_hand;
@@ -2743,12 +2766,24 @@
         await db.collection('duels').doc(duelId).update(updateData);
     }
 
-    window.handleDuelMinesClick = async function(duelId, tileIdx) {
-        const doc = await db.collection('duels').doc(duelId).get();
-        if (!doc.exists) return;
-        const d = doc.data();
+    window.handleDuelMinesClick = async function(tileEl, duelId, tileIdx) {
+        if (!activeDuelData) return;
+        const d = activeDuelData;
         
         if (d.revealed_tiles.includes(tileIdx)) return;
+        
+        if (tileEl) {
+            tileEl.classList.add('revealed');
+            tileEl.removeAttribute('onclick');
+            const isBomb = d.mines_grid[tileIdx];
+            if (isBomb) {
+                tileEl.innerText = "💥";
+                tileEl.style.borderColor = "var(--accent)";
+            } else {
+                tileEl.innerText = "💎";
+                tileEl.style.color = "var(--primary)";
+            }
+        }
         
         const isHost = d.host === currentUser;
         const opponentRole = isHost ? 'guest' : 'host';
@@ -2846,6 +2881,8 @@
 
     async function clearDuelBoard(duelId) {
         document.getElementById('my-isolated-board').innerHTML = "";
+        activeDuelId = null;
+        activeDuelData = null;
         await db.collection('duels').doc(duelId).delete().catch(() => {});
         handledDuelIds.delete(duelId);
         selectGameType('bj');
@@ -2902,6 +2939,9 @@
 
     // --- 🎰 カジノ従来ゲームロジック復元・維持一式 ---
     function selectGameType(g) {
+        if (activeDuelId) {
+            return alert("対戦中は他のゲームに変更できません。");
+        }
         // プレイ中の誤操作防止
         if (activeMinesGame && activeMinesGame.state === 'playing') {
             return alert("マインズをプレイ中です。キャッシュアウトするか、勝負が決まるまで他のゲームには変更できません。");
@@ -2974,6 +3014,9 @@
     }
 
     async function startIndividualGame() {
+        if (activeDuelId) {
+            return alert("対戦中は個別ゲームを開始できません。");
+        }
         const amt = parseFloat(document.getElementById('bet-amount').value);
         if(isNaN(amt) || amt < 10) return alert("最低ベットは 10円 です");
         if(currentBalance < amt) return alert("残高が足りません");
@@ -3948,6 +3991,10 @@
         if (modal) modal.classList.remove('open');
     }
     function toggleSidebar(open) {
+        if (open && activeDuelId) {
+            alert("対戦中はメニューを開けません。");
+            return;
+        }
         document.getElementById('sidebar-menu').className = open ? "sidebar open" : "sidebar";
         document.getElementById('menu-overlay').className = open ? "sidebar-overlay show" : "sidebar-overlay";
     }
