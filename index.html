@@ -2535,42 +2535,48 @@
     let handledDuelIds = new Set();
 
     async function handleDuelSnapshot(snap) {
-        snap.forEach(async doc => {
-            const d = doc.data();
-            const duelId = doc.id;
+        if (snap.empty) return;
+        
+        const docs = [];
+        snap.forEach(doc => docs.push(doc));
+        
+        // Sort by priority, then by timestamp descending
+        docs.sort((a, b) => {
+            const statusOrder = { playing: 0, finished: 1, invited: 2 };
+            const sA = statusOrder[a.data().status] !== undefined ? statusOrder[a.data().status] : 9;
+            const sB = statusOrder[b.data().status] !== undefined ? statusOrder[b.data().status] : 9;
             
-            // 招待拒否、タイムアウト、キャンセルの処理
-            if (['rejected', 'timeout', 'cancelled'].includes(d.status)) {
-                activeDuelId = null;
-                activeDuelData = null;
-                if (d.host === currentUser) {
-                    const board = document.getElementById('my-isolated-board');
-                    if (board.dataset.activeDuelTimerId) {
-                        clearInterval(parseInt(board.dataset.activeDuelTimerId));
-                        delete board.dataset.activeDuelTimerId;
-                    }
-                    if (duelInviteTimeout) {
-                        clearTimeout(duelInviteTimeout);
-                        duelInviteTimeout = null;
-                    }
-                    
-                    let msg = "";
-                    if (d.status === 'rejected') msg = `❌ ${d.guest} に対戦招待を拒否されました。`;
-                    else if (d.status === 'timeout') msg = `⌛ 対戦招待がタイムアウトしました。`;
-                    else if (d.status === 'cancelled') msg = `🔙 招待をキャンセルしました。`;
-                    
-                    alert(`${msg}\nベット額 ￥${d.bet.toLocaleString()} が返金されました。`);
-                    await changeBalance(d.bet, "対戦招待不成立による返金");
-                    board.innerHTML = "";
-                    selectGameType(selectedGame); // UIリセット
-                }
-                await db.collection('duels').doc(duelId).delete().catch(()=>{});
-                return;
+            if (sA !== sB) {
+                return sA - sB;
             }
             
-            if (d.status === 'playing') {
-                activeDuelId = duelId;
-                activeDuelData = d;
+            const tA = a.data().timestamp ? a.data().timestamp.toMillis() : 0;
+            const tB = b.data().timestamp ? b.data().timestamp.toMillis() : 0;
+            return tB - tA;
+        });
+        
+        // If we already have an active duel, prioritize it
+        let docToProcess = null;
+        if (activeDuelId) {
+            docToProcess = docs.find(doc => doc.id === activeDuelId);
+        }
+        if (!docToProcess) {
+            docToProcess = docs[0];
+        }
+        
+        const d = docToProcess.data();
+        const duelId = docToProcess.id;
+        
+        // If we are currently in a different active duel, ignore this update
+        if (activeDuelId && activeDuelId !== duelId) {
+            return;
+        }
+        
+        // 招待拒否、タイムアウト、キャンセルの処理
+        if (['rejected', 'timeout', 'cancelled'].includes(d.status)) {
+            activeDuelId = null;
+            activeDuelData = null;
+            if (d.host === currentUser) {
                 const board = document.getElementById('my-isolated-board');
                 if (board.dataset.activeDuelTimerId) {
                     clearInterval(parseInt(board.dataset.activeDuelTimerId));
@@ -2580,124 +2586,153 @@
                     clearTimeout(duelInviteTimeout);
                     duelInviteTimeout = null;
                 }
-
-                // ソロプレイ状態を確実に消去
-                activeMinesGame = null; activeHiLowGame = null; activeBjGame = null;
-
-                const opponent = d.host === currentUser ? d.guest : d.host;
-                const gameType = d.gameType || 'dice';
                 
-                if (gameType === 'dice') {
-                    board.innerHTML = `
-                        <div style="text-align:center; padding:20px; border: 2px solid var(--gold); border-radius: 12px; background: rgba(26, 44, 56, 0.9);">
-                            <h3 style="color:var(--gold); margin-bottom:15px;">⚔️ ${opponent} とダイス対戦中！！</h3>
-                            <div style="display:flex; justify-content:space-around; align-items:center;">
-                                <div>
-                                    <div style="font-size:12px; color:var(--text-muted);">${d.host} (ホスト)</div>
-                                    <div id="duel-p1-card" style="width:80px; height:120px; background:var(--bg-input); border:2px solid var(--gold); border-radius:8px; display:flex; justify-content:center; align-items:center; font-size:30px;">？</div>
-                                </div>
-                                <div style="font-size:24px; font-weight:bold; color:var(--gold);">VS</div>
-                                <div>
-                                    <div style="font-size:12px; color:var(--text-muted);">${d.guest} (ゲスト)</div>
-                                    <div id="duel-p2-card" style="width:80px; height:120px; background:var(--bg-input); border:2px solid var(--gold); border-radius:8px; display:flex; justify-content:center; align-items:center; font-size:30px;">？</div>
-                                </div>
-                            </div>
-                            <p style="margin-top:20px; font-size:12px; color:var(--gold);">ダイスを振っています...</p>
-                        </div>
-                    `;
-                    
-                    if (d.host === currentUser) {
-                        await new Promise(res => setTimeout(res, 2000));
-                        await db.collection('duels').doc(duelId).update({ status: 'finished' });
-                    }
-                } else if (gameType === 'bj') {
-                    const isHost = d.host === currentUser;
-                    const myTurn = (d.turn === 'host' && isHost) || (d.turn === 'guest' && !isHost);
-                    const myHand = isHost ? d.host_hand : d.guest_hand;
-                    const oppHand = isHost ? d.guest_hand : d.host_hand;
-                    const myStatus = isHost ? d.host_status : d.guest_status;
-                    const oppStatus = isHost ? d.guest_status : d.host_status;
-                    const myScore = calculateHandValue(myHand);
-                    const oppScore = calculateHandValue(oppHand);
-                    
-                    const myCardsHtml = myHand.map(c => getCardHtml(c)).join('');
-                    const oppCardsHtml = oppHand.map(c => getCardHtml(c)).join('');
-                    
-                    let controlButtons = "";
-                    if (myTurn && myStatus === 'playing') {
-                        controlButtons = `
-                            <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; margin-top:15px;">
-                                <button class="secondary" onclick="handleDuelBjAction('${duelId}', 'hit')">ヒット</button>
-                                <button class="secondary" style="background-color:var(--gold); color:#000;" onclick="handleDuelBjAction('${duelId}', 'stand')">スタンド</button>
-                            </div>
-                        `;
-                    } else {
-                        controlButtons = `<p style="margin-top:15px; font-size:12px; color:var(--gold);">${myTurn ? '操作中...' : opponent + ' のターンを待っています...'}</p>`;
-                    }
-                    
-                    board.innerHTML = `
-                        <div style="text-align:center; padding:20px; border: 2px solid var(--gold); border-radius: 12px; background: rgba(26, 44, 56, 0.9);">
-                            <h3 style="color:var(--gold); margin-bottom:15px;">⚔️ BJ対戦中: vs ${opponent}</h3>
-                            <div style="margin-bottom:15px; text-align:left;">
-                                <div style="font-size:11px; color:var(--text-muted);">${opponent} の手札 (スコア: ${oppStatus === 'busted' ? 'バースト' : oppScore})</div>
-                                <div class="cards-flex">${oppCardsHtml}</div>
-                            </div>
-                            <div style="margin-bottom:15px; text-align:left;">
-                                <div style="font-size:11px; color:var(--primary); font-weight:bold;">あなたの手札 (スコア: ${myStatus === 'busted' ? 'バースト' : myScore})</div>
-                                <div class="cards-flex">${myCardsHtml}</div>
-                            </div>
-                            ${controlButtons}
-                        </div>
-                    `;
-                } else if (gameType === 'mines') {
-                    const isHost = d.host === currentUser;
-                    const myTurn = (d.turn === 'host' && isHost) || (d.turn === 'guest' && !isHost);
-                    
-                    let gridHtml = "";
-                    for (let i = 0; i < 25; i++) {
-                        const isRevealed = d.revealed_tiles.includes(i);
-                        let tileText = "";
-                        let tileClass = "mines-tile";
-                        let style = "";
-                        
-                        if (isRevealed) {
-                            tileClass += " revealed";
-                            if (d.mines_grid[i]) {
-                                tileText = "💥";
-                                style = "border-color: var(--accent);";
-                            } else {
-                                tileText = "💎";
-                                style = "color: var(--primary);";
-                            }
-                        }
-                        
-                        const clickAction = (myTurn && !isRevealed) ? `onclick="handleDuelMinesClick(this, '${duelId}', ${i})"` : "";
-                        gridHtml += `<div class="${tileClass}" style="${style} aspect-ratio: 1;" ${clickAction}>${tileText}</div>`;
-                    }
-                    
-                    board.innerHTML = `
-                        <div style="text-align:center; padding:20px; border: 2px solid var(--gold); border-radius: 12px; background: rgba(26, 44, 56, 0.9);">
-                            <h3 style="color:var(--gold); margin-bottom:10px;">⚔️ マインズ対戦中: vs ${opponent}</h3>
-                            <p style="font-size:12px; color:${myTurn ? 'var(--primary)' : 'var(--text-muted)'}; font-weight:bold; margin-bottom:10px;">
-                                ${myTurn ? '👉 あなたのターンです！マスを開けてください' : `⌛ ${opponent} のターンを待っています...`}
-                            </p>
-                            <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">爆弾の数: 3個固定 | 爆弾を引いたら即敗北</div>
-                            <div class="mines-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-width: 240px; margin: 10px auto;">
-                                ${gridHtml}
-                            </div>
-                        </div>
-                    `;
-                }
+                let msg = "";
+                if (d.status === 'rejected') msg = `❌ ${d.guest} に対戦招待を拒否されました。`;
+                else if (d.status === 'timeout') msg = `⌛ 対戦招待がタイムアウトしました。`;
+                else if (d.status === 'cancelled') msg = `🔙 招待をキャンセルしました。`;
+                
+                alert(`${msg}\nベット額 ￥${d.bet.toLocaleString()} が返金されました。`);
+                await changeBalance(d.bet, "対戦招待不成立による返金");
+                board.innerHTML = "";
+                selectGameType(selectedGame); // UIリセット
             }
+            await db.collection('duels').doc(duelId).delete().catch(()=>{});
+            return;
+        }
+        
+        if (d.status === 'playing') {
+            activeDuelId = duelId;
+            activeDuelData = d;
+            const board = document.getElementById('my-isolated-board');
+            if (board.dataset.activeDuelTimerId) {
+                clearInterval(parseInt(board.dataset.activeDuelTimerId));
+                delete board.dataset.activeDuelTimerId;
+            }
+            if (duelInviteTimeout) {
+                clearTimeout(duelInviteTimeout);
+                duelInviteTimeout = null;
+            }
+
+            // ソロプレイ状態を確実に消去
+            activeMinesGame = null; activeHiLowGame = null; activeBjGame = null;
+
+            const opponent = d.host === currentUser ? d.guest : d.host;
+            const gameType = d.gameType || 'dice';
             
-            if (d.status === 'finished') {
-                activeDuelId = null;
-                activeDuelData = null;
-                if (handledDuelIds.has(duelId)) return;
-                handledDuelIds.add(duelId);
-                showDuelResultV3(duelId, d);
+            if (gameType === 'dice') {
+                board.innerHTML = `
+                    <div style="text-align:center; padding:20px; border: 2px solid var(--gold); border-radius: 12px; background: rgba(26, 44, 56, 0.9);">
+                        <h3 style="color:var(--gold); margin-bottom:15px;">⚔️ ${opponent} とダイス対戦中！！</h3>
+                        <div style="display:flex; justify-content:space-around; align-items:center;">
+                            <div>
+                                <div style="font-size:12px; color:var(--text-muted);">${d.host} (ホスト)</div>
+                                <div id="duel-p1-card" style="width:80px; height:120px; background:var(--bg-input); border:2px solid var(--gold); border-radius:8px; display:flex; justify-content:center; align-items:center; font-size:30px;">？</div>
+                            </div>
+                            <div style="font-size:24px; font-weight:bold; color:var(--gold);">VS</div>
+                            <div>
+                                <div style="font-size:12px; color:var(--text-muted);">${d.guest} (ゲスト)</div>
+                                <div id="duel-p2-card" style="width:80px; height:120px; background:var(--bg-input); border:2px solid var(--gold); border-radius:8px; display:flex; justify-content:center; align-items:center; font-size:30px;">？</div>
+                            </div>
+                        </div>
+                        <p style="margin-top:20px; font-size:12px; color:var(--gold);">ダイスを振っています...</p>
+                    </div>
+                `;
+                
+                if (d.host === currentUser) {
+                    await new Promise(res => setTimeout(res, 2000));
+                    await db.collection('duels').doc(duelId).update({ status: 'finished' });
+                }
+            } else if (gameType === 'bj') {
+                const isHost = d.host === currentUser;
+                const myTurn = (d.turn === 'host' && isHost) || (d.turn === 'guest' && !isHost);
+                const myHand = isHost ? d.host_hand : d.guest_hand;
+                const oppHand = isHost ? d.guest_hand : d.host_hand;
+                const myStatus = isHost ? d.host_status : d.guest_status;
+                const oppStatus = isHost ? d.guest_status : d.host_status;
+                const myScore = calculateHandValue(myHand);
+                const oppScore = calculateHandValue(oppHand);
+                
+                const myCardsHtml = myHand.map(c => getCardHtml(c)).join('');
+                const oppCardsHtml = oppHand.map(c => getCardHtml(c)).join('');
+                
+                let controlButtons = "";
+                if (myTurn && myStatus === 'playing') {
+                    controlButtons = `
+                        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; margin-top:15px;">
+                            <button class="secondary" onclick="handleDuelBjAction('${duelId}', 'hit')">ヒット</button>
+                            <button class="secondary" style="background-color:var(--gold); color:#000;" onclick="handleDuelBjAction('${duelId}', 'stand')">スタンド</button>
+                        </div>
+                    `;
+                } else {
+                    controlButtons = `<p style="margin-top:15px; font-size:12px; color:var(--gold);">${myTurn ? '操作中...' : opponent + ' のターンを待っています...'}</p>`;
+                }
+                
+                board.innerHTML = `
+                    <div style="text-align:center; padding:20px; border: 2px solid var(--gold); border-radius: 12px; background: rgba(26, 44, 56, 0.9);">
+                        <h3 style="color:var(--gold); margin-bottom:15px;">⚔️ BJ対戦中: vs ${opponent}</h3>
+                        <div style="margin-bottom:15px; text-align:left;">
+                            <div style="font-size:11px; color:var(--text-muted);">${opponent} の手札 (スコア: ${oppStatus === 'busted' ? 'バースト' : oppScore})</div>
+                            <div class="cards-flex">${oppCardsHtml}</div>
+                        </div>
+                        <div style="margin-bottom:15px; text-align:left;">
+                            <div style="font-size:11px; color:var(--primary); font-weight:bold;">あなたの手札 (スコア: ${myStatus === 'busted' ? 'バースト' : myScore})</div>
+                            <div class="cards-flex">${myCardsHtml}</div>
+                        </div>
+                        ${controlButtons}
+                        <button onclick="surrenderDuel('${duelId}')" class="secondary" style="background-color:var(--accent); color:#fff; margin-top:15px; font-size:12px; padding:6px 12px; border:none; border-radius:4px; cursor:pointer; width:auto;">🏳️ 降参する</button>
+                    </div>
+                `;
+            } else if (gameType === 'mines') {
+                const isHost = d.host === currentUser;
+                const myTurn = (d.turn === 'host' && isHost) || (d.turn === 'guest' && !isHost);
+                
+                let gridHtml = "";
+                for (let i = 0; i < 25; i++) {
+                    const isRevealed = d.revealed_tiles.includes(i);
+                    let tileText = "";
+                    let tileClass = "mines-tile";
+                    let style = "";
+                    
+                    if (isRevealed) {
+                        tileClass += " revealed";
+                        if (d.mines_grid[i]) {
+                            tileText = "💥";
+                            style = "border-color: var(--accent);";
+                        } else {
+                            tileText = "💎";
+                            style = "color: var(--primary);";
+                        }
+                    }
+                    
+                    const clickAction = (myTurn && !isRevealed) ? `onclick="handleDuelMinesClick(this, '${duelId}', ${i})"` : "";
+                    gridHtml += `<div class="${tileClass}" style="${style} aspect-ratio: 1;" ${clickAction}>${tileText}</div>`;
+                }
+                
+                board.innerHTML = `
+                    <div style="text-align:center; padding:20px; border: 2px solid var(--gold); border-radius: 12px; background: rgba(26, 44, 56, 0.9);">
+                        <h3 style="color:var(--gold); margin-bottom:10px;">⚔️ マインズ対戦中: vs ${opponent}</h3>
+                        <p style="font-size:12px; color:${myTurn ? 'var(--primary)' : 'var(--text-muted)'}; font-weight:bold; margin-bottom:10px;">
+                            ${myTurn ? '👉 あなたのターンです！マスを開けてください' : `⌛ ${opponent} のターンを待っています...`}
+                        </p>
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">爆弾の数: 3個固定 | 爆弾を引いたら即敗北</div>
+                        <div class="mines-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-width: 240px; margin: 10px auto;">
+                            ${gridHtml}
+                        </div>
+                        <button onclick="surrenderDuel('${duelId}')" class="secondary" style="background-color:var(--accent); color:#fff; margin-top:15px; font-size:12px; padding:6px 12px; border:none; border-radius:4px; cursor:pointer; width:auto;">🏳️ 降参する</button>
+                    </div>
+                `;
             }
-        });
+        }
+        
+        if (d.status === 'finished') {
+            activeDuelId = null;
+            activeDuelData = null;
+            if (handledDuelIds.has(duelId)) return;
+            handledDuelIds.add(duelId);
+            showDuelResultV3(duelId, d);
+        }
+    }
     }
 
     window.handleDuelBjAction = async function(duelId, action) {
@@ -2853,6 +2888,18 @@
                 resultText = `🎉 ${data.host} の勝利！！ (ゲストが爆弾を引きました)`;
             }
         }
+        
+        if (data.surrendered_by === 'host') {
+            resultText = `🎉 ${data.guest} の勝利！！ (ホストが降参しました)`;
+            p1ValText = "🏳️ 降参";
+            p2ValText = "👑 勝利";
+            labelText = "RESULT";
+        } else if (data.surrendered_by === 'guest') {
+            resultText = `🎉 ${data.host} の勝利！！ (ゲストが降参しました)`;
+            p1ValText = "👑 勝利";
+            p2ValText = "🏳️ 降参";
+            labelText = "RESULT";
+        }
 
         board.innerHTML = `
             <div style="text-align:center; padding:20px; border: 2px solid var(--primary); border-radius: 12px; background: rgba(15, 33, 46, 0.95);">
@@ -2887,6 +2934,24 @@
         handledDuelIds.delete(duelId);
         selectGameType('bj');
     }
+
+    window.surrenderDuel = async function(duelId) {
+        if (!confirm("本当に降参しますか？\n降参すると対戦相手の勝利となり、ベット額は戻りません。")) return;
+        
+        if (!activeDuelData) return;
+        const d = activeDuelData;
+        const isHost = d.host === currentUser;
+        
+        const hRoll = isHost ? 0 : 100;
+        const gRoll = isHost ? 100 : 0;
+        
+        await db.collection('duels').doc(duelId).update({
+            status: 'finished',
+            host_roll: hRoll,
+            guest_roll: gRoll,
+            surrendered_by: isHost ? 'host' : 'guest'
+        });
+    };
 
     // --- 👑 提案の完全自動採否・自動実装システム ---
     function listenAdminIdeas() {
