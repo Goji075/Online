@@ -3336,7 +3336,7 @@
         
         // Draw slices
         for (let i = 0; i < totalSlices; i++) {
-            const startA = i * sliceAngle - Math.PI / 2; // offset by -90 deg so 0 is at top
+            const startA = i * sliceAngle; // no offset to match original canvas layout
             const endA = startA + sliceAngle;
             
             ctx.beginPath();
@@ -3449,7 +3449,8 @@
             camera: camera,
             renderer: renderer,
             wheel: wheel,
-            ball: ball
+            ball: ball,
+            finalAngle: 0
         };
     }
 
@@ -3463,10 +3464,9 @@
         const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
         const totalSlices = numbers.length;
         const sliceAngle = (2 * Math.PI) / totalSlices;
-        const targetRelativeAngle = winningIndex * sliceAngle + sliceAngle / 2;
         
         if (ballProgress === null) {
-            // Static/idle mode
+            // Static/idle mode: ball sits in 0 slot
             const targetWorldAngle = -angle + (0 * sliceAngle + sliceAngle / 2);
             const radius = 1.7;
             inst.ball.position.x = radius * Math.cos(targetWorldAngle);
@@ -3479,9 +3479,14 @@
             const progress = ballProgress;
             const blend = Math.pow(progress, 3.5);
             
-            // Orbiting
-            const freeAngle = ballStartAngle + (1 - progress) * totalRots * 2 * Math.PI;
-            const slotWorldAngle = -angle + targetRelativeAngle;
+            // Decaying free ball angle: ease-out progression (starts fast, slows down gradually)
+            const easeOutProgress = 1 - Math.pow(1 - progress, 2.2);
+            const freeAngle = ballStartAngle + easeOutProgress * totalRots * 2 * Math.PI;
+            
+            // Universal target slot world angle formula (guarantees ball lands under the needle at finalAngle)
+            const finalAngle = inst.finalAngle || 0;
+            const slotWorldAngle = -angle + finalAngle - Math.PI / 2;
+            
             const ballAngle = (1 - blend) * freeAngle + blend * slotWorldAngle;
             
             // Decaying radius and height
@@ -3496,12 +3501,13 @@
         inst.renderer.render(inst.scene, inst.camera);
     }
 
-    function drawRouletteWheel(angle, ballProgress = null, winningIndex = 0) {
+    function drawRouletteWheel(angle, ballProgress = null, winningIndex = 0, finalAngle = 0) {
         const canvas = document.getElementById('roulette-canvas');
         if (!canvas) return;
         if (!canvas.threeInstance) {
             initThreeRoulette(canvas);
         }
+        canvas.threeInstance.finalAngle = finalAngle;
         updateThreeRoulette(canvas, angle, ballProgress, winningIndex);
     }
 
@@ -3557,7 +3563,7 @@
             speed *= decay;
             step++;
             const progress = Math.min(1.0, step / totalSteps);
-            drawRouletteWheel(currentAngle, progress, winningIndex);
+            drawRouletteWheel(currentAngle, progress, winningIndex, finalAngle);
             if (speed > 0.005) { requestAnimationFrame(spin); }
             else { finishRouletteGame(currentAngle, bet); }
         }
@@ -3633,47 +3639,391 @@
         return `<div class="card-mini ${card.isRed ? 'red' : ''}"><div>${card.suit}${card.rank}</div><div style="text-align:right; margin-top:auto;">${card.rank}</div></div>`;
     }
 
+    function createCardTexture(suit, rank, isRed) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 128;
+        canvas.height = 192;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 128, 192);
+        ctx.strokeStyle = '#2f4553';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(0, 0, 128, 192);
+        
+        ctx.fillStyle = isRed ? '#fe2247' : '#111111';
+        ctx.font = 'bold 24px Helvetica';
+        ctx.fillText(`${suit}${rank}`, 10, 30);
+        
+        ctx.save();
+        ctx.translate(128, 192);
+        ctx.rotate(Math.PI);
+        ctx.fillText(`${suit}${rank}`, 10, 30);
+        ctx.restore();
+        
+        ctx.font = 'bold 64px Helvetica';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(suit, 64, 96);
+        
+        return new THREE.CanvasTexture(canvas);
+    }
+
+    function createCardBackTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 128;
+        canvas.height = 192;
+        const ctx = canvas.getContext('2d');
+        
+        const grad = ctx.createLinearGradient(0, 0, 128, 192);
+        grad.addColorStop(0, '#fe2247');
+        grad.addColorStop(1, '#960018');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 128, 192);
+        
+        ctx.strokeStyle = '#f39c12';
+        ctx.lineWidth = 6;
+        ctx.strokeRect(8, 8, 112, 176);
+        
+        ctx.strokeStyle = 'rgba(243,156,18,0.3)';
+        ctx.lineWidth = 2;
+        for (let i = -192; i < 128; i += 20) {
+            ctx.beginPath();
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i + 192, 192);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(i + 192, 0);
+            ctx.lineTo(i, 192);
+            ctx.stroke();
+        }
+        
+        return new THREE.CanvasTexture(canvas);
+    }
+
+    function initThreeBj(canvas) {
+        const scene = new THREE.Scene();
+        
+        const camera = new THREE.PerspectiveCamera(40, canvas.width / canvas.height, 0.1, 100);
+        camera.position.set(0, 3.8, 4.0);
+        camera.lookAt(0, -0.4, -0.2);
+        
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+        renderer.setSize(canvas.width, canvas.height);
+        renderer.setPixelRatio(window.devicePixelRatio || 1);
+        
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(0, 8, 2);
+        scene.add(dirLight);
+
+        // Green Felt Table top
+        const tableGeom = new THREE.PlaneGeometry(8, 6);
+        const tableMat = new THREE.MeshStandardMaterial({ color: 0x073b1e, roughness: 0.8 });
+        const table = new THREE.Mesh(tableGeom, tableMat);
+        table.rotation.x = -Math.PI / 2;
+        table.position.y = 0;
+        scene.add(table);
+        
+        // Semicircular lines
+        const lineGeom = new THREE.RingGeometry(2.0, 2.05, 32, 1, 0, Math.PI);
+        const lineMat = new THREE.MeshBasicMaterial({ color: 0xd4af37, side: THREE.DoubleSide });
+        const curvedLine = new THREE.Mesh(lineGeom, lineMat);
+        curvedLine.rotation.x = Math.PI / 2;
+        curvedLine.position.set(0, 0.005, -1.5);
+        scene.add(curvedLine);
+        
+        // Shoe
+        const shoeGeom = new THREE.BoxGeometry(0.8, 0.4, 1.2);
+        const shoeMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.5, roughness: 0.3 });
+        const shoe = new THREE.Mesh(shoeGeom, shoeMat);
+        shoe.position.set(2.2, 0.2, -1.8);
+        shoe.rotation.y = -Math.PI / 6;
+        scene.add(shoe);
+        
+        // 3D Humanoid Dealer
+        const dealerGroup = new THREE.Group();
+        dealerGroup.position.set(0, 0, -2.4);
+        
+        // Torso
+        const torsoGeom = new THREE.CylinderGeometry(0.35, 0.28, 1.0, 16);
+        const torsoMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
+        const torso = new THREE.Mesh(torsoGeom, torsoMat);
+        torso.position.y = 0.5;
+        dealerGroup.add(torso);
+        
+        // Collar
+        const collarGeom = new THREE.CylinderGeometry(0.18, 0.22, 0.1, 16);
+        const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
+        const collar = new THREE.Mesh(collarGeom, whiteMat);
+        collar.position.y = 1.0;
+        dealerGroup.add(collar);
+        
+        // Head
+        const headGeom = new THREE.SphereGeometry(0.22, 32, 32);
+        const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac, roughness: 0.6 });
+        const head = new THREE.Mesh(headGeom, skinMat);
+        head.position.y = 1.25;
+        dealerGroup.add(head);
+        
+        // Hair
+        const hairGeom = new THREE.SphereGeometry(0.23, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+        const hairMat = new THREE.MeshStandardMaterial({ color: 0x221100, roughness: 0.8 });
+        const hair = new THREE.Mesh(hairGeom, hairMat);
+        hair.position.y = 1.26;
+        hair.rotation.x = -Math.PI / 6;
+        dealerGroup.add(hair);
+        
+        // Bow tie
+        const tieGroup = new THREE.Group();
+        const tieGeom = new THREE.ConeGeometry(0.08, 0.15, 4);
+        const tie1 = new THREE.Mesh(tieGeom, torsoMat);
+        tie1.rotation.z = Math.PI / 2;
+        tie1.position.x = -0.06;
+        const tie2 = new THREE.Mesh(tieGeom, torsoMat);
+        tie2.rotation.z = -Math.PI / 2;
+        tie2.position.x = 0.06;
+        tieGroup.add(tie1);
+        tieGroup.add(tie2);
+        tieGroup.position.set(0, 0.95, 0.3);
+        dealerGroup.add(tieGroup);
+        
+        scene.add(dealerGroup);
+        
+        // Shoulder
+        const shoulderR = new THREE.Vector3(0.45, 0.8, -2.2);
+        const handRest = new THREE.Vector3(0.0, 0.2, -1.2);
+        
+        const upperArmGeom = new THREE.CylinderGeometry(0.045, 0.045, 0.6, 8);
+        const lowerArmGeom = new THREE.CylinderGeometry(0.04, 0.04, 0.6, 8);
+        const sleeveMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
+        
+        const upperArm = new THREE.Mesh(upperArmGeom, sleeveMat);
+        const lowerArm = new THREE.Mesh(lowerArmGeom, whiteMat);
+        const lowerArmSleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.042, 0.45, 8), sleeveMat);
+        lowerArmSleeve.position.y = -0.08;
+        lowerArm.add(lowerArmSleeve);
+        
+        const handR = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 16), skinMat);
+        
+        scene.add(upperArm);
+        scene.add(lowerArm);
+        scene.add(handR);
+        
+        const cardBackTex = createCardBackTexture();
+        
+        canvas.threeInstance = {
+            scene: scene,
+            camera: camera,
+            renderer: renderer,
+            shoulderR: shoulderR,
+            upperArm: upperArm,
+            lowerArm: lowerArm,
+            handR: handR,
+            handRest: handRest,
+            cardBackTex: cardBackTex,
+            cardsMap: new Map(),
+            animationQueue: []
+        };
+    }
+
+    function updateDealerArm(inst, handPos) {
+        const S = inst.shoulderR;
+        const H = handPos.clone();
+        
+        const V = new THREE.Vector3().subVectors(H, S);
+        let d = V.length();
+        
+        const L1 = 0.55;
+        const L2 = 0.55;
+        
+        if (d > L1 + L2 - 0.01) {
+            d = L1 + L2 - 0.01;
+            V.normalize().multiplyScalar(d);
+            H.copy(S).add(V);
+        }
+        
+        const u_V = V.clone().normalize();
+        const x = (L1 * L1 - L2 * L2 + d * d) / (2 * d);
+        const h = Math.sqrt(Math.max(0, L1 * L1 - x * x));
+        
+        const u_B = new THREE.Vector3(0.3, -0.8, 0.3);
+        const u_B_perp = new THREE.Vector3().copy(u_B).sub(u_V.clone().multiplyScalar(u_B.dot(u_V))).normalize();
+        
+        const E = new THREE.Vector3().copy(S).add(u_V.clone().multiplyScalar(x)).add(u_B_perp.clone().multiplyScalar(h));
+        
+        const dirUpper = new THREE.Vector3().subVectors(E, S);
+        const lenUpper = dirUpper.length();
+        inst.upperArm.position.copy(S).add(dirUpper.clone().multiplyScalar(0.5));
+        inst.upperArm.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dirUpper.clone().normalize());
+        inst.upperArm.scale.set(1, lenUpper / 0.6, 1);
+        
+        const dirLower = new THREE.Vector3().subVectors(H, E);
+        const lenLower = dirLower.length();
+        inst.lowerArm.position.copy(E).add(dirLower.clone().multiplyScalar(0.5));
+        inst.lowerArm.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dirLower.clone().normalize());
+        inst.lowerArm.scale.set(1, lenLower / 0.6, 1);
+        
+        inst.handR.position.copy(H);
+    }
+
+    function create3DCardMesh(inst, suit, rank, isRed) {
+        const geom = new THREE.BoxGeometry(0.55, 0.005, 0.85);
+        const faceTex = createCardTexture(suit, rank, isRed);
+        const sideMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        const faceMat = new THREE.MeshStandardMaterial({ map: faceTex, roughness: 0.3 });
+        const backMat = new THREE.MeshStandardMaterial({ map: inst.cardBackTex, roughness: 0.3 });
+        
+        const materials = [
+            sideMat,
+            sideMat,
+            faceMat,
+            backMat,
+            sideMat,
+            sideMat
+        ];
+        
+        return new THREE.Mesh(geom, materials);
+    }
+
+    function getCardTargetPosition(owner, handIndex, cardIndex) {
+        if (owner === 'dealer') {
+            return new THREE.Vector3(-0.5 + cardIndex * 0.22, 0.02, -0.6);
+        } else {
+            const numHands = activeBjGame.hands.length;
+            if (numHands === 1) {
+                return new THREE.Vector3(-0.5 + cardIndex * 0.22, 0.02, 0.6);
+            } else {
+                const offsetX = handIndex === 0 ? -1.0 : 0.4;
+                return new THREE.Vector3(offsetX + cardIndex * 0.22, 0.02, 0.6);
+            }
+        }
+    }
+
+    function updateThreeBj(canvas) {
+        const inst = canvas.threeInstance;
+        if (!inst) return;
+        
+        const currentCardKeys = new Set();
+        
+        function checkAndAddCard(card, owner, handIdx, cardIdx) {
+            const key = `${owner}-${handIdx}-${cardIdx}-${card.suit}-${card.rank}`;
+            currentCardKeys.add(key);
+            
+            const isHidden = (owner === 'dealer' && cardIdx === 1 && activeBjGame.state === 'playing');
+            
+            if (!inst.cardsMap.has(key)) {
+                const mesh = create3DCardMesh(inst, card.suit, card.rank, card.isRed);
+                mesh.position.set(2.2, 0.2, -1.8);
+                mesh.rotation.set(0, -Math.PI / 6, Math.PI);
+                inst.scene.add(mesh);
+                
+                const targetPos = getCardTargetPosition(owner, handIdx, cardIdx);
+                const targetRot = isHidden ? new THREE.Euler(0, 0, Math.PI) : new THREE.Euler(0, 0, 0);
+                
+                inst.cardsMap.set(key, {
+                    mesh: mesh,
+                    targetPos: targetPos,
+                    targetRot: targetRot,
+                    owner: owner,
+                    index: cardIdx,
+                    isHidden: isHidden
+                });
+                
+                inst.animationQueue.push({
+                    type: 'deal',
+                    key: key,
+                    mesh: mesh,
+                    targetPos: targetPos,
+                    targetRot: targetRot,
+                    duration: 35,
+                    elapsed: 0
+                });
+            } else {
+                const mapItem = inst.cardsMap.get(key);
+                if (mapItem.isHidden && !isHidden) {
+                    mapItem.isHidden = false;
+                    mapItem.targetRot = new THREE.Euler(0, 0, 0);
+                    
+                    inst.animationQueue.push({
+                        type: 'flip',
+                        key: key,
+                        mesh: mapItem.mesh,
+                        targetRot: mapItem.targetRot,
+                        duration: 25,
+                        elapsed: 0
+                    });
+                }
+            }
+        }
+        
+        activeBjGame.dealerHand.forEach((card, idx) => {
+            checkAndAddCard(card, 'dealer', 0, idx);
+        });
+        
+        activeBjGame.hands.forEach((hand, handIdx) => {
+            hand.forEach((card, cardIdx) => {
+                checkAndAddCard(card, 'player', handIdx, cardIdx);
+            });
+        });
+        
+        for (const [key, item] of inst.cardsMap.entries()) {
+            if (!currentCardKeys.has(key)) {
+                inst.scene.remove(item.mesh);
+                inst.cardsMap.delete(key);
+            }
+        }
+        
+        if (currentCardKeys.size === 0) {
+            inst.animationQueue = [];
+        }
+    }
+
     function renderBjBoard() {
         const board = document.getElementById('my-isolated-board');
-        if (!activeBjGame) return;
-        let dealerCardsHtml = activeBjGame.dealerHand.map((c, i) => getCardHtml(c, i === 1 && activeBjGame.state === 'playing')).join('');
+        if (!board || !activeBjGame) return;
         
         let dealerScore = activeBjGame.state === 'playing' ? "?" : calculateHandValue(activeBjGame.dealerHand);
+        let playerScore = calculateHandValue(activeBjGame.hands[0]);
+        let playerStatusStr = playerScore > 21 ? " (バースト)" : (playerScore === 21 && activeBjGame.hands[0].length === 2 ? " (BJ)" : "");
         
-        let playerHandsHtml = activeBjGame.hands.map((hand, idx) => {
-            const cardsHtml = hand.map(c => getCardHtml(c)).join('');
-            const score = calculateHandValue(hand);
-            const isActive = idx === activeBjGame.activeHandIndex && activeBjGame.state === 'playing';
-            const statusStr = score > 21 ? " (バースト)" : (score === 21 && hand.length === 2 ? " (BJ)" : "");
-            const borderStyle = isActive ? "border: 2px solid var(--primary); padding: 5px; border-radius: 6px; background: rgba(0, 231, 1, 0.05);" : "padding: 5px;";
-            return `
-                <div style="${borderStyle} margin-bottom: 5px;">
-                    <div style="font-size: 11px; color: ${isActive ? 'var(--primary)' : 'var(--text-muted)'};">
-                        手札 ${idx + 1} (スコア: ${score})${statusStr} ${isActive ? '👈 プレイ中' : ''}
-                    </div>
-                    <div class="cards-flex">${cardsHtml}</div>
-                </div>
-            `;
-        }).join('');
-
         board.innerHTML = `
             <h4 style="color:var(--primary); margin-bottom:8px;">🃏 BJ (ベット: 各￥${activeBjGame.bet})</h4>
-            <div style="margin-bottom:10px;">
-                <div style="font-size:12px; color:var(--text-muted);">ディーラー (スコア: ${dealerScore})</div>
-                <div class="cards-flex">${dealerCardsHtml}</div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-bottom:4px; padding:0 10px;">
+                <div>👤 ディーラー (スコア: <span id="bj-dealer-score-val">${dealerScore}</span>)</div>
+                <div>👤 あなた (スコア: <span id="bj-player-score-val">${playerScore}</span>)${playerStatusStr}</div>
             </div>
-            <div style="margin-bottom:10px;">
-                ${playerHandsHtml}
+            
+            <div id="bj-3d-container" style="width:100%; height:260px; position:relative; background:#073b1e; border-radius:12px; border:2px solid #2f4553; overflow:hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.6);">
+                <canvas id="bj-3d-canvas" style="width:100%; height:100%; display:block;"></canvas>
             </div>
+            
             <div id="bj-status-text" style="font-size:13px; font-weight:bold; color:var(--gold); text-align:center; margin-top:10px;"></div>
         `;
-
+        
+        const statusTextEl = document.getElementById('bj-status-text');
+        if (statusTextEl && activeBjGame.state === 'busted') {
+            statusTextEl.innerText = "💥 すべての手札がバースト！あなたの負けです。";
+        }
+        
         const activeHand = activeBjGame.hands[activeBjGame.activeHandIndex];
         const splitBtn = document.getElementById('btn-bj-split');
-        if (splitBtn && activeBjGame.state === 'playing' && activeBjGame.hands.length === 1 && activeHand.length === 2 && activeHand[0].value === activeHand[1].value && currentBalance >= activeBjGame.bet) {
-            splitBtn.classList.remove('hidden');
-        } else if (splitBtn) {
-            splitBtn.classList.add('hidden');
+        if (splitBtn) {
+            if (activeBjGame.state === 'playing' && activeBjGame.hands.length === 1 && activeHand.length === 2 && activeHand[0].value === activeHand[1].value && currentBalance >= activeBjGame.bet) {
+                splitBtn.classList.remove('hidden');
+            } else {
+                splitBtn.classList.add('hidden');
+            }
+        }
+        
+        const canvas = document.getElementById('bj-3d-canvas');
+        if (canvas) {
+            canvas.width = canvas.clientWidth || 240;
+            canvas.height = canvas.clientHeight || 260;
+            updateThreeBj(canvas);
         }
     }
 
@@ -3684,38 +4034,113 @@
         const dealerHand = [];
         activeBjGame = { bet: bet, deck: deck, hands: [playerHand], activeHandIndex: 0, dealerHand: dealerHand, state: 'playing' };
         
-        const board = document.getElementById('my-isolated-board');
-        board.innerHTML = `
-            <h4 style="color:var(--primary); margin-bottom:8px;">🃏 BJ (ベット: ￥${activeBjGame.bet})</h4>
-            <p style="font-size:12px; text-align:center; color:var(--text-muted);">カードを配っています...</p>
-        `;
-
+        renderBjBoard();
+        
+        const canvas = document.getElementById('bj-3d-canvas');
+        if (canvas) {
+            initThreeBj(canvas);
+            
+            // Start the frame loop
+            let animId;
+            const tickBj = () => {
+                if (!document.getElementById('bj-3d-canvas')) return;
+                const inst = canvas.threeInstance;
+                if (!inst) return;
+                
+                const hitBtn = document.querySelector('button[onclick*="gameSubAction(\'hit\')"]');
+                const standBtn = document.querySelector('button[onclick*="gameSubAction(\'stand\')"]');
+                const doubleBtn = document.querySelector('button[onclick*="gameSubAction(\'double\')"]');
+                
+                if (inst.animationQueue.length > 0) {
+                    if (hitBtn) hitBtn.disabled = true;
+                    if (standBtn) standBtn.disabled = true;
+                    if (doubleBtn) doubleBtn.disabled = true;
+                    
+                    const task = inst.animationQueue[0];
+                    const progress = task.elapsed / task.duration;
+                    
+                    if (task.type === 'deal') {
+                        const shoePos = new THREE.Vector3(2.2, 0.2, -1.8);
+                        const targetPos = task.targetPos;
+                        let handPos = new THREE.Vector3();
+                        
+                        if (progress < 0.15) {
+                            const t = progress / 0.15;
+                            handPos.lerpVectors(inst.handRest, shoePos, t);
+                        } else if (progress < 0.85) {
+                            const t = (progress - 0.15) / 0.7;
+                            handPos.lerpVectors(shoePos, targetPos, t);
+                            handPos.y += Math.sin(t * Math.PI) * 0.35;
+                            
+                            task.mesh.position.copy(handPos);
+                            const startRot = new THREE.Euler(0, -Math.PI / 6, Math.PI);
+                            const currentRot = new THREE.Euler(
+                                (1 - t) * startRot.x + t * task.targetRot.x,
+                                (1 - t) * startRot.y + t * task.targetRot.y,
+                                (1 - t) * startRot.z + t * task.targetRot.z
+                            );
+                            task.mesh.rotation.copy(currentRot);
+                        } else {
+                            const t = (progress - 0.85) / 0.15;
+                            handPos.lerpVectors(targetPos, inst.handRest, t);
+                            task.mesh.position.copy(targetPos);
+                            task.mesh.rotation.copy(task.targetRot);
+                        }
+                        updateDealerArm(inst, handPos);
+                    } else if (task.type === 'flip') {
+                        const t = progress;
+                        task.mesh.rotation.z = Math.PI * (1 - t);
+                        task.mesh.position.y = 0.02 + 0.2 * Math.sin(t * Math.PI);
+                        updateDealerArm(inst, inst.handRest);
+                    }
+                    
+                    task.elapsed++;
+                    if (task.elapsed >= task.duration) {
+                        task.mesh.position.copy(task.targetPos || task.mesh.position);
+                        task.mesh.rotation.copy(task.targetRot);
+                        inst.animationQueue.shift();
+                    }
+                } else {
+                    if (hitBtn && activeBjGame && activeBjGame.state === 'playing') hitBtn.disabled = false;
+                    if (standBtn && activeBjGame && activeBjGame.state === 'playing') standBtn.disabled = false;
+                    if (doubleBtn && activeBjGame && activeBjGame.state === 'playing') doubleBtn.disabled = false;
+                    updateDealerArm(inst, inst.handRest);
+                }
+                
+                inst.renderer.render(inst.scene, inst.camera);
+                animId = requestAnimationFrame(tickBj);
+            };
+            tickBj();
+        }
+        
         const delay = (ms) => new Promise(res => setTimeout(res, ms));
-
+        
+        // Deal sequence
         activeBjGame.hands[0].push(activeBjGame.deck.pop());
-        renderBjBoard();
-        await delay(600);
-
+        updateThreeBj(canvas);
+        await delay(650);
+        
         activeBjGame.dealerHand.push(activeBjGame.deck.pop());
-        renderBjBoard();
-        await delay(600);
-
+        updateThreeBj(canvas);
+        await delay(650);
+        
         activeBjGame.hands[0].push(activeBjGame.deck.pop());
-        renderBjBoard();
-        await delay(600);
-
+        updateThreeBj(canvas);
+        await delay(650);
+        
         activeBjGame.dealerHand.push(activeBjGame.deck.pop());
-        renderBjBoard();
-        await delay(600);
-
+        updateThreeBj(canvas);
+        await delay(650);
+        
         document.getElementById('bj-controls').classList.remove('hidden');
-
         const playerScore = calculateHandValue(activeBjGame.hands[0]);
         if (playerScore === 21) { await resolveBjGame('stand'); }
     }
 
     async function resolveBjGame(action) {
         if (!activeBjGame) return;
+        const canvas = document.getElementById('bj-3d-canvas');
+        
         if (action === 'split') {
             const currentHand = activeBjGame.hands[activeBjGame.activeHandIndex];
             if (currentHand.length !== 2 || currentHand[0].value !== currentHand[1].value) return;
@@ -3747,7 +4172,7 @@
                     const allBusted = activeBjGame.hands.every(h => calculateHandValue(h) > 21);
                     if (allBusted) {
                         activeBjGame.state = 'busted';
-                        renderBjBoard(); // ディーラーの手札をめくるために描画
+                        renderBjBoard();
                         document.getElementById('bj-controls').classList.add('hidden');
                         document.getElementById('bj-status-text').innerText = "💥 すべての手札がバースト！あなたの負けです。";
                         logRpg("🃏 カジノ速報：BJでバーストして没収されました");
@@ -3807,13 +4232,23 @@
         activeBjGame.state = 'dealer-turn';
         document.getElementById('bj-controls').classList.add('hidden');
         const delay = (ms) => new Promise(res => setTimeout(res, ms));
+        const canvas = document.getElementById('bj-3d-canvas');
         let dealerScore = calculateHandValue(activeBjGame.dealerHand);
+        
         while (dealerScore < 17) {
             activeBjGame.dealerHand.push(activeBjGame.deck.pop());
             dealerScore = calculateHandValue(activeBjGame.dealerHand);
             renderBjBoard();
             await delay(800);
         }
+        
+        // Wait for animations to finish before resolving payout
+        if (canvas && canvas.threeInstance) {
+            while (canvas.threeInstance.animationQueue.length > 0) {
+                await delay(100);
+            }
+        }
+        
         let totalWinAmt = 0;
         let resultLines = [];
         activeBjGame.hands.forEach((hand, idx) => {
@@ -3838,6 +4273,14 @@
             totalWinAmt += winAmt;
             resultLines.push(handResult);
         });
+        
+        // Ensure dealer score and results text update correctly
+        let finalDealerScore = calculateHandValue(activeBjGame.dealerHand);
+        const dealerScoreVal = document.getElementById('bj-dealer-score-val');
+        if (dealerScoreVal) {
+            dealerScoreVal.innerText = finalDealerScore > 21 ? `${finalDealerScore} (バースト)` : finalDealerScore;
+        }
+        
         document.getElementById('bj-status-text').innerHTML = resultLines.join('<br>') + `<br><span style="color:var(--primary); font-size:14px;">合計獲得: ￥${Math.floor(totalWinAmt).toLocaleString()}</span>`;
         if (totalWinAmt > 0) { await changeBalance(totalWinAmt, "BJ払い戻し"); }
         activeBjGame = null;
