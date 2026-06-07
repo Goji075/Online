@@ -276,6 +276,28 @@
     </div>
 </div>
 
+<div class="sub-modal" id="modal-create-duel">
+    <div class="modal-header"><h3>⚔️ 対戦ルームを作成</h3><span style="cursor:pointer;" onclick="closeSubModal('create-duel')">✕</span></div>
+    <div style="margin-bottom:15px;">
+        <label style="font-size:11px; color:var(--text-muted);">ゲームを選択</label>
+        <select id="create-duel-game" style="width: 100%; padding: 12px; background-color: var(--bg-input); border: 2px solid #2f4553; border-radius: 4px; color: #fff; margin-bottom: 12px; font-size: 16px;">
+            <option value="dice">🎲 ダイス (Dice)</option>
+            <option value="mines">💣 マインズ (Mines)</option>
+            <option value="bj">🃏 ブラックジャック (Blackjack)</option>
+        </select>
+        <label style="font-size:11px; color:var(--text-muted);">ベット額 (￥ / 1人あたり)</label>
+        <input type="number" id="create-duel-bet" value="100" min="10" style="width: 100%; padding: 12px; background-color: var(--bg-input); border: 2px solid #2f4553; border-radius: 4px; color: #fff; margin-bottom: 12px; font-size: 16px;">
+        <label style="font-size:11px; color:var(--text-muted);">最大人数 (2〜5人)</label>
+        <select id="create-duel-max-players" style="width: 100%; padding: 12px; background-color: var(--bg-input); border: 2px solid #2f4553; border-radius: 4px; color: #fff; margin-bottom: 12px; font-size: 16px;">
+            <option value="2">2人</option>
+            <option value="3">3人</option>
+            <option value="4">4人</option>
+            <option value="5">5人</option>
+        </select>
+        <button onclick="createMultiplayerDuel()" style="width: 100%; padding: 14px; background-color: var(--gold); border: none; border-radius: 4px; color: #000; font-size: 16px; font-weight: bold; cursor: pointer;">ルームを作成する</button>
+    </div>
+</div>
+
 <div class="sub-modal" id="modal-inventory">
     <div class="modal-header"><h3>🎒 インベントリ & 装備合成</h3><span style="cursor:pointer;" onclick="closeSubModal('inventory')">✕</span></div>
     <div style="display:flex; gap:5px; margin-bottom:10px;">
@@ -527,10 +549,13 @@
 
             <div id="my-isolated-board" class="my-game-area"></div>
 
-            <div class="panel hidden" style="padding:15px; border:1px solid var(--gold);">
-                <h3 style="font-size:14px; color:var(--gold); margin-bottom:10px; display:flex; align-items:center; gap:6px;">⚔️ 進行中の対戦募集 (Duel Market)</h3>
-                <div id="duel-market-list" style="display:flex; flex-direction:column; gap:8px; min-height:50px;">
-                    <p style="font-size:11px; color:var(--text-muted); text-align:center;">ロビーでは対戦できません。部屋に参加してください。</p>
+            <div class="panel" id="multiplayer-lobby-panel" style="padding:15px; border:1px solid var(--gold);">
+                <h3 style="font-size:14px; color:var(--gold); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>⚔️ 複数人対戦ロビー (Multiplayer Battles)</span>
+                    <button onclick="openCreateDuelModal()" style="width:auto; padding:6px 12px; font-size:12px; background:var(--gold); color:#000; border-radius:4px;">対戦を作成</button>
+                </h3>
+                <div id="multiplayer-duel-list" style="display:flex; flex-direction:column; gap:8px; min-height:50px;">
+                    <p style="font-size:11px; color:var(--text-muted); text-align:center;">対戦ルームを読み込み中...</p>
                 </div>
             </div>
 
@@ -3086,6 +3111,957 @@
         await db.collection('duels').doc(duelId).update(updateData);
     }
 
+    // --- ⚔️ 複数人対戦 (Multiplayer Duel) システム ---
+    let activeMultiplayerDuelId = null;
+    let activeMultiplayerDuelData = null;
+    let multiplayerDuelsUnsubscribe = null;
+    let activeMultiplayerDuelUnsubscribe = null;
+    let handledMultiplayerDuelIds = new Set();
+
+    function openCreateDuelModal() {
+        if (activeDuelId || activeMultiplayerDuelId) {
+            alert("すでに対戦中、またはルームに参加しています。");
+            return;
+        }
+        openSubModal('create-duel');
+    }
+
+    async function createMultiplayerDuel() {
+        const gameType = document.getElementById('create-duel-game').value;
+        const betAmt = parseFloat(document.getElementById('create-duel-bet').value);
+        const maxPlayers = parseInt(document.getElementById('create-duel-max-players').value);
+
+        if (isNaN(betAmt) || betAmt < 10) {
+            alert("無効なベット額です。最低 10円 からです。");
+            return;
+        }
+        if (currentBalance < betAmt) {
+            alert("残高が足りません。");
+            return;
+        }
+
+        closeSubModal('create-duel');
+
+        if (confirm(`￥${betAmt.toLocaleString()} をベットして、${maxPlayers}人対戦ルーム（${gameType === 'dice' ? 'ダイス' : gameType === 'bj' ? 'ブラックジャック' : 'マインズ'}）を作成しますか？`)) {
+            await changeBalance(-betAmt, `複数人対戦作成ベット`, true);
+
+            const docRef = await db.collection('multiplayer_duels').add({
+                creator: currentUser,
+                players: [currentUser],
+                status: 'recruiting',
+                gameType: gameType,
+                bet: betAmt,
+                maxPlayers: maxPlayers,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            activeMultiplayerDuelId = docRef.id;
+            alert("対戦ルームを作成しました。プレイヤーの参加をお待ちください！");
+        }
+    }
+
+    async function joinMultiplayerDuel(duelId) {
+        if (activeDuelId || activeMultiplayerDuelId) {
+            alert("すでに対戦中、またはルームに参加しています。");
+            return;
+        }
+
+        const docRef = db.collection('multiplayer_duels').doc(duelId);
+        const doc = await docRef.get();
+        if (!doc.exists) return alert("ルームが存在しません。");
+        const d = doc.data();
+
+        if (d.status !== 'recruiting') {
+            return alert("このルームはすでにゲームが開始されています。");
+        }
+        if (d.players.includes(currentUser)) {
+            return alert("すでにこのルームに参加しています。");
+        }
+        if (d.players.length >= d.maxPlayers) {
+            return alert("このルームは満員です。");
+        }
+        if (currentBalance < d.bet) {
+            return alert("残高が足りません。");
+        }
+
+        if (confirm(`￥${d.bet.toLocaleString()} をベットして、この対戦ルームに参加しますか？`)) {
+            await changeBalance(-d.bet, "複数人対戦参加ベット", true);
+
+            const updatedPlayers = [...d.players, currentUser];
+            const updateData = {
+                players: updatedPlayers
+            };
+
+            if (updatedPlayers.length === d.maxPlayers) {
+                await startMultiplayerGameLogic(duelId, d.gameType, updatedPlayers, d.bet);
+            } else {
+                await docRef.update(updateData);
+                activeMultiplayerDuelId = duelId;
+            }
+        }
+    }
+
+    async function leaveMultiplayerDuel(duelId) {
+        const docRef = db.collection('multiplayer_duels').doc(duelId);
+        const doc = await docRef.get();
+        if (!doc.exists) return;
+        const d = doc.data();
+
+        if (d.status !== 'recruiting') return alert("ゲームが開始されているため退出できません。");
+        if (!d.players.includes(currentUser)) return;
+
+        if (confirm("対戦ルームから退出しますか？ベット額は返金されます。")) {
+            await changeBalance(d.bet, "複数人対戦退出返金");
+
+            if (d.creator === currentUser) {
+                const batch = db.batch();
+                for (const player of d.players) {
+                    if (player !== currentUser) {
+                        const userRef = db.collection('users_v2').doc(player);
+                        batch.update(userRef, {
+                            balance: firebase.firestore.FieldValue.increment(d.bet)
+                        });
+                        const notifRef = db.collection('notifications').doc();
+                        batch.set(notifRef, {
+                            username: player,
+                            message: `📢 主催者 ${currentUser} が退出したため、対戦ルームが解散され ￥${d.bet.toLocaleString()} が返金されました。`,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                }
+                batch.delete(docRef);
+                await batch.commit();
+                activeMultiplayerDuelId = null;
+                alert("主催者が退出したため、ルームを解散しました。");
+            } else {
+                const updatedPlayers = d.players.filter(p => p !== currentUser);
+                await docRef.update({
+                    players: updatedPlayers
+                });
+                activeMultiplayerDuelId = null;
+                alert("ルームから退出しました。");
+            }
+            document.getElementById('my-isolated-board').innerHTML = "";
+        }
+    }
+
+    async function startMultiplayerDuelManual(duelId) {
+        const docRef = db.collection('multiplayer_duels').doc(duelId);
+        const doc = await docRef.get();
+        if (!doc.exists) return;
+        const d = doc.data();
+
+        if (d.creator !== currentUser) return alert("主催者のみ開始できます。");
+        if (d.players.length < 2) return alert("対戦を開始するには最低2人のプレイヤーが必要です。");
+
+        if (confirm("対戦を開始しますか？")) {
+            await startMultiplayerGameLogic(duelId, d.gameType, d.players, d.bet);
+        }
+    }
+
+    async function startMultiplayerGameLogic(duelId, gameType, players, bet) {
+        const docRef = db.collection('multiplayer_duels').doc(duelId);
+        
+        const turnOrder = [...players];
+        for (let i = turnOrder.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [turnOrder[i], turnOrder[j]] = [turnOrder[j], turnOrder[i]];
+        }
+
+        const updateData = {
+            status: 'playing',
+            players: players,
+            turnOrder: turnOrder,
+            turn: turnOrder[0],
+            turnIndex: 0,
+            round: 1,
+            tiebreakerPlayers: []
+        };
+
+        if (gameType === 'dice') {
+            updateData.rolls = {};
+        } else if (gameType === 'bj') {
+            const deck = createDeck();
+            const hands = {};
+            const playerStatuses = {};
+            for (const player of players) {
+                hands[player] = [deck.pop(), deck.pop()];
+                playerStatuses[player] = 'playing';
+            }
+            updateData.deck = deck;
+            updateData.hands = hands;
+            updateData.playerStatuses = playerStatuses;
+        } else if (gameType === 'mines') {
+            let grid = Array(25).fill(false);
+            let placed = 0;
+            while(placed < 3) {
+                let idx = Math.floor(Math.random() * 25);
+                if(!grid[idx]) { grid[idx] = true; placed++; }
+            }
+            updateData.mines_grid = grid;
+            updateData.revealed_tiles = [];
+            updateData.eliminated_players = [];
+            updateData.active_players = players;
+        }
+
+        await docRef.update(updateData);
+    }
+
+    function listenToMultiplayerDuels() {
+        if (multiplayerDuelsUnsubscribe) multiplayerDuelsUnsubscribe();
+
+        multiplayerDuelsUnsubscribe = db.collection('multiplayer_duels')
+            .orderBy('timestamp', 'desc')
+            .limit(20)
+            .onSnapshot(snap => {
+                const list = document.getElementById('multiplayer-duel-list');
+                if (!list) return;
+
+                if (snap.empty) {
+                    list.innerHTML = `<p style="font-size: 11px; color: var(--text-muted); text-align: center;">募集中の対戦はありません</p>`;
+                    return;
+                }
+
+                let html = "";
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const id = doc.id;
+                    const gameNames = {mines: "💣 マインズ", bj: "🃏 ブラックジャック", dice: "🎲 ダイス"};
+                    
+                    const isJoined = d.players.includes(currentUser);
+
+                    if (d.status === 'recruiting' || (isJoined && ['playing', 'finished'].includes(d.status))) {
+                        let btnHtml = "";
+                        if (d.status === 'recruiting') {
+                            if (isJoined) {
+                                btnHtml = `<button onclick="leaveMultiplayerDuel('${id}')" style="background:var(--accent); color:#fff; width:auto; padding:4px 8px; font-size:11px; margin-right:4px;">退出</button>`;
+                                if (d.creator === currentUser && d.players.length >= 2) {
+                                    btnHtml += `<button onclick="startMultiplayerDuelManual('${id}')" style="background:var(--primary); color:#000; width:auto; padding:4px 8px; font-size:11px;">開始</button>`;
+                                }
+                            } else {
+                                btnHtml = `<button onclick="joinMultiplayerDuel('${id}')" style="background:var(--gold); color:#000; width:auto; padding:4px 8px; font-size:11px;">参加</button>`;
+                            }
+                        } else if (d.status === 'playing') {
+                            btnHtml = `<span style="color:var(--primary); font-size:11px; font-weight:bold;">対戦中</span>`;
+                        } else if (d.status === 'finished') {
+                            btnHtml = `<span style="color:var(--text-muted); font-size:11px;">終了</span>`;
+                        }
+
+                        html += `
+                            <div class="player-hand-box" style="margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; padding:10px; border-left: 3px solid ${isJoined ? 'var(--primary)' : 'var(--gold)'};">
+                                <div>
+                                    <strong>${gameNames[d.gameType] || d.gameType}</strong> (￥${d.bet.toLocaleString()})<br>
+                                    <span style="font-size:10px; color:var(--text-muted);">主催者: ${d.creator} | 参加者: ${d.players.length}/${d.maxPlayers}人 (${d.players.join(', ')})</span>
+                                </div>
+                                <div>
+                                    ${btnHtml}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
+                if (html === "") {
+                    list.innerHTML = `<p style="font-size: 11px; color: var(--text-muted); text-align: center;">募集中の対戦はありません</p>`;
+                } else {
+                    list.innerHTML = html;
+                }
+            }, err => console.error("Multiplayer duels listener error:", err));
+    }
+
+    function listenToMyActiveMultiplayerDuels() {
+        if (activeMultiplayerDuelUnsubscribe) activeMultiplayerDuelUnsubscribe();
+
+        activeMultiplayerDuelUnsubscribe = db.collection('multiplayer_duels')
+            .where('players', 'array-contains', currentUser)
+            .onSnapshot(snap => {
+                if (snap.empty) {
+                    if (activeMultiplayerDuelId) {
+                        activeMultiplayerDuelId = null;
+                        activeMultiplayerDuelData = null;
+                        document.getElementById('my-isolated-board').innerHTML = "";
+                    }
+                    return;
+                }
+
+                const doc = snap.docs.find(doc => ['playing', 'finished'].includes(doc.data().status));
+                if (!doc) {
+                    const recruitingDoc = snap.docs.find(doc => doc.data().status === 'recruiting');
+                    if (recruitingDoc) {
+                        activeMultiplayerDuelId = recruitingDoc.id;
+                        activeMultiplayerDuelData = recruitingDoc.data();
+                        
+                        const board = document.getElementById('my-isolated-board');
+                        const d = recruitingDoc.data();
+                        const isCreator = d.creator === currentUser;
+                        board.innerHTML = `
+                            <div style="text-align:center; padding:20px; border: 2px dashed var(--gold); border-radius: 12px; background: rgba(26, 44, 56, 0.9);">
+                                <h3 style="color:var(--gold); margin-bottom:10px; font-size:14px;">⌛ プレイヤーの参加待ち...</h3>
+                                <p style="font-size:13px; color:#fff; margin-bottom:15px;">
+                                    主催者: <strong>${d.creator}</strong><br>
+                                    ゲーム: ${d.gameType === 'dice' ? 'ダイス' : d.gameType === 'bj' ? 'ブラックジャック' : 'マインズ'} | ベット: ￥${d.bet.toLocaleString()}<br>
+                                    参加人数: <strong>${d.players.length} / ${d.maxPlayers}人</strong>
+                                </p>
+                                <div style="display:flex; flex-direction:column; gap:4px; max-width:200px; margin:0 auto 15px;">
+                                    ${d.players.map(p => `<div style="font-size:12px; color:var(--primary); font-weight:bold;">👤 ${p} ${p === d.creator ? '(主催者)' : ''}</div>`).join('')}
+                                </div>
+                                <div style="display:flex; gap:10px; justify-content:center;">
+                                    <button onclick="leaveMultiplayerDuel('${recruitingDoc.id}')" style="background:var(--accent); color:#fff; padding:10px 20px; font-size:13px; font-weight:bold; border-radius:6px; cursor:pointer; width:auto;">部屋を退出</button>
+                                    ${isCreator && d.players.length >= 2 ? `<button onclick="startMultiplayerDuelManual('${recruitingDoc.id}')" style="background:var(--primary); color:#000; padding:10px 20px; font-size:13px; font-weight:bold; border-radius:6px; cursor:pointer; width:auto;">ゲームを開始する</button>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    return;
+                }
+
+                const d = doc.data();
+                const duelId = doc.id;
+                activeMultiplayerDuelId = duelId;
+                activeMultiplayerDuelData = d;
+
+                handleMultiplayerDuelSnapshot(d, duelId);
+            }, err => console.error("Active multiplayer duel listener error:", err));
+    }
+
+    async function handleMultiplayerDuelSnapshot(d, duelId) {
+        if (d.status === 'playing') {
+            activeMinesGame = null; activeHiLowGame = null; activeBjGame = null;
+
+            if (d.gameType === 'dice') {
+                renderMultiplayerDice(d, duelId);
+            } else if (d.gameType === 'bj') {
+                renderMultiplayerBj(d, duelId);
+            } else if (d.gameType === 'mines') {
+                renderMultiplayerMines(d, duelId);
+            }
+        } else if (d.status === 'finished') {
+            if (handledMultiplayerDuelIds.has(duelId)) return;
+            handledMultiplayerDuelIds.add(duelId);
+            showMultiplayerDuelResult(d, duelId);
+        }
+    }
+
+    function renderMultiplayerDice(d, duelId) {
+        const board = document.getElementById('my-isolated-board');
+        const isMyTurn = (d.turn === currentUser);
+
+        let playersHtml = "";
+        for (const player of d.players) {
+            const rolled = d.rolls && d.rolls[player] > 0;
+            const rollVal = rolled ? d.rolls[player] : "?";
+            const isCurrentTurn = (d.turn === player);
+            const borderStyle = isCurrentTurn ? '2px solid var(--primary)' : '2px solid #2f4553';
+            const shadowStyle = isCurrentTurn ? 'box-shadow: 0 0 10px rgba(0, 231, 1, 0.4);' : '';
+            
+            let diceDisplay = "";
+            if (rolled) {
+                diceDisplay = `<canvas id="mp-dice-canvas-${player}" width="60" height="60" style="display:block; margin:5px auto;"></canvas>`;
+            } else {
+                diceDisplay = `<div style="font-size:20px; font-weight:bold; color:var(--text-muted); margin:10px 0;">？</div>`;
+            }
+
+            playersHtml += `
+                <div style="flex:1; min-width:80px; text-align:center;">
+                    <div style="font-size:11px; color:${isCurrentTurn ? 'var(--primary)' : 'var(--text-muted)'}; font-weight:bold; overflow:hidden; text-overflow:ellipsis; max-width:80px; margin:0 auto;">${player}</div>
+                    <div style="background:var(--bg-input); border:${borderStyle}; ${shadowStyle} border-radius:8px; padding:6px; margin-top:4px; min-height:85px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                        ${diceDisplay}
+                        <span style="font-size:9px; color:var(--text-muted);">${rolled ? '決定' : '待機中'}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        let controlHtml = "";
+        if (isMyTurn) {
+            const alreadyRolled = d.rolls && d.rolls[currentUser] > 0;
+            if (!alreadyRolled) {
+                controlHtml = `<button id="btn-mp-dice-roll" onclick="rollMultiplayerDice('${duelId}')" style="background:var(--primary); color:#000; padding:12px; font-weight:bold; border-radius:6px; margin-top:15px; cursor:pointer;">🎲 ダイスを振る</button>`;
+            } else {
+                controlHtml = `<p style="margin-top:15px; font-size:12px; color:var(--gold);">結果を送信中...</p>`;
+            }
+        } else {
+            controlHtml = `<p style="margin-top:15px; font-size:12px; color:var(--gold);">⌛ ${d.turn} がダイスを振るのを待っています...</p>`;
+        }
+
+        board.innerHTML = `
+            <div style="text-align:center; padding:15px; border: 2px solid var(--gold); border-radius: 12px; background: rgba(26, 44, 56, 0.9);">
+                <h3 style="color:var(--gold); margin-bottom:8px; font-size:14px;">⚔️ 複数人ダイス対戦中 (Round ${d.round})</h3>
+                <p style="font-size:11px; color:${isMyTurn ? 'var(--primary)' : 'var(--text-muted)'}; font-weight:bold; margin-bottom:12px;">
+                    ${isMyTurn ? '👉 あなたのターンです！ダイスを振ってください' : `⌛ ${d.turn} のターンを待っています...`}
+                </p>
+                <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:10px;">
+                    ${playersHtml}
+                </div>
+                ${controlHtml}
+                <div style="display:flex; justify-content:center; gap:10px; margin-top:15px;">
+                    <button onclick="surrenderMultiplayerDuel('${duelId}')" class="secondary" style="background-color:var(--accent); color:#fff; font-size:12px; padding:6px 12px; border:none; border-radius:4px; cursor:pointer; width:auto;">🏳️ 降参する</button>
+                </div>
+            </div>
+        `;
+
+        for (const player of d.players) {
+            const rolled = d.rolls && d.rolls[player] > 0;
+            if (rolled) {
+                const canvas = document.getElementById(`mp-dice-canvas-${player}`);
+                if (canvas) drawDice3D(canvas, d.rolls[player], 0);
+            }
+        }
+    }
+
+    window.rollMultiplayerDice = async function(duelId) {
+        if (!activeMultiplayerDuelData) return;
+        const d = activeMultiplayerDuelData;
+
+        const button = document.getElementById('btn-mp-dice-roll');
+        if (button) {
+            button.disabled = true;
+            button.innerText = "ダイスを振っています...";
+        }
+
+        let ticks = 0;
+        let angle = 0;
+        let roll = 1;
+        const maxTicks = 20;
+
+        function tick() {
+            roll = 1 + Math.floor(Math.random() * 6);
+            angle += 0.3;
+            const targetCanvas = document.getElementById(`mp-dice-canvas-${currentUser}`);
+            if (targetCanvas) {
+                drawDice3D(targetCanvas, roll, angle);
+            }
+            ticks++;
+            if (ticks < maxTicks) {
+                setTimeout(tick, 60);
+            } else {
+                finishMultiplayerDiceRoll(duelId, roll);
+            }
+        }
+        tick();
+    };
+
+    async function finishMultiplayerDiceRoll(duelId, roll) {
+        const docRef = db.collection('multiplayer_duels').doc(duelId);
+        const doc = await docRef.get();
+        if (!doc.exists) return;
+        const d = doc.data();
+
+        const newRolls = { ...(d.rolls || {}) };
+        newRolls[currentUser] = roll;
+
+        const nextIndex = d.turnIndex + 1;
+        const updateData = {
+            rolls: newRolls,
+            turnIndex: nextIndex
+        };
+
+        if (nextIndex < d.turnOrder.length) {
+            updateData.turn = d.turnOrder[nextIndex];
+        } else {
+            const rollValues = d.turnOrder.map(p => newRolls[p]);
+            const maxRoll = Math.max(...rollValues);
+            const winnersList = d.turnOrder.filter(p => newRolls[p] === maxRoll);
+
+            if (winnersList.length === 1) {
+                updateData.status = 'finished';
+                updateData.winners = winnersList;
+            } else {
+                updateData.round = d.round + 1;
+                updateData.turnOrder = winnersList;
+                updateData.turn = winnersList[0];
+                updateData.turnIndex = 0;
+                updateData.rolls = {};
+                
+                await db.collection('notifications').add({
+                    username: currentUser,
+                    message: `🎲 ダイス引き分け！同点の人 (${winnersList.join(', ')}) でもう一回振り直します！ (Round ${d.round + 1})`,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+        }
+
+        await docRef.update(updateData);
+    }
+
+    function renderMultiplayerMines(d, duelId) {
+        const board = document.getElementById('my-isolated-board');
+        const isMyTurn = (d.turn === currentUser);
+
+        let gridHtml = "";
+        for (let i = 0; i < 25; i++) {
+            const isRevealed = d.revealed_tiles.includes(i);
+            let tileText = "";
+            let tileClass = "mines-tile";
+            let style = "";
+
+            if (isRevealed) {
+                tileClass += " revealed";
+                if (d.mines_grid[i]) {
+                    tileText = "💥";
+                    style = "border-color: var(--accent);";
+                } else {
+                    tileText = "💎";
+                    style = "color: var(--primary);";
+                }
+            }
+
+            const clickAction = (isMyTurn && !isRevealed) ? `onclick="clickMultiplayerMines('${duelId}', ${i})"` : "";
+            gridHtml += `<div class="${tileClass}" style="${style} aspect-ratio: 1;" ${clickAction}>${tileText}</div>`;
+        }
+
+        let playersStatusHtml = "";
+        for (const player of d.players) {
+            const isCurrentTurn = (d.turn === player);
+            const isEliminated = d.eliminated_players && d.eliminated_players.includes(player);
+            let statusLabel = "";
+            if (isEliminated) {
+                statusLabel = `<span style="color:var(--accent);">💥 脱落</span>`;
+            } else {
+                statusLabel = isCurrentTurn ? `<span style="color:var(--primary); font-weight:bold;">👉 手番</span>` : `<span style="color:var(--text-muted);">安全</span>`;
+            }
+
+            playersStatusHtml += `
+                <div style="background:rgba(0,0,0,0.3); padding:6px 10px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; border: 1px solid ${isCurrentTurn ? 'var(--primary)' : '#2f4553'}; font-size:11px;">
+                    <strong>👤 ${player}</strong>
+                    <span>${statusLabel}</span>
+                </div>
+            `;
+        }
+
+        board.innerHTML = `
+            <div style="text-align:center; padding:15px; border: 2px solid var(--gold); border-radius: 12px; background: rgba(26, 44, 56, 0.9);">
+                <h3 style="color:var(--gold); margin-bottom:8px; font-size:14px;">⚔️ 複数人マインズ対戦中</h3>
+                <p style="font-size:11px; color:${isMyTurn ? 'var(--primary)' : 'var(--text-muted)'}; font-weight:bold; margin-bottom:10px;">
+                    ${isMyTurn ? '👉 あなたのターンです！安全なマスを開けてください' : `⌛ ${d.turn} のターンを待っています...`}
+                </p>
+                <div style="font-size:10px; color:var(--text-muted); margin-bottom:12px;">
+                    地雷: 3個固定 | 地雷を引くと即脱落！<br>
+                    全員の賭け金 ￥${(d.bet * d.players.length).toLocaleString()} は生存した勝者全員で山分け！
+                </div>
+                
+                <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                    <div style="flex:1; max-width:240px;">
+                        <div class="mines-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 0 auto;">
+                            ${gridHtml}
+                        </div>
+                    </div>
+                    <div style="flex:1; min-width:140px; display:flex; flex-direction:column; gap:4px; text-align:left;">
+                        <div style="font-size:10px; color:var(--text-muted); font-weight:bold; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:3px; margin-bottom:3px;">プレイヤー状況</div>
+                        ${playersStatusHtml}
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:center; gap:10px; margin-top:15px;">
+                    <button onclick="surrenderMultiplayerDuel('${duelId}')" class="secondary" style="background-color:var(--accent); color:#fff; font-size:12px; padding:6px 12px; border:none; border-radius:4px; cursor:pointer; width:auto;">🏳️ 降参する</button>
+                </div>
+            </div>
+        `;
+    }
+
+    window.clickMultiplayerMines = async function(duelId, tileIdx) {
+        if (!activeMultiplayerDuelData) return;
+        const d = activeMultiplayerDuelData;
+
+        if (d.revealed_tiles.includes(tileIdx)) return;
+
+        const isBomb = d.mines_grid[tileIdx];
+        const newRevealed = [...d.revealed_tiles, tileIdx];
+
+        const docRef = db.collection('multiplayer_duels').doc(duelId);
+        
+        if (isBomb) {
+            const newEliminated = [...(d.eliminated_players || []), currentUser];
+            const newActive = d.active_players.filter(p => p !== currentUser);
+            const totalBombsRevealed = newRevealed.filter(idx => d.mines_grid[idx]).length;
+
+            if (newActive.length === 1) {
+                await docRef.update({
+                    revealed_tiles: newRevealed,
+                    eliminated_players: newEliminated,
+                    active_players: newActive,
+                    status: 'finished',
+                    winners: newActive
+                });
+            } else if (totalBombsRevealed === 3) {
+                await docRef.update({
+                    revealed_tiles: newRevealed,
+                    eliminated_players: newEliminated,
+                    active_players: newActive,
+                    status: 'finished',
+                    winners: newActive
+                });
+            } else {
+                const nextIndex = findNextActivePlayerIndex(d.turnIndex, d.turnOrder, newActive);
+                await docRef.update({
+                    revealed_tiles: newRevealed,
+                    eliminated_players: newEliminated,
+                    active_players: newActive,
+                    turnIndex: nextIndex,
+                    turn: d.turnOrder[nextIndex]
+                });
+            }
+        } else {
+            const totalSafeOpened = newRevealed.filter(idx => !d.mines_grid[idx]).length;
+            if (totalSafeOpened === 22) {
+                await docRef.update({
+                    revealed_tiles: newRevealed,
+                    status: 'finished',
+                    winners: d.active_players
+                });
+            } else {
+                const nextIndex = findNextActivePlayerIndex(d.turnIndex, d.turnOrder, d.active_players);
+                await docRef.update({
+                    revealed_tiles: newRevealed,
+                    turnIndex: nextIndex,
+                    turn: d.turnOrder[nextIndex]
+                });
+            }
+        }
+    };
+
+    function findNextActivePlayerIndex(currentIndex, turnOrder, activePlayers) {
+        let idx = currentIndex;
+        for (let i = 0; i < turnOrder.length; i++) {
+            idx = (idx + 1) % turnOrder.length;
+            if (activePlayers.includes(turnOrder[idx])) {
+                return idx;
+            }
+        }
+        return currentIndex;
+    }
+
+    function renderMultiplayerBj(d, duelId) {
+        const board = document.getElementById('my-isolated-board');
+        const isMyTurn = (d.turn === currentUser);
+
+        let playersHtml = "";
+        for (const player of d.players) {
+            const hand = d.hands && d.hands[player];
+            const pStatus = d.playerStatuses && d.playerStatuses[player];
+            const score = hand ? calculateHandValue(hand) : 0;
+            const isCurrentTurn = (d.turn === player);
+            
+            const borderStyle = isCurrentTurn ? '2px solid var(--primary)' : '2px solid #2f4553';
+            const shadowStyle = isCurrentTurn ? 'box-shadow: 0 0 10px rgba(0, 231, 1, 0.4);' : '';
+            
+            let cards2dHtml = "";
+            if (hand) {
+                cards2dHtml = hand.map(card => {
+                    return `<div class="card-mini ${card.isRed ? 'red' : ''}"><div>${card.suit}${card.rank}</div><div style="text-align:right; margin-top:auto;">${card.rank}</div></div>`;
+                }).join("");
+            }
+
+            let statusLabel = "";
+            if (pStatus === 'busted') {
+                statusLabel = `<span style="color:var(--accent);">💥 BUST</span>`;
+            } else if (pStatus === 'stand') {
+                statusLabel = `<span style="color:var(--gold);">STAND (${score})</span>`;
+            } else {
+                statusLabel = isCurrentTurn ? `<span style="color:var(--primary); font-weight:bold;">👉 手番 (${score})</span>` : `<span style="color:var(--text-muted);">待機中 (${score})</span>`;
+            }
+
+            playersHtml += `
+                <div style="background:rgba(0,0,0,0.5); padding:8px 12px; border-radius:8px; border:${borderStyle}; ${shadowStyle} display:flex; flex-direction:column; gap:6px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px;">
+                        <strong>👤 ${player}</strong>
+                        <span>${statusLabel}</span>
+                    </div>
+                    <div class="cards-flex" style="justify-content:flex-start;">
+                        ${cards2dHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        let controlHtml = "";
+        if (isMyTurn && d.playerStatuses[currentUser] === 'playing') {
+            controlHtml = `
+                <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; margin-top:15px;">
+                    <button class="secondary" onclick="handleMultiplayerBjAction('${duelId}', 'hit')">ヒット (Hit)</button>
+                    <button class="secondary" style="background-color:var(--gold); color:#000;" onclick="handleMultiplayerBjAction('${duelId}', 'stand')">スタンド (Stand)</button>
+                </div>
+            `;
+        } else {
+            controlHtml = `<p style="margin-top:15px; font-size:12px; color:var(--gold);">⌛ ${d.turn} のアクションを待っています...</p>`;
+        }
+
+        board.innerHTML = `
+            <div style="text-align:left; padding:15px; border: 2px solid var(--gold); border-radius: 12px; background: rgba(26, 44, 56, 0.9); box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+                <h3 style="color:var(--gold); margin-bottom:10px; font-size:14px; text-align:center;">⚔️ 複数人ブラックジャック対戦中 (Round ${d.round})</h3>
+                <p style="font-size:11px; color:${isMyTurn ? 'var(--primary)' : 'var(--text-muted)'}; font-weight:bold; margin-bottom:12px; text-align:center;">
+                    ${isMyTurn ? '👉 あなたのターンです！ヒットまたはスタンドを選択してください' : `⌛ ${d.turn} の番を待っています...`}
+                </p>
+                
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    ${playersHtml}
+                </div>
+                
+                ${controlHtml}
+                <div style="display:flex; justify-content:center; gap:10px; margin-top:15px;">
+                    <button onclick="surrenderMultiplayerDuel('${duelId}')" class="secondary" style="background-color:var(--accent); color:#fff; font-size:12px; padding:6px 12px; border:none; border-radius:4px; cursor:pointer; width:auto;">🏳️ 降参する</button>
+                </div>
+            </div>
+        `;
+    }
+
+    window.handleMultiplayerBjAction = async function(duelId, action) {
+        if (!activeMultiplayerDuelData) return;
+        const d = activeMultiplayerDuelData;
+
+        const docRef = db.collection('multiplayer_duels').doc(duelId);
+        
+        const myHand = d.hands[currentUser];
+        const deck = d.deck;
+        const newHands = { ...d.hands };
+        const newPlayerStatuses = { ...d.playerStatuses };
+
+        if (action === 'hit') {
+            const card = deck.pop();
+            myHand.push(card);
+            newHands[currentUser] = myHand;
+
+            const score = calculateHandValue(myHand);
+            if (score > 21) {
+                newPlayerStatuses[currentUser] = 'busted';
+                await moveToNextBjPlayer(docRef, d, newHands, newPlayerStatuses, deck);
+            } else {
+                await docRef.update({
+                    hands: newHands,
+                    deck: deck
+                });
+            }
+        } else if (action === 'stand') {
+            newPlayerStatuses[currentUser] = 'stand';
+            await moveToNextBjPlayer(docRef, d, newHands, newPlayerStatuses, deck);
+        }
+    };
+
+    async function moveToNextBjPlayer(docRef, d, newHands, newPlayerStatuses, deck) {
+        const nextIndex = d.turnIndex + 1;
+        const updateData = {
+            hands: newHands,
+            playerStatuses: newPlayerStatuses,
+            deck: deck,
+            turnIndex: nextIndex
+        };
+
+        if (nextIndex < d.turnOrder.length) {
+            updateData.turn = d.turnOrder[nextIndex];
+            await docRef.update(updateData);
+        } else {
+            const finalScores = {};
+            for (const player of d.players) {
+                const score = calculateHandValue(newHands[player]);
+                finalScores[player] = newPlayerStatuses[player] === 'busted' ? 0 : score;
+            }
+
+            const maxScore = Math.max(...d.players.map(p => finalScores[p]));
+
+            if (maxScore === 0) {
+                await startBjTiebreaker(docRef, d, d.players);
+            } else {
+                const winnersList = d.players.filter(p => finalScores[p] === maxScore);
+
+                if (winnersList.length === 1) {
+                    await docRef.update({
+                        ...updateData,
+                        status: 'finished',
+                        winners: winnersList
+                    });
+                } else {
+                    await startBjTiebreaker(docRef, d, winnersList);
+                }
+            }
+        }
+    }
+
+    async function startBjTiebreaker(docRef, d, players) {
+        const deck = createDeck();
+        const hands = {};
+        const playerStatuses = {};
+        for (const player of players) {
+            hands[player] = [deck.pop(), deck.pop()];
+            playerStatuses[player] = 'playing';
+        }
+
+        await docRef.update({
+            status: 'playing',
+            round: d.round + 1,
+            turnOrder: players,
+            turn: players[0],
+            turnIndex: 0,
+            deck: deck,
+            hands: hands,
+            playerStatuses: playerStatuses
+        });
+
+        await db.collection('notifications').add({
+            username: currentUser,
+            message: `🃏 ブラックジャック引き分け！同点の人 (${players.join(', ')}) でもう一回勝負します！ (Round ${d.round + 1})`,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
+
+    async function showMultiplayerDuelResult(d, duelId) {
+        const board = document.getElementById('my-isolated-board');
+        const winners = d.winners || [];
+        const isIWinner = winners.includes(currentUser);
+
+        const totalPool = d.bet * d.players.length;
+        const winAmt = totalPool / winners.length;
+
+        let resultTitle = "";
+        if (winners.length === 0) {
+            resultTitle = "引き分け！全員脱落のためノーゲーム";
+        } else if (isIWinner) {
+            resultTitle = `🎉 あなたの勝利！！ (賞金 ￥${Math.floor(winAmt).toLocaleString()})`;
+        } else {
+            resultTitle = `💀 あなたの敗北...`;
+        }
+
+        if (isIWinner) {
+            await changeBalance(winAmt, "複数人対戦勝利賞金");
+            alert(`💰 複数人対戦に勝利しました！ ￥${Math.floor(winAmt).toLocaleString()} を獲得！`);
+        }
+
+        let scoreboardHtml = "";
+        for (const player of d.players) {
+            const isWinner = winners.includes(player);
+            let detail = "";
+            if (d.gameType === 'dice') {
+                const roll = d.rolls && d.rolls[player] ? d.rolls[player] : "?";
+                detail = `出目: ${roll}`;
+            } else if (d.gameType === 'bj') {
+                const hand = d.hands && d.hands[player];
+                const score = hand ? calculateHandValue(hand) : 0;
+                const status = d.playerStatuses && d.playerStatuses[player];
+                detail = status === 'busted' ? 'バースト' : `スコア: ${score}`;
+            } else if (d.gameType === 'mines') {
+                const isEliminated = d.eliminated_players && d.eliminated_players.includes(player);
+                detail = isEliminated ? '地雷（脱落）' : '生存（安全）';
+            }
+
+            scoreboardHtml += `
+                <div style="background:var(--bg-input); border: 2px solid ${isWinner ? 'var(--primary)' : '#2f4553'}; border-radius:8px; padding:8px; display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <div>
+                        <strong>👤 ${player}</strong> 
+                        <span style="font-size:10px; color:var(--text-muted); margin-left:10px;">${detail}</span>
+                    </div>
+                    <span style="font-weight:bold; color:${isWinner ? 'var(--primary)' : 'var(--text-muted)'};">${isWinner ? '👑 WINNER' : 'LOSE'}</span>
+                </div>
+            `;
+        }
+
+        board.innerHTML = `
+            <div style="text-align:center; padding:20px; border: 2px solid var(--primary); border-radius: 12px; background: rgba(15, 33, 46, 0.95); box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+                <h3 style="${winners.length === 0 ? 'color:var(--text-muted)' : 'color:var(--primary)'}; margin-bottom:15px; font-size:16px;">${resultTitle}</h3>
+                
+                <div style="display:flex; flex-direction:column; gap:6px; text-align:left; max-width:280px; margin: 0 auto 15px;">
+                    <div style="font-size:11px; color:var(--text-muted); font-weight:bold; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:3px; margin-bottom:5px;">対戦結果スコア</div>
+                    ${scoreboardHtml}
+                </div>
+
+                <button onclick="clearMultiplayerDuelBoard('${duelId}')" style="background:var(--primary); color:#000; padding:10px 20px; border-radius:4px; font-weight:bold; cursor:pointer;">結果を確認して閉じる</button>
+            </div>
+        `;
+    }
+
+    window.clearMultiplayerDuelBoard = async function(duelId) {
+        document.getElementById('my-isolated-board').innerHTML = "";
+        activeMultiplayerDuelId = null;
+        activeMultiplayerDuelData = null;
+        
+        const docRef = db.collection('multiplayer_duels').doc(duelId);
+        const doc = await docRef.get();
+        if (doc.exists && doc.data().creator === currentUser) {
+            await docRef.delete().catch(() => {});
+        }
+        
+        handledMultiplayerDuelIds.delete(duelId);
+        selectGameType('bj');
+    };
+
+    window.surrenderMultiplayerDuel = async function(duelId) {
+        if (!confirm("本当に降参しますか？\n降参するとあなたはこの対戦で敗北扱いとなり、ベット額は戻りません。")) return;
+
+        const docRef = db.collection('multiplayer_duels').doc(duelId);
+        const doc = await docRef.get();
+        if (!doc.exists) return;
+        const d = doc.data();
+
+        if (d.gameType === 'dice') {
+            const newRolls = { ...(d.rolls || {}) };
+            newRolls[currentUser] = 0;
+
+            const nextIndex = d.turnIndex + 1;
+            const updateData = {
+                rolls: newRolls,
+                turnIndex: nextIndex
+            };
+
+            if (nextIndex < d.turnOrder.length) {
+                updateData.turn = d.turnOrder[nextIndex];
+            } else {
+                const rollValues = d.turnOrder.map(p => newRolls[p]);
+                const maxRoll = Math.max(...rollValues);
+                const winnersList = d.turnOrder.filter(p => newRolls[p] === maxRoll);
+
+                if (winnersList.length === 1) {
+                    updateData.status = 'finished';
+                    updateData.winners = winnersList;
+                } else {
+                    updateData.round = d.round + 1;
+                    updateData.turnOrder = winnersList;
+                    updateData.turn = winnersList[0];
+                    updateData.turnIndex = 0;
+                    updateData.rolls = {};
+                }
+            }
+            await docRef.update(updateData);
+        } else if (d.gameType === 'bj') {
+            const newPlayerStatuses = { ...d.playerStatuses };
+            newPlayerStatuses[currentUser] = 'busted';
+
+            if (d.turn === currentUser) {
+                await moveToNextBjPlayer(docRef, d, d.hands, newPlayerStatuses, d.deck);
+            } else {
+                await docRef.update({
+                    playerStatuses: newPlayerStatuses
+                });
+            }
+        } else if (d.gameType === 'mines') {
+            const newEliminated = [...(d.eliminated_players || []), currentUser];
+            const newActive = d.active_players.filter(p => p !== currentUser);
+
+            if (newActive.length === 1) {
+                await docRef.update({
+                    eliminated_players: newEliminated,
+                    active_players: newActive,
+                    status: 'finished',
+                    winners: newActive
+                });
+            } else {
+                const isMyCurrentTurn = (d.turn === currentUser);
+                const updateData = {
+                    eliminated_players: newEliminated,
+                    active_players: newActive
+                };
+                if (isMyCurrentTurn) {
+                    const nextIndex = findNextActivePlayerIndex(d.turnIndex, d.turnOrder, newActive);
+                    updateData.turnIndex = nextIndex;
+                    updateData.turn = d.turnOrder[nextIndex];
+                }
+                await docRef.update(updateData);
+            }
+        }
+
+        activeMultiplayerDuelId = null;
+        activeMultiplayerDuelData = null;
+        document.getElementById('my-isolated-board').innerHTML = "";
+        alert("降参しました。");
+    };
+
     // --- 👑 提案の完全自動採否・自動実装システム ---
     function listenAdminIdeas() {
         db.collection('rpg_ideas').where('status', '==', 'pending').onSnapshot(snap => {
@@ -5266,6 +6242,8 @@
         // 招待と対戦状態の監視
         listenToDuelInvites();
         listenToMyActiveDuels();
+        listenToMultiplayerDuels();
+        listenToMyActiveMultiplayerDuels();
     }
 
     async function sendGlobalChatMessage() {
