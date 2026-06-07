@@ -6,6 +6,7 @@
     <title>Koyocasino</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root {
             --bg-main: #0f212e;
@@ -2684,11 +2685,11 @@
                 
                 if (hostRoll > 0) {
                     const canvas = document.getElementById('dice-canvas-host');
-                    if (canvas) drawDiceOnContext(canvas.getContext('2d'), hostRoll, 0);
+                    if (canvas) drawDice3D(canvas, hostRoll, 0);
                 }
                 if (guestRoll > 0) {
                     const canvas = document.getElementById('dice-canvas-guest');
-                    if (canvas) drawDiceOnContext(canvas.getContext('2d'), guestRoll, 0);
+                    if (canvas) drawDice3D(canvas, guestRoll, 0);
                 }
             } else if (gameType === 'bj') {
                 const isHost = d.host === currentUser;
@@ -3048,7 +3049,7 @@
             angle += 0.3;
             const canvas = document.getElementById(`dice-canvas-${role}-rolling`);
             if (canvas) {
-                drawDiceOnContext(canvas.getContext('2d'), roll, angle);
+                drawDice3D(canvas, roll, angle);
             }
             ticks++;
             if (ticks < maxTicks) {
@@ -3312,48 +3313,196 @@
         }
     }
 
-    function drawRouletteWheel(angle) {
-        const canvas = document.getElementById('roulette-canvas');
-        if (!canvas) return;
+    function createRouletteTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
         const ctx = canvas.getContext('2d');
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2;
-        const radius = canvas.width / 2 - 10;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const cx = 256;
+        const cy = 256;
+        const radius = 250;
+        
+        ctx.clearRect(0, 0, 512, 512);
+        
         const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
         const totalSlices = numbers.length;
         const sliceAngle = (2 * Math.PI) / totalSlices;
+        
+        // Draw outer gold ring
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#f39c12';
+        ctx.fill();
+        
+        // Draw slices
         for (let i = 0; i < totalSlices; i++) {
-            const startA = angle + i * sliceAngle;
+            const startA = i * sliceAngle - Math.PI / 2; // offset by -90 deg so 0 is at top
             const endA = startA + sliceAngle;
+            
             ctx.beginPath();
             ctx.moveTo(cx, cy);
-            ctx.arc(cx, cy, radius, startA, endA);
+            ctx.arc(cx, cy, radius - 8, startA, endA);
             ctx.closePath();
+            
             const num = numbers[i];
-            if (num === 0) { ctx.fillStyle = '#27ae60'; }
-            else if ([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(num)) { ctx.fillStyle = '#fe2247'; }
-            else { ctx.fillStyle = '#111111'; }
+            if (num === 0) {
+                ctx.fillStyle = '#27ae60';
+            } else if ([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(num)) {
+                ctx.fillStyle = '#fe2247';
+            } else {
+                ctx.fillStyle = '#111111';
+            }
             ctx.fill();
+            
+            // Draw inner dividers
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 1;
             ctx.stroke();
+            
+            // Draw numbers
             ctx.save();
             ctx.translate(cx, cy);
             ctx.rotate(startA + sliceAngle / 2);
             ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 8px Helvetica';
+            ctx.font = 'bold 16px Helvetica';
             ctx.textAlign = 'right';
-            ctx.fillText(num.toString(), radius - 5, 3);
+            ctx.fillText(num.toString(), radius - 20, 6);
             ctx.restore();
         }
+        
+        // Draw center gold circle
         ctx.beginPath();
-        ctx.moveTo(cx - 5, 5);
-        ctx.lineTo(cx + 5, 5);
-        ctx.lineTo(cx, 20);
-        ctx.closePath();
-        ctx.fillStyle = 'var(--gold)';
+        ctx.arc(cx, cy, 80, 0, Math.PI * 2);
+        ctx.fillStyle = '#f39c12';
         ctx.fill();
+        
+        return new THREE.CanvasTexture(canvas);
+    }
+
+    function initThreeRoulette(canvas) {
+        const scene = new THREE.Scene();
+        
+        // Perspective camera with tilted view
+        const camera = new THREE.PerspectiveCamera(45, canvas.width / canvas.height, 0.1, 100);
+        camera.position.set(0, 5.0, 5.0);
+        camera.lookAt(0, 0, 0);
+        
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+        renderer.setSize(canvas.width, canvas.height);
+        renderer.setPixelRatio(window.devicePixelRatio || 1);
+        
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(3, 8, 3);
+        scene.add(dirLight);
+        
+        const pointLight = new THREE.PointLight(0xffffff, 0.5, 10);
+        pointLight.position.set(0, 2, 0);
+        scene.add(pointLight);
+
+        // Roulette Wheel Texture
+        const rouletteTexture = createRouletteTexture();
+        
+        // Cylinder geometry for 3D wheel
+        const wheelGeom = new THREE.CylinderGeometry(2, 2, 0.3, 64);
+        const sideMat = new THREE.MeshStandardMaterial({ color: 0x1e272c, metalness: 0.8, roughness: 0.2 });
+        const topMat = new THREE.MeshStandardMaterial({ map: rouletteTexture, roughness: 0.3, metalness: 0.15 });
+        const bottomMat = new THREE.MeshStandardMaterial({ color: 0x0a1118 });
+        
+        const wheel = new THREE.Mesh(wheelGeom, [sideMat, topMat, bottomMat]);
+        scene.add(wheel);
+        
+        // Spindle (rotating central turret)
+        const spindleGroup = new THREE.Group();
+        const coneGeom = new THREE.ConeGeometry(0.3, 0.5, 32);
+        const goldMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9, roughness: 0.1 });
+        const cone = new THREE.Mesh(coneGeom, goldMat);
+        cone.position.y = 0.25;
+        spindleGroup.add(cone);
+        
+        const sphereGeom = new THREE.SphereGeometry(0.12, 16, 16);
+        const sphere = new THREE.Mesh(sphereGeom, goldMat);
+        sphere.position.y = 0.5;
+        spindleGroup.add(sphere);
+        
+        wheel.add(spindleGroup);
+        
+        // Outer rim (does not rotate)
+        const rimGeom = new THREE.TorusGeometry(2.05, 0.08, 16, 100);
+        const rimMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9, roughness: 0.1 });
+        const rim = new THREE.Mesh(rimGeom, rimMat);
+        rim.rotation.x = Math.PI / 2;
+        rim.position.y = 0.1;
+        scene.add(rim);
+        
+        // Ball
+        const ballGeom = new THREE.SphereGeometry(0.08, 16, 16);
+        const ballMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0.1 });
+        const ball = new THREE.Mesh(ballGeom, ballMat);
+        scene.add(ball);
+        
+        canvas.threeInstance = {
+            scene: scene,
+            camera: camera,
+            renderer: renderer,
+            wheel: wheel,
+            ball: ball
+        };
+    }
+
+    function updateThreeRoulette(canvas, angle, ballProgress, winningIndex) {
+        const inst = canvas.threeInstance;
+        if (!inst) return;
+        
+        // Rotate wheel
+        inst.wheel.rotation.y = -angle;
+        
+        const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+        const totalSlices = numbers.length;
+        const sliceAngle = (2 * Math.PI) / totalSlices;
+        const targetRelativeAngle = winningIndex * sliceAngle + sliceAngle / 2;
+        
+        if (ballProgress === null) {
+            // Static/idle mode
+            const targetWorldAngle = -angle + (0 * sliceAngle + sliceAngle / 2);
+            const radius = 1.7;
+            inst.ball.position.x = radius * Math.cos(targetWorldAngle);
+            inst.ball.position.z = radius * Math.sin(targetWorldAngle);
+            inst.ball.position.y = 0.18;
+        } else {
+            // Spin mode
+            const totalRots = 8;
+            const ballStartAngle = 0;
+            const progress = ballProgress;
+            const blend = Math.pow(progress, 3.5);
+            
+            // Orbiting
+            const freeAngle = ballStartAngle + (1 - progress) * totalRots * 2 * Math.PI;
+            const slotWorldAngle = -angle + targetRelativeAngle;
+            const ballAngle = (1 - blend) * freeAngle + blend * slotWorldAngle;
+            
+            // Decaying radius and height
+            const ballRadius = 1.95 - blend * (1.95 - 1.7);
+            const ballHeight = 0.28 - blend * (0.28 - 0.18);
+            
+            inst.ball.position.x = ballRadius * Math.cos(ballAngle);
+            inst.ball.position.z = ballRadius * Math.sin(ballAngle);
+            inst.ball.position.y = ballHeight;
+        }
+        
+        inst.renderer.render(inst.scene, inst.camera);
+    }
+
+    function drawRouletteWheel(angle, ballProgress = null, winningIndex = 0) {
+        const canvas = document.getElementById('roulette-canvas');
+        if (!canvas) return;
+        if (!canvas.threeInstance) {
+            initThreeRoulette(canvas);
+        }
+        updateThreeRoulette(canvas, angle, ballProgress, winningIndex);
     }
 
     function runRouletteGame(bet) {
@@ -3378,13 +3527,37 @@
             <canvas id="roulette-canvas" width="200" height="200" style="background:#0a1118; border-radius:50%; border:4px solid #2f4553; display:block; margin:0 auto;"></canvas>
             <div id="roulette-result-text" style="font-size:14px; font-weight:bold; color:#fff; text-align:center; margin-top:10px;"></div>
         `;
+        
         let currentAngle = 0;
         let speed = 0.5 + Math.random() * 0.3;
         const decay = 0.985;
+        
+        // Precalculate steps and final angle
+        let tempAngle = 0;
+        let tempSpeed = speed;
+        let totalSteps = 0;
+        while (tempSpeed > 0.005) {
+            tempAngle += tempSpeed;
+            tempSpeed *= decay;
+            totalSteps++;
+        }
+        const finalAngle = tempAngle;
+        
+        const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+        const totalSlices = numbers.length;
+        const sliceAngle = (2 * Math.PI) / totalSlices;
+        const normalizedAngle = (2 * Math.PI - (finalAngle % (2 * Math.PI))) % (2 * Math.PI);
+        const needleAngle = (normalizedAngle - Math.PI / 2 + 2 * Math.PI) % (2 * Math.PI);
+        const winningIndex = Math.floor(needleAngle / sliceAngle) % totalSlices;
+
+        let step = 0;
         function spin() {
+            if (!document.getElementById('roulette-canvas')) return;
             currentAngle += speed;
             speed *= decay;
-            drawRouletteWheel(currentAngle);
+            step++;
+            const progress = Math.min(1.0, step / totalSteps);
+            drawRouletteWheel(currentAngle, progress, winningIndex);
             if (speed > 0.005) { requestAnimationFrame(spin); }
             else { finishRouletteGame(currentAngle, bet); }
         }
@@ -3733,87 +3906,359 @@
         }
     }
 
+    function createDiceTextures() {
+        const textures = [];
+        const dots = {
+            1: [[64, 64]],
+            2: [[32, 32], [96, 96]],
+            3: [[32, 32], [64, 64], [96, 96]],
+            4: [[32, 32], [32, 96], [96, 32], [96, 96]],
+            5: [[32, 32], [32, 96], [64, 64], [96, 32], [96, 96]],
+            6: [[32, 32], [32, 64], [32, 96], [96, 32], [96, 64], [96, 96]]
+        };
+        for (let i = 1; i <= 6; i++) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            
+            // Draw face background matching the app's look
+            ctx.fillStyle = '#1a2c38';
+            ctx.fillRect(0, 0, 128, 128);
+            
+            // Rounded white face
+            ctx.fillStyle = '#ffffff';
+            if (ctx.roundRect) {
+                ctx.beginPath();
+                ctx.roundRect(4, 4, 120, 120, 20);
+                ctx.fill();
+                ctx.strokeStyle = '#2f4553';
+                ctx.lineWidth = 6;
+                ctx.stroke();
+            } else {
+                ctx.fillRect(4, 4, 120, 120);
+            }
+            
+            // Draw dots
+            ctx.fillStyle = (i === 1) ? '#fe2247' : '#111111';
+            const radius = (i === 1) ? 18 : 10;
+            for (const [x, y] of dots[i]) {
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            textures.push(new THREE.CanvasTexture(canvas));
+        }
+        return textures;
+    }
+
+    function initThreeDice(canvas) {
+        const scene = new THREE.Scene();
+        
+        const camera = new THREE.PerspectiveCamera(45, canvas.width / canvas.height, 0.1, 10);
+        camera.position.set(0, 2.5, 2.5);
+        camera.lookAt(0, 0, 0);
+        
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+        renderer.setSize(canvas.width, canvas.height);
+        renderer.setPixelRatio(window.devicePixelRatio || 1);
+        
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+        dirLight.position.set(2, 4, 2);
+        scene.add(dirLight);
+        
+        const diceTextures = createDiceTextures();
+        const materials = [
+            new THREE.MeshStandardMaterial({ map: diceTextures[3], roughness: 0.2, metalness: 0.1 }), // +X (4)
+            new THREE.MeshStandardMaterial({ map: diceTextures[2], roughness: 0.2, metalness: 0.1 }), // -X (3)
+            new THREE.MeshStandardMaterial({ map: diceTextures[1], roughness: 0.2, metalness: 0.1 }), // +Y (2)
+            new THREE.MeshStandardMaterial({ map: diceTextures[4], roughness: 0.2, metalness: 0.1 }), // -Y (5)
+            new THREE.MeshStandardMaterial({ map: diceTextures[0], roughness: 0.2, metalness: 0.1 }), // +Z (1)
+            new THREE.MeshStandardMaterial({ map: diceTextures[5], roughness: 0.2, metalness: 0.1 })  // -Z (6)
+        ];
+        
+        const geom = new THREE.BoxGeometry(1.0, 1.0, 1.0);
+        const dice = new THREE.Mesh(geom, materials);
+        scene.add(dice);
+        
+        canvas.threeInstance = {
+            scene: scene,
+            camera: camera,
+            renderer: renderer,
+            dice: dice
+        };
+    }
+
+    function drawDice3D(canvas, num, angle) {
+        if (!canvas.threeInstance) {
+            initThreeDice(canvas);
+        }
+        const inst = canvas.threeInstance;
+        if (!inst) return;
+        
+        let rx = 0, ry = 0, rz = 0;
+        if (num === 1) { rx = -Math.PI / 2; }
+        else if (num === 2) { rx = 0; }
+        else if (num === 3) { rz = -Math.PI / 2; }
+        else if (num === 4) { rz = Math.PI / 2; }
+        else if (num === 5) { rx = Math.PI; }
+        else if (num === 6) { rx = Math.PI / 2; }
+        
+        inst.dice.rotation.set(rx, ry + angle, rz);
+        inst.renderer.render(inst.scene, inst.camera);
+    }
+
     function drawDice(num, angle = 0) {
         const canvas = document.getElementById('dice-canvas');
         if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const w = canvas.width;
-        const h = canvas.height;
-        ctx.clearRect(0, 0, w, h);
-        ctx.save();
-        ctx.translate(w / 2, h / 2);
-        ctx.rotate(angle);
-        ctx.fillStyle = "#ffffff";
-        ctx.strokeStyle = "#2f4553";
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        const size = 70;
-        const r = 10;
-        ctx.roundRect(-size/2, -size/2, size, size, r);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = num === 1 ? "#fe2247" : "#111111";
-        const dotR = 6;
-        function drawDot(x, y) {
-            ctx.beginPath();
-            ctx.arc(x, y, dotR, 0, 2*Math.PI);
-            ctx.fill();
-        }
-        const offset = 18;
-        if (num === 1) {
-            ctx.beginPath();
-            ctx.arc(0, 0, dotR * 1.5, 0, 2*Math.PI);
-            ctx.fillStyle = "#fe2247";
-            ctx.fill();
-        } else if (num === 2) {
-            drawDot(-offset, -offset);
-            drawDot(offset, offset);
-        } else if (num === 3) {
-            drawDot(-offset, -offset);
-            drawDot(0, 0);
-            drawDot(offset, offset);
-        } else if (num === 4) {
-            drawDot(-offset, -offset);
-            drawDot(offset, -offset);
-            drawDot(-offset, offset);
-            drawDot(offset, offset);
-        } else if (num === 5) {
-            drawDot(-offset, -offset);
-            drawDot(offset, -offset);
-            drawDot(0, 0);
-            drawDot(-offset, offset);
-            drawDot(offset, offset);
-        } else if (num === 6) {
-            drawDot(-offset, -offset);
-            drawDot(offset, -offset);
-            drawDot(-offset, 0);
-            drawDot(offset, 0);
-            drawDot(-offset, offset);
-            drawDot(offset, offset);
-        }
-        ctx.restore();
+        drawDice3D(canvas, num, angle);
     }
 
     function runDiceGame(bet) {
         const mode = document.getElementById('dice-bet-mode').value;
         const board = document.getElementById('my-isolated-board');
+        
         board.innerHTML = `
-            <h4 style="color:var(--primary); margin-bottom:8px;">🎲 ダイスロール中...</h4>
-            <canvas id="dice-canvas" width="100" height="100" style="display:block; margin:10px auto; background:transparent;"></canvas>
+            <h4 id="dice-status-label" style="color:var(--primary); margin-bottom:8px; text-align:center;">
+                👇 ダイスをスワイプ（フリック）またはクリックして振ってください！
+            </h4>
+            <div id="dice-3d-container" style="width:100%; height:180px; position:relative; background:rgba(0,0,0,0.25); border-radius:12px; border:2px dashed #2f4553; overflow:hidden; cursor:grab; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                <canvas id="dice-canvas" style="width:100%; height:100%; display:block;"></canvas>
+            </div>
         `;
-        let ticks = 0;
-        let angle = 0;
-        let roll = 1;
-        const maxTicks = 20;
-        function rollTick() {
-            roll = 1 + Math.floor(Math.random() * 6);
-            angle += 0.3;
-            drawDice(roll, angle);
-            ticks++;
-            if (ticks < maxTicks) { setTimeout(rollTick, 60); }
-            else { finishDiceGame(bet, mode, roll); }
+        
+        const canvas = document.getElementById('dice-canvas');
+        canvas.width = canvas.clientWidth || 240;
+        canvas.height = canvas.clientHeight || 180;
+        
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, canvas.width / canvas.height, 0.1, 20);
+        camera.position.set(0, 5, 6);
+        camera.lookAt(0, 0.5, 0);
+        
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+        renderer.setSize(canvas.width, canvas.height);
+        renderer.setPixelRatio(window.devicePixelRatio || 1);
+        
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+        dirLight.position.set(5, 10, 5);
+        scene.add(dirLight);
+        
+        const pointLight = new THREE.PointLight(0x00e701, 1.0, 10);
+        pointLight.position.set(0, 4, 0);
+        scene.add(pointLight);
+        
+        const diceTextures = createDiceTextures();
+        const materials = [
+            new THREE.MeshStandardMaterial({ map: diceTextures[3], roughness: 0.2, metalness: 0.1 }), // +X (4)
+            new THREE.MeshStandardMaterial({ map: diceTextures[2], roughness: 0.2, metalness: 0.1 }), // -X (3)
+            new THREE.MeshStandardMaterial({ map: diceTextures[1], roughness: 0.2, metalness: 0.1 }), // +Y (2)
+            new THREE.MeshStandardMaterial({ map: diceTextures[4], roughness: 0.2, metalness: 0.1 }), // -Y (5)
+            new THREE.MeshStandardMaterial({ map: diceTextures[0], roughness: 0.2, metalness: 0.1 }), // +Z (1)
+            new THREE.MeshStandardMaterial({ map: diceTextures[5], roughness: 0.2, metalness: 0.1 })  // -Z (6)
+        ];
+        
+        const geom = new THREE.BoxGeometry(1.0, 1.0, 1.0);
+        const dice = new THREE.Mesh(geom, materials);
+        scene.add(dice);
+        
+        dice.position.set(0, 0.5, 0);
+        
+        let pos = new THREE.Vector3(0, 0.5, 0);
+        let vel = new THREE.Vector3(0, 0, 0);
+        let angVel = new THREE.Vector3(0.01, 0.015, 0.005);
+        
+        let isDragging = false;
+        let isRolled = false;
+        let startX = 0, startY = 0, startTime = 0;
+        let prevX = 0, prevY = 0;
+        
+        const xLimit = 2.2;
+        const zLimit = 1.6;
+        const floorY = 0.5;
+        const gravity = 0.18;
+        const bounce = 0.55;
+        
+        function render() {
+            renderer.render(scene, camera);
         }
-        rollTick();
+        
+        let animId;
+        function tickIdle() {
+            if (!document.getElementById('dice-canvas')) return;
+            if (!isDragging && !isRolled) {
+                dice.rotation.x += angVel.x;
+                dice.rotation.y += angVel.y;
+                dice.rotation.z += angVel.z;
+                render();
+                animId = requestAnimationFrame(tickIdle);
+            }
+        }
+        tickIdle();
+        
+        let rollVal = 1;
+        let rollStartTime = 0;
+        const rollDuration = 1600;
+        
+        function tickRoll(timestamp) {
+            if (!document.getElementById('dice-canvas')) return;
+            if (!rollStartTime) rollStartTime = timestamp;
+            const elapsed = timestamp - rollStartTime;
+            
+            if (elapsed < rollDuration) {
+                vel.y -= gravity;
+                pos.add(vel);
+                
+                dice.rotation.x += angVel.x;
+                dice.rotation.y += angVel.y;
+                dice.rotation.z += angVel.z;
+                
+                if (pos.y < floorY) {
+                    pos.y = floorY;
+                    vel.y = -vel.y * bounce;
+                    vel.x *= 0.8;
+                    vel.z *= 0.8;
+                    angVel.x += (Math.random() - 0.5) * 0.4;
+                    angVel.y += (Math.random() - 0.5) * 0.4;
+                    angVel.z += (Math.random() - 0.5) * 0.4;
+                }
+                
+                if (pos.x > xLimit) { pos.x = xLimit; vel.x = -vel.x * bounce; }
+                if (pos.x < -xLimit) { pos.x = -xLimit; vel.x = -vel.x * bounce; }
+                if (pos.z > zLimit) { pos.z = zLimit; vel.z = -vel.z * bounce; }
+                if (pos.z < -zLimit) { pos.z = -zLimit; vel.z = -vel.z * bounce; }
+                
+                dice.position.copy(pos);
+                
+                if (elapsed > rollDuration - 500) {
+                    const t = (elapsed - (rollDuration - 500)) / 500;
+                    pos.lerp(new THREE.Vector3(0, floorY, 0), t * 0.15);
+                    dice.position.copy(pos);
+                    
+                    let rx = 0, ry = 0, rz = 0;
+                    if (rollVal === 1) { rx = -Math.PI / 2; }
+                    else if (rollVal === 2) { rx = 0; }
+                    else if (rollVal === 3) { rz = -Math.PI / 2; }
+                    else if (rollVal === 4) { rz = Math.PI / 2; }
+                    else if (rollVal === 5) { rx = Math.PI; }
+                    else if (rollVal === 6) { rx = Math.PI / 2; }
+                    
+                    const targetQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, dice.rotation.y, rz));
+                    dice.quaternion.slerp(targetQuat, t * 0.2);
+                }
+                
+                render();
+                requestAnimationFrame(tickRoll);
+            } else {
+                let rx = 0, ry = 0, rz = 0;
+                if (rollVal === 1) { rx = -Math.PI / 2; }
+                else if (rollVal === 2) { rx = 0; }
+                else if (rollVal === 3) { rz = -Math.PI / 2; }
+                else if (rollVal === 4) { rz = Math.PI / 2; }
+                else if (rollVal === 5) { rx = Math.PI; }
+                else if (rollVal === 6) { rx = Math.PI / 2; }
+                dice.rotation.set(rx, dice.rotation.y, rz);
+                dice.position.set(0, floorY, 0);
+                render();
+                finishDiceGame(bet, mode, rollVal);
+            }
+        }
+        
+        function triggerRoll(vx, vy) {
+            cleanupEvents();
+            cancelAnimationFrame(animId);
+            isRolled = true;
+            document.getElementById('dice-status-label').innerText = "🎲 ダイスロール中...";
+            
+            rollVal = 1 + Math.floor(Math.random() * 6);
+            
+            vel.x = vx * 0.08;
+            vel.y = Math.min(2.5, Math.max(1.2, Math.abs(vy) * 0.1));
+            vel.z = -vy * 0.06;
+            
+            if (vel.length() < 0.2) {
+                vel.x = (Math.random() - 0.5) * 0.8;
+                vel.y = 1.5 + Math.random() * 0.5;
+                vel.z = (Math.random() - 0.5) * 0.8;
+            }
+            
+            angVel.x = (Math.random() - 0.5) * 1.5;
+            angVel.y = (Math.random() - 0.5) * 1.5;
+            angVel.z = (Math.random() - 0.5) * 1.5;
+            
+            requestAnimationFrame(tickRoll);
+        }
+        
+        const container = document.getElementById('dice-3d-container');
+        
+        function onStart(e) {
+            if (isRolled) return;
+            isDragging = true;
+            container.style.cursor = 'grabbing';
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            startX = clientX;
+            startY = clientY;
+            prevX = clientX;
+            prevY = clientY;
+            startTime = performance.now();
+        }
+        
+        function onMove(e) {
+            if (!isDragging || isRolled) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const dx = clientX - prevX;
+            const dy = clientY - prevY;
+            
+            dice.rotation.y += dx * 0.01;
+            dice.rotation.x += dy * 0.01;
+            render();
+            
+            prevX = clientX;
+            prevY = clientY;
+        }
+        
+        function onEnd(e) {
+            if (!isDragging || isRolled) return;
+            isDragging = false;
+            container.style.cursor = 'grab';
+            
+            const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+            const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+            
+            const dx = clientX - startX;
+            const dy = clientY - startY;
+            const dt = performance.now() - startTime;
+            
+            const vx = dx / Math.max(10, dt);
+            const vy = dy / Math.max(10, dt);
+            
+            triggerRoll(vx, vy);
+        }
+        
+        function cleanupEvents() {
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('mouseup', onEnd);
+            window.removeEventListener('touchmove', onMove);
+            window.removeEventListener('touchend', onEnd);
+        }
+        
+        container.addEventListener('mousedown', onStart);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+        
+        container.addEventListener('touchstart', onStart, { passive: true });
+        window.addEventListener('touchmove', onMove, { passive: false });
+        window.addEventListener('touchend', onEnd, { passive: true });
     }
 
     async function finishDiceGame(bet, mode, roll) {
@@ -3848,47 +4293,12 @@
         // 結果表示用キャンバスに最終結果を描画
         const newCanvas = document.getElementById('dice-result-canvas');
         if (newCanvas) {
-            const ctx = newCanvas.getContext('2d');
-            drawDiceOnContext(ctx, roll, 0);
+            drawDice3D(newCanvas, roll, 0);
         }
 
         if(isWin) {
             await changeBalance(bet * multiplier, "ダイス勝利");
         }
-    }
-
-    function drawDiceOnContext(ctx, num, angle) {
-        const cx = 50, cy = 50, size = 60;
-        ctx.clearRect(0,0,100,100);
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(angle);
-        ctx.fillStyle = '#ffffff';
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = 'rgba(255,255,255,0.5)';
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(-size/2, -size/2, size, size, 8);
-        else ctx.rect(-size/2, -size/2, size, size);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = '#333333';
-        const offset = size / 4;
-        const dotR = size / 10;
-        function drawDot(x, y) { ctx.beginPath(); ctx.arc(x, y, dotR, 0, Math.PI*2); ctx.fill(); }
-        if (num === 1) { ctx.fillStyle = '#e74c3c'; drawDot(0, 0); }
-        else if (num === 2) { drawDot(-offset, -offset); drawDot(offset, offset); }
-        else if (num === 3) { drawDot(-offset, -offset); drawDot(0, 0); drawDot(offset, offset); }
-        else if (num === 4) { drawDot(-offset, -offset); drawDot(offset, -offset); drawDot(-offset, offset); drawDot(offset, offset); }
-        else if (num === 5) { drawDot(-offset, -offset); drawDot(offset, -offset); drawDot(0, 0); drawDot(-offset, offset); drawDot(offset, offset); }
-        else if (num === 6) { drawDot(-offset, -offset); drawDot(offset, -offset); drawDot(-offset, 0); drawDot(offset, 0); drawDot(-offset, offset); drawDot(offset, offset); }
-        ctx.restore();
-    }
-
-    function drawDice(num, angle) {
-        const canvas = document.getElementById('dice-canvas');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        drawDiceOnContext(ctx, num, angle);
     }
 
     // --- 📈 ハイロー ---
