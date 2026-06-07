@@ -3174,7 +3174,7 @@
             board.innerHTML = `
                 <h4 style="color:var(--gold); margin-bottom:8px;">🎡 ルーレット賭け先選択</h4>
                 <div class="roulette-container" style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 10px 0;">
-                    <canvas id="roulette-canvas" width="200" height="200" style="background: #0a1118; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: 4px solid #2f4553;"></canvas>
+                    <canvas id="roulette-canvas" width="240" height="240" style="background: #0a1118; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: 4px solid #2f4553;"></canvas>
                     <div class="roulette-bet-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; width: 100%; margin-top: 10px;">
                         <button class="roulette-spot-btn" onclick="selectRouletteSpot('red')" style="background: var(--bg-input); border: 2px solid #2f4553; color: white; padding: 8px 4px; font-size: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; text-align: center;">🔴 赤 (2x)</button>
                         <button class="roulette-spot-btn" onclick="selectRouletteSpot('black')" style="background: var(--bg-input); border: 2px solid #2f4553; color: white; padding: 8px 4px; font-size: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; text-align: center;">⚫ 黒 (2x)</button>
@@ -3328,119 +3328,184 @@
         const totalSlices = numbers.length;
         const sliceAngle = (2 * Math.PI) / totalSlices;
         
-        // Draw outer gold ring
+        // Draw polished gold outer ring
+        const outerGrad = ctx.createRadialGradient(cx, cy, radius - 15, cx, cy, radius);
+        outerGrad.addColorStop(0, '#d4af37');
+        outerGrad.addColorStop(0.5, '#fff3a8');
+        outerGrad.addColorStop(1, '#aa7c11');
         ctx.beginPath();
         ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-        ctx.fillStyle = '#f39c12';
+        ctx.fillStyle = outerGrad;
         ctx.fill();
         
         // Draw slices
         for (let i = 0; i < totalSlices; i++) {
-            const startA = i * sliceAngle; // no offset to match original canvas layout
+            const startA = i * sliceAngle;
             const endA = startA + sliceAngle;
             
             ctx.beginPath();
             ctx.moveTo(cx, cy);
-            ctx.arc(cx, cy, radius - 8, startA, endA);
+            ctx.arc(cx, cy, radius - 12, startA, endA);
             ctx.closePath();
             
             const num = numbers[i];
             if (num === 0) {
-                ctx.fillStyle = '#27ae60';
+                // Shiny green segment
+                const greenGrad = ctx.createRadialGradient(cx, cy, 100, cx, cy, radius - 12);
+                greenGrad.addColorStop(0, '#1e824c');
+                greenGrad.addColorStop(1, '#27ae60');
+                ctx.fillStyle = greenGrad;
             } else if ([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(num)) {
-                ctx.fillStyle = '#fe2247';
+                // Shiny red segment
+                const redGrad = ctx.createRadialGradient(cx, cy, 100, cx, cy, radius - 12);
+                redGrad.addColorStop(0, '#b3001e');
+                redGrad.addColorStop(1, '#fe2247');
+                ctx.fillStyle = redGrad;
             } else {
-                ctx.fillStyle = '#111111';
+                // Shiny black segment
+                const blackGrad = ctx.createRadialGradient(cx, cy, 100, cx, cy, radius - 12);
+                blackGrad.addColorStop(0, '#0a0a0a');
+                blackGrad.addColorStop(1, '#222222');
+                ctx.fillStyle = blackGrad;
             }
             ctx.fill();
             
-            // Draw inner dividers
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 1;
+            // Draw clean gold divider lines
+            ctx.strokeStyle = 'rgba(212, 175, 55, 0.4)';
+            ctx.lineWidth = 1.5;
             ctx.stroke();
             
-            // Draw numbers
+            // Draw numbers rotated elegantly
             ctx.save();
             ctx.translate(cx, cy);
             ctx.rotate(startA + sliceAngle / 2);
             ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 16px Helvetica';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+            ctx.shadowBlur = 4;
+            ctx.font = 'bold 18px "Georgia", serif';
             ctx.textAlign = 'right';
-            ctx.fillText(num.toString(), radius - 20, 6);
+            ctx.textBaseline = 'middle';
+            ctx.fillText(num.toString(), radius - 26, 0);
             ctx.restore();
         }
         
-        // Draw center gold circle
+        // Draw inner gold ring border
+        ctx.beginPath();
+        ctx.arc(cx, cy, 160, 0, Math.PI * 2);
+        ctx.strokeStyle = '#d4af37';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        // Draw central gold circle
+        const innerGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 80);
+        innerGrad.addColorStop(0, '#fff3a8');
+        innerGrad.addColorStop(0.7, '#d4af37');
+        innerGrad.addColorStop(1, '#aa7c11');
         ctx.beginPath();
         ctx.arc(cx, cy, 80, 0, Math.PI * 2);
-        ctx.fillStyle = '#f39c12';
+        ctx.fillStyle = innerGrad;
         ctx.fill();
         
-        return new THREE.CanvasTexture(canvas);
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.anisotropy = 4;
+        return tex;
     }
 
     function initThreeRoulette(canvas) {
         const scene = new THREE.Scene();
         
-        // Perspective camera with tilted view
-        const camera = new THREE.PerspectiveCamera(45, canvas.width / canvas.height, 0.1, 100);
-        camera.position.set(0, 5.0, 5.0);
-        camera.lookAt(0, 0, 0);
+        const camera = new THREE.PerspectiveCamera(40, canvas.width / canvas.height, 0.1, 100);
+        camera.position.set(0, 4.0, 4.0);
+        camera.lookAt(0, -0.2, 0);
         
         const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
         renderer.setSize(canvas.width, canvas.height);
         renderer.setPixelRatio(window.devicePixelRatio || 1);
         
-        // Lights
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
         scene.add(ambientLight);
         
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
         dirLight.position.set(3, 8, 3);
         scene.add(dirLight);
         
-        const pointLight = new THREE.PointLight(0xffffff, 0.5, 10);
-        pointLight.position.set(0, 2, 0);
-        scene.add(pointLight);
+        const spotLight = new THREE.SpotLight(0xffffff, 0.7, 15, Math.PI / 6, 0.5, 1);
+        spotLight.position.set(0, 4, 0);
+        scene.add(spotLight);
 
-        // Roulette Wheel Texture
         const rouletteTexture = createRouletteTexture();
         
-        // Cylinder geometry for 3D wheel
-        const wheelGeom = new THREE.CylinderGeometry(2, 2, 0.3, 64);
-        const sideMat = new THREE.MeshStandardMaterial({ color: 0x1e272c, metalness: 0.8, roughness: 0.2 });
-        const topMat = new THREE.MeshStandardMaterial({ map: rouletteTexture, roughness: 0.3, metalness: 0.15 });
-        const bottomMat = new THREE.MeshStandardMaterial({ color: 0x0a1118 });
+        const wheelGeom = new THREE.CylinderGeometry(2, 2, 0.35, 64);
+        const sideMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9, roughness: 0.15 });
+        const topMat = new THREE.MeshStandardMaterial({ map: rouletteTexture, roughness: 0.2, metalness: 0.15 });
+        const bottomMat = new THREE.MeshStandardMaterial({ color: 0x0f0f0f });
         
         const wheel = new THREE.Mesh(wheelGeom, [sideMat, topMat, bottomMat]);
         scene.add(wheel);
         
         // Spindle (rotating central turret)
         const spindleGroup = new THREE.Group();
-        const coneGeom = new THREE.ConeGeometry(0.3, 0.5, 32);
+        const coneGeom = new THREE.ConeGeometry(0.25, 0.5, 32);
         const goldMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9, roughness: 0.1 });
         const cone = new THREE.Mesh(coneGeom, goldMat);
-        cone.position.y = 0.25;
+        cone.position.y = 0.28;
         spindleGroup.add(cone);
         
-        const sphereGeom = new THREE.SphereGeometry(0.12, 16, 16);
+        const sphereGeom = new THREE.SphereGeometry(0.1, 16, 16);
         const sphere = new THREE.Mesh(sphereGeom, goldMat);
-        sphere.position.y = 0.5;
+        sphere.position.y = 0.53;
         spindleGroup.add(sphere);
         
+        // Add 4 premium spokes/handles pointing out
+        const handleGroup = new THREE.Group();
+        for (let i = 0; i < 4; i++) {
+            const spokeAngle = (i * Math.PI) / 2;
+            const spoke = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.5, 8), goldMat);
+            spoke.rotation.x = Math.PI / 2;
+            spoke.rotation.y = spokeAngle;
+            spoke.position.x = 0.22 * Math.cos(spokeAngle);
+            spoke.position.z = 0.22 * Math.sin(spokeAngle);
+            spoke.position.y = 0.32;
+            
+            const tip = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), goldMat);
+            tip.position.x = 0.45 * Math.cos(spokeAngle);
+            tip.position.z = 0.45 * Math.sin(spokeAngle);
+            tip.position.y = 0.32;
+            
+            handleGroup.add(spoke);
+            handleGroup.add(tip);
+        }
+        spindleGroup.add(handleGroup);
         wheel.add(spindleGroup);
         
-        // Outer rim (does not rotate)
-        const rimGeom = new THREE.TorusGeometry(2.05, 0.08, 16, 100);
-        const rimMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9, roughness: 0.1 });
-        const rim = new THREE.Mesh(rimGeom, rimMat);
-        rim.rotation.x = Math.PI / 2;
-        rim.position.y = 0.1;
-        scene.add(rim);
+        // Mahogany Wood Outer Rim (does not rotate)
+        const woodRimGeom = new THREE.TorusGeometry(2.18, 0.12, 16, 100);
+        const woodRimMat = new THREE.MeshStandardMaterial({ color: 0x3d1a04, roughness: 0.08, metalness: 0.05 });
+        const woodRim = new THREE.Mesh(woodRimGeom, woodRimMat);
+        woodRim.rotation.x = Math.PI / 2;
+        woodRim.position.y = 0.12;
+        scene.add(woodRim);
         
-        // Ball
-        const ballGeom = new THREE.SphereGeometry(0.08, 16, 16);
-        const ballMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0.1 });
+        // Silver Inner Rim/Track (does not rotate)
+        const silverRimGeom = new THREE.TorusGeometry(2.03, 0.04, 16, 100);
+        const silverRimMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9, roughness: 0.05 });
+        const silverRim = new THREE.Mesh(silverRimGeom, silverRimMat);
+        silverRim.rotation.x = Math.PI / 2;
+        silverRim.position.y = 0.12;
+        scene.add(silverRim);
+        
+        // Golden Needle Pointer (fixed at 12 o'clock pointing down at the wheel)
+        const needleGeom = new THREE.ConeGeometry(0.05, 0.15, 4);
+        const needleMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.85, roughness: 0.15 });
+        const needle = new THREE.Mesh(needleGeom, needleMat);
+        needle.position.set(0, 0.18, -2.05);
+        needle.rotation.x = Math.PI / 2;
+        needle.rotation.z = Math.PI;
+        scene.add(needle);
+        
+        // Polished Ivory Ball
+        const ballGeom = new THREE.SphereGeometry(0.075, 32, 32);
+        const ballMat = new THREE.MeshStandardMaterial({ color: 0xfffdf2, roughness: 0.05, metalness: 0.15 });
         const ball = new THREE.Mesh(ballGeom, ballMat);
         scene.add(ball);
         
@@ -3458,7 +3523,7 @@
         const inst = canvas.threeInstance;
         if (!inst) return;
         
-        // Rotate wheel
+        // Rotate wheel clockwise (negative Y rotation)
         inst.wheel.rotation.y = -angle;
         
         const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
@@ -3466,32 +3531,49 @@
         const sliceAngle = (2 * Math.PI) / totalSlices;
         
         if (ballProgress === null) {
-            // Static/idle mode: ball sits in 0 slot
-            const targetWorldAngle = -angle + (0 * sliceAngle + sliceAngle / 2);
-            const radius = 1.7;
+            // Static/idle mode: ball sits in the pocket of the winningIndex from the previous spin
+            const winIdx = winningIndex || 0;
+            const slotLocalAngle = winIdx * sliceAngle + sliceAngle / 2;
+            const targetWorldAngle = slotLocalAngle + angle;
+            const radius = 1.65;
             inst.ball.position.x = radius * Math.cos(targetWorldAngle);
             inst.ball.position.z = radius * Math.sin(targetWorldAngle);
-            inst.ball.position.y = 0.18;
+            inst.ball.position.y = 0.16;
         } else {
             // Spin mode
-            const totalRots = 8;
-            const ballStartAngle = 0;
+            const totalRots = 7;
             const progress = ballProgress;
             const blend = Math.pow(progress, 3.5);
             
-            // Decaying free ball angle: ease-out progression (starts fast, slows down gradually)
+            // Decaying free ball angle: ease-out progression (spins counter-clockwise, positive angle)
             const easeOutProgress = 1 - Math.pow(1 - progress, 2.2);
-            const freeAngle = ballStartAngle + easeOutProgress * totalRots * 2 * Math.PI;
+            const freeAngle = 0 + easeOutProgress * totalRots * 2 * Math.PI;
             
-            // Universal target slot world angle formula (guarantees ball lands under the needle at finalAngle)
-            const finalAngle = inst.finalAngle || 0;
-            const slotWorldAngle = -angle + finalAngle - Math.PI / 2;
+            // Target slot world angle: slotLocalAngle + angle
+            const slotLocalAngle = winningIndex * sliceAngle + sliceAngle / 2;
+            const slotWorldAngle = slotLocalAngle + angle;
             
-            const ballAngle = (1 - blend) * freeAngle + blend * slotWorldAngle;
+            // Unwrap targetBallAngle relative to freeAngle to make the transition perfectly smooth
+            let targetBallAngle = slotWorldAngle;
+            while (targetBallAngle < freeAngle - Math.PI) {
+                targetBallAngle += 2 * Math.PI;
+            }
+            while (targetBallAngle > freeAngle + Math.PI) {
+                targetBallAngle -= 2 * Math.PI;
+            }
             
-            // Decaying radius and height
-            const ballRadius = 1.95 - blend * (1.95 - 1.7);
-            const ballHeight = 0.28 - blend * (0.28 - 0.18);
+            let ballAngle = (1 - blend) * freeAngle + blend * targetBallAngle;
+            let ballRadius = 1.95 - blend * (1.95 - 1.65);
+            let ballHeight = 0.28 - blend * (0.28 - 0.16);
+            
+            // Bouncing effect as the ball lands and settles in the pocket
+            if (progress > 0.82) {
+                const bounceT = (progress - 0.82) / 0.18;
+                const bounceAmp = Math.sin(bounceT * Math.PI * 4.5) * 0.08 * Math.pow(1 - bounceT, 1.8);
+                ballRadius += bounceAmp * 0.6;
+                ballHeight += Math.abs(bounceAmp) * 0.8;
+                ballAngle += bounceAmp * 0.15;
+            }
             
             inst.ball.position.x = ballRadius * Math.cos(ballAngle);
             inst.ball.position.z = ballRadius * Math.sin(ballAngle);
@@ -3530,7 +3612,7 @@
                 <div style="font-size:14px; font-weight:bold; color:var(--gold);">${betDisplay} に ￥${bet.toLocaleString()}</div>
             </div>
             <h4 style="color:var(--gold); margin-bottom:8px;">🎡 ルーレットスピン中...</h4>
-            <canvas id="roulette-canvas" width="200" height="200" style="background:#0a1118; border-radius:50%; border:4px solid #2f4553; display:block; margin:0 auto;"></canvas>
+            <canvas id="roulette-canvas" width="240" height="240" style="background:#0a1118; border-radius:50%; border:4px solid #2f4553; display:block; margin:0 auto;"></canvas>
             <div id="roulette-result-text" style="font-size:14px; font-weight:bold; color:#fff; text-align:center; margin-top:10px;"></div>
         `;
         
@@ -3552,9 +3634,10 @@
         const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
         const totalSlices = numbers.length;
         const sliceAngle = (2 * Math.PI) / totalSlices;
-        const normalizedAngle = (2 * Math.PI - (finalAngle % (2 * Math.PI))) % (2 * Math.PI);
-        const needleAngle = (normalizedAngle - Math.PI / 2 + 2 * Math.PI) % (2 * Math.PI);
-        const winningIndex = Math.floor(needleAngle / sliceAngle) % totalSlices;
+        
+        // Clockwise wheel alignment needle calculation
+        const targetLocalAngle = (3 * Math.PI / 2 - finalAngle + 12 * Math.PI) % (2 * Math.PI);
+        const winningIndex = Math.floor(targetLocalAngle / sliceAngle) % totalSlices;
 
         let step = 0;
         function spin() {
@@ -3574,9 +3657,9 @@
         const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
         const totalSlices = numbers.length;
         const sliceAngle = (2 * Math.PI) / totalSlices;
-        const normalizedAngle = (2 * Math.PI - (finalAngle % (2 * Math.PI))) % (2 * Math.PI);
-        const needleAngle = (normalizedAngle - Math.PI / 2 + 2 * Math.PI) % (2 * Math.PI);
-        const winningIndex = Math.floor(needleAngle / sliceAngle) % totalSlices;
+        
+        const targetLocalAngle = (3 * Math.PI / 2 - finalAngle + 12 * Math.PI) % (2 * Math.PI);
+        const winningIndex = Math.floor(targetLocalAngle / sliceAngle) % totalSlices;
         const rolledNumber = numbers[winningIndex];
         const isRed = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(rolledNumber);
         const isBlack = rolledNumber !== 0 && !isRed;
@@ -3641,63 +3724,254 @@
 
     function createCardTexture(suit, rank, isRed) {
         const canvas = document.createElement('canvas');
-        canvas.width = 128;
-        canvas.height = 192;
+        canvas.width = 256;
+        canvas.height = 384;
         const ctx = canvas.getContext('2d');
         
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, 128, 192);
-        ctx.strokeStyle = '#2f4553';
-        ctx.lineWidth = 4;
-        ctx.strokeRect(0, 0, 128, 192);
+        ctx.fillRect(0, 0, 256, 384);
+        
+        // Polished border
+        ctx.strokeStyle = '#1a2c38';
+        ctx.lineWidth = 8;
+        ctx.strokeRect(0, 0, 256, 384);
         
         ctx.fillStyle = isRed ? '#fe2247' : '#111111';
-        ctx.font = 'bold 24px Helvetica';
-        ctx.fillText(`${suit}${rank}`, 10, 30);
+        ctx.font = 'bold 44px Helvetica';
+        ctx.fillText(`${suit}${rank}`, 20, 55);
         
         ctx.save();
-        ctx.translate(128, 192);
+        ctx.translate(256, 384);
         ctx.rotate(Math.PI);
-        ctx.fillText(`${suit}${rank}`, 10, 30);
+        ctx.fillText(`${suit}${rank}`, 20, 55);
         ctx.restore();
         
-        ctx.font = 'bold 64px Helvetica';
+        ctx.font = 'bold 120px Helvetica';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(suit, 64, 96);
+        ctx.fillText(suit, 128, 192);
         
         return new THREE.CanvasTexture(canvas);
     }
 
     function createCardBackTexture() {
         const canvas = document.createElement('canvas');
-        canvas.width = 128;
-        canvas.height = 192;
+        canvas.width = 256;
+        canvas.height = 384;
         const ctx = canvas.getContext('2d');
         
-        const grad = ctx.createLinearGradient(0, 0, 128, 192);
-        grad.addColorStop(0, '#fe2247');
-        grad.addColorStop(1, '#960018');
+        const grad = ctx.createLinearGradient(0, 0, 256, 384);
+        grad.addColorStop(0, '#b3001e');
+        grad.addColorStop(0.5, '#fe2247');
+        grad.addColorStop(1, '#66000e');
         ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 128, 192);
+        ctx.fillRect(0, 0, 256, 384);
         
-        ctx.strokeStyle = '#f39c12';
-        ctx.lineWidth = 6;
-        ctx.strokeRect(8, 8, 112, 176);
-        
-        ctx.strokeStyle = 'rgba(243,156,18,0.3)';
+        // Gold double border
+        ctx.strokeStyle = '#d4af37';
+        ctx.lineWidth = 10;
+        ctx.strokeRect(16, 16, 224, 352);
         ctx.lineWidth = 2;
-        for (let i = -192; i < 128; i += 20) {
+        ctx.strokeRect(26, 26, 204, 332);
+        
+        // Geometric diamond pattern
+        ctx.strokeStyle = 'rgba(212, 175, 55, 0.25)';
+        ctx.lineWidth = 3;
+        for (let i = -384; i < 256; i += 30) {
             ctx.beginPath();
             ctx.moveTo(i, 0);
-            ctx.lineTo(i + 192, 192);
+            ctx.lineTo(i + 384, 384);
             ctx.stroke();
             
             ctx.beginPath();
-            ctx.moveTo(i + 192, 0);
-            ctx.lineTo(i, 192);
+            ctx.moveTo(i + 384, 0);
+            ctx.lineTo(i, 384);
             ctx.stroke();
         }
+        
+        return new THREE.CanvasTexture(canvas);
+    }
+
+    function createDealerTorsoTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        
+        // Base is white (shirt)
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 256, 512);
+        
+        // Cute waistcoat/vest with a deep V-neck
+        ctx.fillStyle = '#1e1c24'; // dark navy/black vest
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(85, 0);
+        ctx.lineTo(60, 240); // Deep V-neck left
+        ctx.lineTo(110, 512);
+        ctx.lineTo(0, 512);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.moveTo(256, 0);
+        ctx.lineTo(171, 0);
+        ctx.lineTo(196, 240); // Deep V-neck right
+        ctx.lineTo(146, 512);
+        ctx.lineTo(256, 512);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Cute golden buttons
+        ctx.fillStyle = '#d4af37';
+        for (let y = 280; y <= 460; y += 70) {
+            ctx.beginPath();
+            ctx.arc(128, y, 7, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Cute pink ribbon (instead of a bow tie)
+        ctx.fillStyle = '#ff4d79';
+        // Left bow
+        ctx.beginPath();
+        ctx.moveTo(128, 90);
+        ctx.lineTo(95, 75);
+        ctx.lineTo(95, 115);
+        ctx.closePath();
+        ctx.fill();
+        // Right bow
+        ctx.beginPath();
+        ctx.moveTo(128, 90);
+        ctx.lineTo(161, 75);
+        ctx.lineTo(161, 115);
+        ctx.closePath();
+        ctx.fill();
+        // Ribbon center knot
+        ctx.fillStyle = '#e60040';
+        ctx.beginPath();
+        ctx.arc(128, 90, 8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Golden staff name tag with "SAKURA" name
+        ctx.fillStyle = '#d4af37';
+        ctx.fillRect(30, 200, 45, 16);
+        ctx.fillStyle = '#111113';
+        ctx.font = 'bold 8px Helvetica';
+        ctx.textAlign = 'center';
+        ctx.fillText("SAKURA", 52, 211);
+        
+        return new THREE.CanvasTexture(canvas);
+    }
+
+    function createDealerFaceTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+        
+        // Fair porcelain/peach skin tone
+        ctx.fillStyle = '#ffece0';
+        ctx.fillRect(0, 0, 256, 256);
+        
+        const eyeY = 112;
+        const eyeSpacing = 44;
+        
+        // Eyebrows (soft, cute brown thin lines)
+        ctx.strokeStyle = '#5a3d28';
+        ctx.lineWidth = 3.5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(128 - eyeSpacing, eyeY - 14, 15, Math.PI * 1.15, Math.PI * 1.75);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(128 + eyeSpacing, eyeY - 14, 15, Math.PI * 1.25, Math.PI * 1.85);
+        ctx.stroke();
+        
+        // Eyes (Anime style)
+        // White sclera
+        ctx.fillStyle = '#ffffff';
+        // Left eye
+        ctx.beginPath();
+        ctx.ellipse(128 - eyeSpacing, eyeY, 20, 14, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#2b1d12';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        // Right eye
+        ctx.beginPath();
+        ctx.ellipse(128 + eyeSpacing, eyeY, 20, 14, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Large brown iris
+        ctx.fillStyle = '#663c20'; // Warm chestnut brown
+        ctx.beginPath();
+        ctx.ellipse(128 - eyeSpacing, eyeY, 13, 13, 0, 0, Math.PI * 2);
+        ctx.ellipse(128 + eyeSpacing, eyeY, 13, 13, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Inner black pupil
+        ctx.fillStyle = '#1d120a';
+        ctx.beginPath();
+        ctx.ellipse(128 - eyeSpacing, eyeY, 7, 7, 0, 0, Math.PI * 2);
+        ctx.ellipse(128 + eyeSpacing, eyeY, 7, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Sparkle highlights (multiple white dots for anime look)
+        ctx.fillStyle = '#ffffff';
+        // Main sparkle
+        ctx.beginPath();
+        ctx.arc(128 - eyeSpacing - 4, eyeY - 4, 3.5, 0, Math.PI * 2);
+        ctx.arc(128 + eyeSpacing - 4, eyeY - 4, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        // Sub sparkle
+        ctx.beginPath();
+        ctx.arc(128 - eyeSpacing + 4, eyeY + 4, 1.8, 0, Math.PI * 2);
+        ctx.arc(128 + eyeSpacing + 4, eyeY + 4, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Eyelashes/Eyelids details
+        ctx.strokeStyle = '#2b1d12';
+        ctx.lineWidth = 3;
+        // Upper eyelash flick left
+        ctx.beginPath();
+        ctx.moveTo(128 - eyeSpacing - 18, eyeY - 6);
+        ctx.quadraticCurveTo(128 - eyeSpacing - 22, eyeY - 12, 128 - eyeSpacing - 16, eyeY - 14);
+        ctx.stroke();
+        // Upper eyelash flick right
+        ctx.beginPath();
+        ctx.moveTo(128 + eyeSpacing + 18, eyeY - 6);
+        ctx.quadraticCurveTo(128 + eyeSpacing + 22, eyeY - 12, 128 + eyeSpacing - 16, eyeY - 14);
+        ctx.stroke();
+        
+        // Cheeks (blush)
+        ctx.fillStyle = 'rgba(255, 105, 135, 0.4)';
+        ctx.beginPath();
+        ctx.arc(128 - eyeSpacing - 2, eyeY + 24, 13, 0, Math.PI * 2);
+        ctx.arc(128 + eyeSpacing + 2, eyeY + 24, 13, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Cute little nose (very soft dot)
+        ctx.fillStyle = '#e59d74';
+        ctx.beginPath();
+        ctx.arc(128, eyeY + 16, 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Smiling mouth (cherry pink)
+        ctx.fillStyle = '#ff6b8b';
+        ctx.beginPath();
+        ctx.arc(128, eyeY + 36, 16, 0, Math.PI);
+        ctx.closePath();
+        ctx.fill();
+        // Outline of mouth
+        ctx.strokeStyle = '#d92b50';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(128, eyeY + 36, 16, 0, Math.PI);
+        ctx.stroke();
+        // Teeth (white bar at top of mouth)
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(116, eyeY + 36, 24, 5);
         
         return new THREE.CanvasTexture(canvas);
     }
@@ -3705,30 +3979,32 @@
     function initThreeBj(canvas) {
         const scene = new THREE.Scene();
         
-        const camera = new THREE.PerspectiveCamera(40, canvas.width / canvas.height, 0.1, 100);
-        camera.position.set(0, 3.8, 4.0);
-        camera.lookAt(0, -0.4, -0.2);
+        // Move camera closer and at a better perspective to see the huge cards clearly
+        // Upgraded camera settings to display both the dealer's upper body/face and the cards on the table
+        const camera = new THREE.PerspectiveCamera(50, canvas.width / canvas.height, 0.1, 100);
+        camera.position.set(0, 2.7, 3.2);
+        camera.lookAt(0, 0.45, -0.65);
         
         const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
         renderer.setSize(canvas.width, canvas.height);
         renderer.setPixelRatio(window.devicePixelRatio || 1);
         
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
         scene.add(ambientLight);
         
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
         dirLight.position.set(0, 8, 2);
         scene.add(dirLight);
 
         // Green Felt Table top
         const tableGeom = new THREE.PlaneGeometry(8, 6);
-        const tableMat = new THREE.MeshStandardMaterial({ color: 0x073b1e, roughness: 0.8 });
+        const tableMat = new THREE.MeshStandardMaterial({ color: 0x054d24, roughness: 0.75 }); // Rich darker green
         const table = new THREE.Mesh(tableGeom, tableMat);
         table.rotation.x = -Math.PI / 2;
         table.position.y = 0;
         scene.add(table);
         
-        // Semicircular lines
+        // Golden betting line ring
         const lineGeom = new THREE.RingGeometry(2.0, 2.05, 32, 1, 0, Math.PI);
         const lineMat = new THREE.MeshBasicMaterial({ color: 0xd4af37, side: THREE.DoubleSide });
         const curvedLine = new THREE.Mesh(lineGeom, lineMat);
@@ -3736,78 +4012,99 @@
         curvedLine.position.set(0, 0.005, -1.5);
         scene.add(curvedLine);
         
-        // Shoe
-        const shoeGeom = new THREE.BoxGeometry(0.8, 0.4, 1.2);
-        const shoeMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.5, roughness: 0.3 });
+        // Larger Shoe to hold bigger cards
+        const shoeGeom = new THREE.BoxGeometry(1.1, 0.5, 1.6);
+        const shoeMat = new THREE.MeshStandardMaterial({ color: 0x151515, metalness: 0.6, roughness: 0.25 });
         const shoe = new THREE.Mesh(shoeGeom, shoeMat);
-        shoe.position.set(2.2, 0.2, -1.8);
+        shoe.position.set(2.4, 0.25, -1.8);
         shoe.rotation.y = -Math.PI / 6;
         scene.add(shoe);
         
         // 3D Humanoid Dealer
         const dealerGroup = new THREE.Group();
-        dealerGroup.position.set(0, 0, -2.4);
+        dealerGroup.position.set(0, 0, -2.5);
         
-        // Torso
-        const torsoGeom = new THREE.CylinderGeometry(0.35, 0.28, 1.0, 16);
-        const torsoMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
+        // Torso with waistcoat shirt texture
+        const torsoGeom = new THREE.CylinderGeometry(0.38, 0.3, 1.0, 32);
+        const torsoTexture = createDealerTorsoTexture();
+        const torsoMat = new THREE.MeshStandardMaterial({ map: torsoTexture, roughness: 0.4 });
         const torso = new THREE.Mesh(torsoGeom, torsoMat);
         torso.position.y = 0.5;
+        torso.rotation.y = Math.PI; // Face the camera
         dealerGroup.add(torso);
         
         // Collar
-        const collarGeom = new THREE.CylinderGeometry(0.18, 0.22, 0.1, 16);
+        const collarGeom = new THREE.CylinderGeometry(0.18, 0.21, 0.08, 16);
         const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
         const collar = new THREE.Mesh(collarGeom, whiteMat);
-        collar.position.y = 1.0;
+        collar.position.y = 1.02;
         dealerGroup.add(collar);
         
-        // Head
+        // Head with Face texture
         const headGeom = new THREE.SphereGeometry(0.22, 32, 32);
-        const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac, roughness: 0.6 });
-        const head = new THREE.Mesh(headGeom, skinMat);
+        const faceTexture = createDealerFaceTexture();
+        const headMat = new THREE.MeshStandardMaterial({ map: faceTexture, roughness: 0.5 });
+        const head = new THREE.Mesh(headGeom, headMat);
         head.position.y = 1.25;
+        head.rotation.y = Math.PI; // Face the camera
         dealerGroup.add(head);
         
-        // Hair
-        const hairGeom = new THREE.SphereGeometry(0.23, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
-        const hairMat = new THREE.MeshStandardMaterial({ color: 0x221100, roughness: 0.8 });
+        // Cute Japanese Anime style hairstyle
+        const hairMat = new THREE.MeshStandardMaterial({ color: 0x2b1d12, roughness: 0.85 }); // Dark chocolate brown hair
+        const hairGeom = new THREE.SphereGeometry(0.232, 32, 32, 0, Math.PI * 2, 0, Math.PI / 1.7);
         const hair = new THREE.Mesh(hairGeom, hairMat);
-        hair.position.y = 1.26;
+        hair.position.y = 1.28;
         hair.rotation.x = -Math.PI / 6;
         dealerGroup.add(hair);
         
-        // Bow tie
-        const tieGroup = new THREE.Group();
-        const tieGeom = new THREE.ConeGeometry(0.08, 0.15, 4);
-        const tie1 = new THREE.Mesh(tieGeom, torsoMat);
-        tie1.rotation.z = Math.PI / 2;
-        tie1.position.x = -0.06;
-        const tie2 = new THREE.Mesh(tieGeom, torsoMat);
-        tie2.rotation.z = -Math.PI / 2;
-        tie2.position.x = 0.06;
-        tieGroup.add(tie1);
-        tieGroup.add(tie2);
-        tieGroup.position.set(0, 0.95, 0.3);
-        dealerGroup.add(tieGroup);
+        // Hime-cut side hair locks
+        const sideLocksGeom = new THREE.BoxGeometry(0.04, 0.35, 0.08);
+        const lockR = new THREE.Mesh(sideLocksGeom, hairMat);
+        lockR.position.set(-0.21, 1.12, 0.08);
+        const lockL = new THREE.Mesh(sideLocksGeom, hairMat);
+        lockL.position.set(0.21, 1.12, 0.08);
+        dealerGroup.add(lockR);
+        dealerGroup.add(lockL);
+        
+        // Cute hair buns (O-dango style)
+        const bunGeom = new THREE.SphereGeometry(0.085, 16, 16);
+        const bunR = new THREE.Mesh(bunGeom, hairMat);
+        bunR.position.set(-0.19, 1.45, -0.06);
+        const bunL = new THREE.Mesh(bunGeom, hairMat);
+        bunL.position.set(0.19, 1.45, -0.06);
+        dealerGroup.add(bunR);
+        dealerGroup.add(bunL);
+        
+        // Cute pink hair ribbons
+        const ribbonGeom = new THREE.TorusGeometry(0.065, 0.018, 8, 16);
+        const ribbonMat = new THREE.MeshStandardMaterial({ color: 0xff4d79, roughness: 0.5, metalness: 0.1 });
+        const ribbonR = new THREE.Mesh(ribbonGeom, ribbonMat);
+        ribbonR.position.set(-0.19, 1.45, -0.06);
+        ribbonR.rotation.y = Math.PI / 4;
+        const ribbonL = new THREE.Mesh(ribbonGeom, ribbonMat);
+        ribbonL.position.set(0.19, 1.45, -0.06);
+        ribbonL.rotation.y = -Math.PI / 4;
+        dealerGroup.add(ribbonR);
+        dealerGroup.add(ribbonL);
         
         scene.add(dealerGroup);
         
-        // Shoulder
-        const shoulderR = new THREE.Vector3(0.45, 0.8, -2.2);
+        // IK Arm parameters (adjusted segment lengths to 0.95 to reach easily)
+        const shoulderR = new THREE.Vector3(0.5, 1.0, -2.3);
         const handRest = new THREE.Vector3(0.0, 0.2, -1.2);
         
-        const upperArmGeom = new THREE.CylinderGeometry(0.045, 0.045, 0.6, 8);
-        const lowerArmGeom = new THREE.CylinderGeometry(0.04, 0.04, 0.6, 8);
-        const sleeveMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
+        const upperArmGeom = new THREE.CylinderGeometry(0.05, 0.05, 0.95, 16);
+        const lowerArmGeom = new THREE.CylinderGeometry(0.042, 0.042, 0.95, 16);
+        const sleeveMat = new THREE.MeshStandardMaterial({ color: 0x111113, roughness: 0.45 });
+        const skinMat = new THREE.MeshStandardMaterial({ color: '#ffece0', roughness: 0.55 });
         
         const upperArm = new THREE.Mesh(upperArmGeom, sleeveMat);
         const lowerArm = new THREE.Mesh(lowerArmGeom, whiteMat);
-        const lowerArmSleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.042, 0.45, 8), sleeveMat);
-        lowerArmSleeve.position.y = -0.08;
+        const lowerArmSleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.75, 16), sleeveMat);
+        lowerArmSleeve.position.y = -0.1;
         lowerArm.add(lowerArmSleeve);
         
-        const handR = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 16), skinMat);
+        const handR = new THREE.Mesh(new THREE.SphereGeometry(0.075, 16, 16), skinMat);
         
         scene.add(upperArm);
         scene.add(lowerArm);
@@ -3826,7 +4123,9 @@
             handRest: handRest,
             cardBackTex: cardBackTex,
             cardsMap: new Map(),
-            animationQueue: []
+            animationQueue: [],
+            dealerGroup: dealerGroup,
+            head: head
         };
     }
 
@@ -3837,8 +4136,8 @@
         const V = new THREE.Vector3().subVectors(H, S);
         let d = V.length();
         
-        const L1 = 0.55;
-        const L2 = 0.55;
+        const L1 = 0.95;
+        const L2 = 0.95;
         
         if (d > L1 + L2 - 0.01) {
             d = L1 + L2 - 0.01;
@@ -3859,23 +4158,24 @@
         const lenUpper = dirUpper.length();
         inst.upperArm.position.copy(S).add(dirUpper.clone().multiplyScalar(0.5));
         inst.upperArm.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dirUpper.clone().normalize());
-        inst.upperArm.scale.set(1, lenUpper / 0.6, 1);
+        inst.upperArm.scale.set(1, lenUpper / 0.95, 1);
         
         const dirLower = new THREE.Vector3().subVectors(H, E);
         const lenLower = dirLower.length();
         inst.lowerArm.position.copy(E).add(dirLower.clone().multiplyScalar(0.5));
         inst.lowerArm.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dirLower.clone().normalize());
-        inst.lowerArm.scale.set(1, lenLower / 0.6, 1);
+        inst.lowerArm.scale.set(1, lenLower / 0.95, 1);
         
         inst.handR.position.copy(H);
     }
 
     function create3DCardMesh(inst, suit, rank, isRed) {
-        const geom = new THREE.BoxGeometry(0.55, 0.005, 0.85);
+        // Significantly larger BoxGeometry for card visibility
+        const geom = new THREE.BoxGeometry(0.85, 0.01, 1.25);
         const faceTex = createCardTexture(suit, rank, isRed);
         const sideMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-        const faceMat = new THREE.MeshStandardMaterial({ map: faceTex, roughness: 0.3 });
-        const backMat = new THREE.MeshStandardMaterial({ map: inst.cardBackTex, roughness: 0.3 });
+        const faceMat = new THREE.MeshStandardMaterial({ map: faceTex, roughness: 0.2 });
+        const backMat = new THREE.MeshStandardMaterial({ map: inst.cardBackTex, roughness: 0.2 });
         
         const materials = [
             sideMat,
@@ -3890,15 +4190,22 @@
     }
 
     function getCardTargetPosition(owner, handIndex, cardIndex) {
+        // Beautiful layout dynamic centering logic with cardIndex height offset to prevent overlap hiding numbers
         if (owner === 'dealer') {
-            return new THREE.Vector3(-0.5 + cardIndex * 0.22, 0.02, -0.6);
+            const count = activeBjGame ? activeBjGame.dealerHand.length : 1;
+            const startX = -((count - 1) * 0.35) / 2;
+            return new THREE.Vector3(startX + cardIndex * 0.35, 0.02 + cardIndex * 0.005, -0.9);
         } else {
-            const numHands = activeBjGame.hands.length;
+            const numHands = activeBjGame ? activeBjGame.hands.length : 1;
             if (numHands === 1) {
-                return new THREE.Vector3(-0.5 + cardIndex * 0.22, 0.02, 0.6);
+                const count = activeBjGame ? activeBjGame.hands[0].length : 1;
+                const startX = -((count - 1) * 0.35) / 2;
+                return new THREE.Vector3(startX + cardIndex * 0.35, 0.02 + cardIndex * 0.005, 0.45);
             } else {
-                const offsetX = handIndex === 0 ? -1.0 : 0.4;
-                return new THREE.Vector3(offsetX + cardIndex * 0.22, 0.02, 0.6);
+                const count = activeBjGame ? activeBjGame.hands[handIndex].length : 1;
+                const spacing = 0.26;
+                const startX = handIndex === 0 ? -1.3 - ((count - 1) * spacing) / 2 : 0.5 - ((count - 1) * spacing) / 2;
+                return new THREE.Vector3(startX + cardIndex * spacing, 0.02 + cardIndex * 0.005, 0.45);
             }
         }
     }
@@ -3914,14 +4221,14 @@
             currentCardKeys.add(key);
             
             const isHidden = (owner === 'dealer' && cardIdx === 1 && activeBjGame.state === 'playing');
+            const targetPos = getCardTargetPosition(owner, handIdx, cardIdx);
             
             if (!inst.cardsMap.has(key)) {
                 const mesh = create3DCardMesh(inst, card.suit, card.rank, card.isRed);
-                mesh.position.set(2.2, 0.2, -1.8);
+                mesh.position.set(2.4, 0.25, -1.8);
                 mesh.rotation.set(0, -Math.PI / 6, Math.PI);
                 inst.scene.add(mesh);
                 
-                const targetPos = getCardTargetPosition(owner, handIdx, cardIdx);
                 const targetRot = isHidden ? new THREE.Euler(0, 0, Math.PI) : new THREE.Euler(0, 0, 0);
                 
                 inst.cardsMap.set(key, {
@@ -3930,7 +4237,8 @@
                     targetRot: targetRot,
                     owner: owner,
                     index: cardIdx,
-                    isHidden: isHidden
+                    isHidden: isHidden,
+                    key: key
                 });
                 
                 inst.animationQueue.push({
@@ -3944,6 +4252,9 @@
                 });
             } else {
                 const mapItem = inst.cardsMap.get(key);
+                // Update target position dynamically as cards are added (centering shifts)
+                mapItem.targetPos.copy(targetPos);
+                
                 if (mapItem.isHidden && !isHidden) {
                     mapItem.isHidden = false;
                     mapItem.targetRot = new THREE.Euler(0, 0, 0);
@@ -3953,6 +4264,7 @@
                         key: key,
                         mesh: mapItem.mesh,
                         targetRot: mapItem.targetRot,
+                        targetPos: mapItem.targetPos,
                         duration: 25,
                         elapsed: 0
                     });
@@ -3973,6 +4285,14 @@
         for (const [key, item] of inst.cardsMap.entries()) {
             if (!currentCardKeys.has(key)) {
                 inst.scene.remove(item.mesh);
+                if (item.mesh.geometry) item.mesh.geometry.dispose();
+                if (item.mesh.material) {
+                    if (Array.isArray(item.mesh.material)) {
+                        item.mesh.material.forEach(m => m.dispose());
+                    } else {
+                        item.mesh.material.dispose();
+                    }
+                }
                 inst.cardsMap.delete(key);
             }
         }
@@ -3987,26 +4307,105 @@
         if (!board || !activeBjGame) return;
         
         let dealerScore = activeBjGame.state === 'playing' ? "?" : calculateHandValue(activeBjGame.dealerHand);
-        let playerScore = calculateHandValue(activeBjGame.hands[0]);
-        let playerStatusStr = playerScore > 21 ? " (バースト)" : (playerScore === 21 && activeBjGame.hands[0].length === 2 ? " (BJ)" : "");
         
-        board.innerHTML = `
-            <h4 style="color:var(--primary); margin-bottom:8px;">🃏 BJ (ベット: 各￥${activeBjGame.bet})</h4>
-            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-bottom:4px; padding:0 10px;">
-                <div>👤 ディーラー (スコア: <span id="bj-dealer-score-val">${dealerScore}</span>)</div>
-                <div>👤 あなた (スコア: <span id="bj-player-score-val">${playerScore}</span>)${playerStatusStr}</div>
-            </div>
+        let playerScoreText = "";
+        if (activeBjGame.hands.length > 1) {
+            playerScoreText = activeBjGame.hands.map((hand, idx) => {
+                const val = calculateHandValue(hand);
+                const isCurrent = idx === activeBjGame.activeHandIndex;
+                const status = val > 21 ? " (バースト)" : (val === 21 && hand.length === 2 ? " (BJ)" : "");
+                return `<span style="${isCurrent ? 'color: var(--primary); font-weight: bold; text-decoration: underline;' : 'color: var(--text-muted);'}">手札${idx+1}: ${val}${status}</span>`;
+            }).join(" | ");
+        } else {
+            const val = calculateHandValue(activeBjGame.hands[0]);
+            const status = val > 21 ? " (バースト)" : (val === 21 && activeBjGame.hands[0].length === 2 ? " (BJ)" : "");
+            playerScoreText = `<span style="color:#27ae60;">${val}</span>${status}`;
+        }
+
+        // Helper to generate 2D cards for zoom display
+        const getCardZoomHtml = (card, hide = false) => {
+            if (hide) return `<div class="card-back-zoom"></div>`;
+            return `<div class="card-zoom ${card.isRed ? 'red' : ''}"><div>${card.suit}${card.rank}</div><div style="text-align:right; margin-top:auto;">${card.rank}</div></div>`;
+        };
+
+        let dealerCards2dHtml = activeBjGame.dealerHand.map((card, idx) => {
+            const hide = (idx === 1 && activeBjGame.state === 'playing');
+            return getCardZoomHtml(card, hide);
+        }).join("");
+
+        let playerCards2dHtml = "";
+        if (activeBjGame.hands.length > 1) {
+            playerCards2dHtml = activeBjGame.hands.map((hand, idx) => {
+                const isCurrent = idx === activeBjGame.activeHandIndex;
+                const handCardsHtml = hand.map(card => getCardZoomHtml(card, false)).join("");
+                return `<div style="border: 1px solid ${isCurrent ? 'var(--primary)' : '#2f4553'}; padding: 4px; border-radius: 4px; display: flex; gap: 4px; background: ${isCurrent ? 'rgba(0,231,1,0.05)' : 'transparent'};">
+                    <span style="font-size: 10px; color: ${isCurrent ? 'var(--primary)' : 'var(--text-muted)'}; writing-mode: vertical-lr; text-align: center;">手札${idx+1}</span>
+                    ${handCardsHtml}
+                </div>`;
+            }).join("");
+        } else {
+            playerCards2dHtml = activeBjGame.hands[0].map(card => getCardZoomHtml(card, false)).join("");
+        }
+        
+        const existingCanvas = document.getElementById('bj-3d-canvas');
+        if (!existingCanvas || activeBjGame.hands[0].length === 0) {
+            board.innerHTML = `
+                <style>
+                    .card-zoom { width: 44px; height: 64px; background: white; color: #000; border-radius: 6px; display: flex; flex-direction: column; justify-content: space-between; padding: 4px; font-size: 13px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.4); animation: flipIn 0.3s ease-out; }
+                    .card-zoom.red { color: var(--accent); }
+                    .card-back-zoom { width: 44px; height: 64px; background: linear-gradient(135deg, #fe2247 0%, #960018 100%); border: 2px solid white; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
+                </style>
+                <div style="background: linear-gradient(135deg, #111116 0%, #1a2c38 100%); padding: 12px; border-radius: 8px; border: 1px solid var(--gold); margin-bottom: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">ライブ・ブラックジャック</div>
+                    <div id="bj-bet-val" style="font-size: 15px; font-weight: bold; color: var(--gold); margin-top: 2px;">💰 ベット: ￥${activeBjGame.bet.toLocaleString()}</div>
+                </div>
+
+                <!-- 2D Card Zoom Overlay (Online Casino HUD Style) -->
+                <div style="display:flex; justify-content:space-between; gap:10px; margin-bottom:10px;">
+                    <div style="flex:1; background:rgba(0,0,0,0.6); padding:8px; border-radius:8px; border-left:3px solid #fe2247; min-height:95px;">
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px; font-weight:bold;">👤 ディーラー: <span id="bj-dealer-score-val" style="color:#fe2247;">${dealerScore}</span></div>
+                        <div id="bj-dealer-cards-2d" style="display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
+                             ${dealerCards2dHtml}
+                        </div>
+                    </div>
+                    <div style="flex:1; background:rgba(0,0,0,0.6); padding:8px; border-radius:8px; border-left:3px solid #27ae60; min-height:95px;">
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px; font-weight:bold;">👤 プレイヤー: <span id="bj-player-score-val">${playerScoreText}</span></div>
+                        <div id="bj-player-cards-2d" style="display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
+                             ${playerCards2dHtml}
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="bj-3d-container" style="width:100%; height:380px; position:relative; background:#054d24; border-radius:12px; border:4px solid #d4af37; overflow:hidden; box-shadow: inset 0 0 25px rgba(0,0,0,0.8), 0 10px 20px rgba(0,0,0,0.5);">
+                    <canvas id="bj-3d-canvas" style="width:100%; height:100%; display:block;"></canvas>
+                </div>
+                
+                <div id="bj-status-text" style="font-size:14px; font-weight:bold; color:var(--gold); text-align:center; margin-top:12px; min-height: 20px;"></div>
+            `;
+        } else {
+            const dealerScoreEl = document.getElementById('bj-dealer-score-val');
+            if (dealerScoreEl) dealerScoreEl.innerText = dealerScore;
             
-            <div id="bj-3d-container" style="width:100%; height:260px; position:relative; background:#073b1e; border-radius:12px; border:2px solid #2f4553; overflow:hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.6);">
-                <canvas id="bj-3d-canvas" style="width:100%; height:100%; display:block;"></canvas>
-            </div>
+            const playerScoreEl = document.getElementById('bj-player-score-val');
+            if (playerScoreEl) playerScoreEl.innerHTML = playerScoreText;
             
-            <div id="bj-status-text" style="font-size:13px; font-weight:bold; color:var(--gold); text-align:center; margin-top:10px;"></div>
-        `;
+            const betValEl = document.getElementById('bj-bet-val');
+            if (betValEl) betValEl.innerText = `💰 ベット: ￥${activeBjGame.bet.toLocaleString()}`;
+
+            const dealerCardsEl = document.getElementById('bj-dealer-cards-2d');
+            if (dealerCardsEl) dealerCardsEl.innerHTML = dealerCards2dHtml;
+
+            const playerCardsEl = document.getElementById('bj-player-cards-2d');
+            if (playerCardsEl) playerCardsEl.innerHTML = playerCards2dHtml;
+        }
         
         const statusTextEl = document.getElementById('bj-status-text');
-        if (statusTextEl && activeBjGame.state === 'busted') {
-            statusTextEl.innerText = "💥 すべての手札がバースト！あなたの負けです。";
+        if (statusTextEl) {
+            if (activeBjGame.state === 'busted') {
+                statusTextEl.innerText = "💥 すべての手札がバースト！あなたの負けです。";
+            } else if (activeBjGame.state === 'playing') {
+                statusTextEl.innerText = "";
+            }
         }
         
         const activeHand = activeBjGame.hands[activeBjGame.activeHandIndex];
@@ -4021,8 +4420,17 @@
         
         const canvas = document.getElementById('bj-3d-canvas');
         if (canvas) {
-            canvas.width = canvas.clientWidth || 240;
-            canvas.height = canvas.clientHeight || 260;
+            const width = canvas.clientWidth || 240;
+            const height = canvas.clientHeight || 380;
+            if (canvas.width !== width || canvas.height !== height) {
+                canvas.width = width;
+                canvas.height = height;
+                if (canvas.threeInstance) {
+                    canvas.threeInstance.renderer.setSize(width, height);
+                    canvas.threeInstance.camera.aspect = width / height;
+                    canvas.threeInstance.camera.updateProjectionMatrix();
+                }
+            }
             updateThreeBj(canvas);
         }
     }
@@ -4047,6 +4455,23 @@
                 const inst = canvas.threeInstance;
                 if (!inst) return;
                 
+                // Idle breathing and head movements
+                const time = Date.now() * 0.001;
+                inst.dealerGroup.position.y = Math.sin(time * 1.5) * 0.015;
+                inst.dealerGroup.rotation.z = Math.cos(time * 1.2) * 0.008;
+                inst.head.rotation.y = Math.PI + Math.sin(time * 0.4) * 0.06;
+                
+                // Smoothly update positions and rotations for all cards to their targets (shifting for centering)
+                for (const item of inst.cardsMap.values()) {
+                    const isAnimating = inst.animationQueue.length > 0 && inst.animationQueue[0].key === item.key;
+                    if (!isAnimating) {
+                        item.mesh.position.lerp(item.targetPos, 0.15);
+                        item.mesh.rotation.x = (1 - 0.15) * item.mesh.rotation.x + 0.15 * item.targetRot.x;
+                        item.mesh.rotation.y = (1 - 0.15) * item.mesh.rotation.y + 0.15 * item.targetRot.y;
+                        item.mesh.rotation.z = (1 - 0.15) * item.mesh.rotation.z + 0.15 * item.targetRot.z;
+                    }
+                }
+                
                 const hitBtn = document.querySelector('button[onclick*="gameSubAction(\'hit\')"]');
                 const standBtn = document.querySelector('button[onclick*="gameSubAction(\'stand\')"]');
                 const doubleBtn = document.querySelector('button[onclick*="gameSubAction(\'double\')"]');
@@ -4060,7 +4485,7 @@
                     const progress = task.elapsed / task.duration;
                     
                     if (task.type === 'deal') {
-                        const shoePos = new THREE.Vector3(2.2, 0.2, -1.8);
+                        const shoePos = new THREE.Vector3(2.4, 0.25, -1.8);
                         const targetPos = task.targetPos;
                         let handPos = new THREE.Vector3();
                         
@@ -4070,7 +4495,7 @@
                         } else if (progress < 0.85) {
                             const t = (progress - 0.15) / 0.7;
                             handPos.lerpVectors(shoePos, targetPos, t);
-                            handPos.y += Math.sin(t * Math.PI) * 0.35;
+                            handPos.y += Math.sin(t * Math.PI) * 0.4;
                             
                             task.mesh.position.copy(handPos);
                             const startRot = new THREE.Euler(0, -Math.PI / 6, Math.PI);
@@ -4090,7 +4515,8 @@
                     } else if (task.type === 'flip') {
                         const t = progress;
                         task.mesh.rotation.z = Math.PI * (1 - t);
-                        task.mesh.position.y = 0.02 + 0.2 * Math.sin(t * Math.PI);
+                        const baseHeight = task.targetPos ? task.targetPos.y : 0.02;
+                        task.mesh.position.y = baseHeight + 0.25 * Math.sin(t * Math.PI);
                         updateDealerArm(inst, inst.handRest);
                     }
                     
@@ -4117,19 +4543,19 @@
         
         // Deal sequence
         activeBjGame.hands[0].push(activeBjGame.deck.pop());
-        updateThreeBj(canvas);
+        renderBjBoard();
         await delay(650);
         
         activeBjGame.dealerHand.push(activeBjGame.deck.pop());
-        updateThreeBj(canvas);
+        renderBjBoard();
         await delay(650);
         
         activeBjGame.hands[0].push(activeBjGame.deck.pop());
-        updateThreeBj(canvas);
+        renderBjBoard();
         await delay(650);
         
         activeBjGame.dealerHand.push(activeBjGame.deck.pop());
-        updateThreeBj(canvas);
+        renderBjBoard();
         await delay(650);
         
         document.getElementById('bj-controls').classList.remove('hidden');
@@ -4233,6 +4659,18 @@
         document.getElementById('bj-controls').classList.add('hidden');
         const delay = (ms) => new Promise(res => setTimeout(res, ms));
         const canvas = document.getElementById('bj-3d-canvas');
+        
+        // Render immediately to trigger and animate the dealer's facedown card flip/reveal
+        renderBjBoard();
+        
+        // Wait for the flip animation of the second card to finish so the player has clear visibility and understanding of the hand
+        if (canvas && canvas.threeInstance) {
+            while (canvas.threeInstance.animationQueue.length > 0) {
+                await delay(100);
+            }
+        }
+        await delay(800); // Wait a moment to build suspense/satisfaction
+        
         let dealerScore = calculateHandValue(activeBjGame.dealerHand);
         
         while (dealerScore < 17) {
@@ -4242,7 +4680,7 @@
             await delay(800);
         }
         
-        // Wait for animations to finish before resolving payout
+        // Wait for any new dealer card dealing animations to finish before resolving payout
         if (canvas && canvas.threeInstance) {
             while (canvas.threeInstance.animationQueue.length > 0) {
                 await delay(100);
