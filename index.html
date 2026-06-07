@@ -402,12 +402,12 @@
             <div style="display:flex; gap:10px; margin-bottom:12px;">
                 <select id="auth-class" style="flex:1; margin-bottom:0;">
                     <option value="" disabled selected>クラス選択</option>
-                    <script>
-                        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-                        for(let l of letters) document.write(`<option value="${l}">${l}組</option>`);
-                    </script>
+                    <option value="A">A組</option>
+                    <option value="B">B組</option>
+                    <option value="C">C組</option>
+                    <option value="D">D組</option>
                 </select>
-                <input type="number" id="auth-number" placeholder="出席番号(01-99)" min="1" max="99" style="flex:1; margin-bottom:0;" onchange="if(this.value && this.value < 10) this.value = '0' + parseInt(this.value)">
+                <input type="number" id="auth-number" placeholder="出席番号(1-52)" min="1" max="52" style="flex:1; margin-bottom:0;" onchange="if(this.value && this.value < 10) this.value = '0' + parseInt(this.value)">
             </div>
         </div>
 
@@ -925,8 +925,10 @@
                 return alert("そのユーザーIDは既に登録されています");
             }
             const classId = document.getElementById('auth-class').value;
-            let attendanceNum = document.getElementById('auth-number').value;
-            if(!classId || !attendanceNum) return alert("クラスと出席番号を入力してください");
+            let attendanceNum = parseInt(document.getElementById('auth-number').value);
+            if(!classId || isNaN(attendanceNum)) return alert("クラスと出席番号を入力してください");
+            if(!['A','B','C','D'].includes(classId)) return alert("クラスはA〜Dの中から選択してください");
+            if(attendanceNum < 1 || attendanceNum > 52) return alert("出席番号は1〜52の間で入力してください");
             attendanceNum = attendanceNum.toString().padStart(2, '0');
 
             await userRef.set({
@@ -2112,48 +2114,92 @@
         updateSynthesisSlots();
     }
 
+    let synFilterType = 'all';
+    let synFilterRarity = 'all';
+
     function selectSynItem(slot) {
         const selectionArea = document.getElementById('syn-selection-area');
-        selectionArea.innerHTML = `<h4 style="font-size:12px; margin-bottom:8px;">${slot === 'base' ? 'ベース' : '素材'}となる装備を選択</h4>`;
-        
-        // 装備中以外の全装備を表示
         const items = pInventory.filter(i => !i.equipped);
-        if (items.length === 0) {
-            selectionArea.innerHTML += `<p style="font-size:11px; color:var(--text-muted); text-align:center;">合成可能な装備がありません（装備を外すか、未装備のものから選んでください）</p>`;
-            return;
-        }
-
         const rarityMap = {common: 'D', uncommon: 'C', rare: 'B', epic: 'A', ultrarare: 'S'};
+        const typeNames = {weapon: '武器', armor: '防具', accessory: '装飾'};
 
-        items.forEach(item => {
-            if (slot === 'material' && synthesisBaseId === item.id) return;
-            if (slot === 'base' && synthesisMaterialId === item.id) return;
+        if (slot === 'base') {
+            // ベース選択時はフィルタを表示
+            selectionArea.innerHTML = `
+                <h4 style="font-size:12px; margin-bottom:8px;">ベースとなる装備を選択</h4>
+                <div style="display:flex; flex-direction:column; gap:5px; margin-bottom:10px; background:rgba(0,0,0,0.1); padding:8px; border-radius:6px;">
+                    <div style="display:flex; gap:3px;">
+                        ${['all','weapon','armor','accessory'].map(t => `<button onclick="setSynFilter('type','${t}','${slot}')" class="rarity-filter-btn ${synFilterType===t?'active':''}" style="font-size:9px;">${t==='all'?'全種':typeNames[t]}</button>`).join('')}
+                    </div>
+                    <div style="display:flex; gap:3px;">
+                        ${['all','ultrarare','epic','rare','uncommon','common'].map(r => `<button onclick="setSynFilter('rarity','${r}','${slot}')" class="rarity-filter-btn ${synFilterRarity===r?'active':''}" style="font-size:9px;">${r==='all'?'全ランク':rarityMap[r]}</button>`).join('')}
+                    </div>
+                </div>
+                <div id="syn-items-list" style="display:flex; flex-direction:column; gap:5px;"></div>
+            `;
             
-            // 素材選択時のみ制約をかける
-            if (slot === 'material' && synthesisBaseId) {
-                const base = pInventory.find(i => i.id === synthesisBaseId);
-                if (item.type !== base.type) return; // 同じ部位のみ
-                if (item.rarity !== base.rarity) return; // 同じレア度のみ
-                if (item.type === 'weapon' && item.attr !== base.attr) return; // 武器は同じ属性のみ
+            const listContainer = document.getElementById('syn-items-list');
+            let filtered = items;
+            if (synFilterType !== 'all') filtered = filtered.filter(i => i.type === synFilterType);
+            if (synFilterRarity !== 'all') filtered = filtered.filter(i => i.rarity === synFilterRarity);
+            
+            if (filtered.length === 0) {
+                listContainer.innerHTML = `<p style="font-size:11px; color:var(--text-muted); text-align:center; padding:10px;">該当する装備がありません</p>`;
+            } else {
+                filtered.forEach(item => {
+                    if (synthesisMaterialId === item.id) return;
+                    const btn = document.createElement('div');
+                    btn.className = "eq-card";
+                    btn.style.cursor = "pointer";
+                    btn.onclick = () => {
+                        synthesisBaseId = item.id;
+                        synthesisMaterialId = null;
+                        renderSynthesisUi();
+                    };
+                    const attrLabel = item.attr && item.attr !== 'none' ? ` [${item.attr.toUpperCase()}]` : "";
+                    btn.innerHTML = `<div class="rarity-${item.rarity}" style="font-size:12px;">${item.name}${attrLabel}</div><div style="font-size:10px; color:var(--text-muted);">${rarityMap[item.rarity]}ランク</div>`;
+                    listContainer.appendChild(btn);
+                });
             }
+        } else {
+            // 素材選択時はベースに合うものだけを表示
+            const base = pInventory.find(i => i.id === synthesisBaseId);
+            if (!base) return alert("先にベースを選択してください");
 
-            const btn = document.createElement('div');
-            btn.className = "eq-card";
-            btn.style.marginBottom = "5px";
-            btn.style.cursor = "pointer";
-            btn.onclick = () => {
-                if (slot === 'base') {
-                    synthesisBaseId = item.id;
-                    synthesisMaterialId = null; // ベース変えたら素材リセット
-                } else {
-                    synthesisMaterialId = item.id;
-                }
-                renderSynthesisUi();
-            };
-            const attrLabel = item.attr && item.attr !== 'none' ? ` [${item.attr.toUpperCase()}]` : "";
-            btn.innerHTML = `<div class="rarity-${item.rarity}" style="font-size:12px;">${item.name}${attrLabel}</div><div style="font-size:10px; color:var(--text-muted);">${rarityMap[item.rarity]}ランク</div>`;
-            selectionArea.appendChild(btn);
-        });
+            selectionArea.innerHTML = `<h4 style="font-size:12px; margin-bottom:8px;">素材を選択 (条件: ${rarityMap[base.rarity]}ランクの${typeNames[base.type]}${base.type==='weapon'?'['+attrNamesKanji[base.attr]+']':''})</h4>
+                                      <div id="syn-items-list" style="display:flex; flex-direction:column; gap:5px;"></div>`;
+            const listContainer = document.getElementById('syn-items-list');
+            
+            const validMaterials = items.filter(i => 
+                i.id !== synthesisBaseId && 
+                i.type === base.type && 
+                i.rarity === base.rarity && 
+                (base.type !== 'weapon' || i.attr === base.attr)
+            );
+
+            if (validMaterials.length === 0) {
+                listContainer.innerHTML = `<p style="font-size:11px; color:var(--accent); text-align:center; padding:10px; font-weight:bold;">⚠️ 合成可能な素材がありません</p>`;
+            } else {
+                validMaterials.forEach(item => {
+                    const btn = document.createElement('div');
+                    btn.className = "eq-card";
+                    btn.style.cursor = "pointer";
+                    btn.onclick = () => {
+                        synthesisMaterialId = item.id;
+                        renderSynthesisUi();
+                    };
+                    const attrLabel = item.attr && item.attr !== 'none' ? ` [${item.attr.toUpperCase()}]` : "";
+                    btn.innerHTML = `<div class="rarity-${item.rarity}" style="font-size:12px;">${item.name}${attrLabel}</div><div style="font-size:10px; color:var(--text-muted);">${rarityMap[item.rarity]}ランク</div>`;
+                    listContainer.appendChild(btn);
+                });
+            }
+        }
+    }
+
+    window.setSynFilter = function(key, val, slot) {
+        if (key === 'type') synFilterType = val;
+        if (key === 'rarity') synFilterRarity = val;
+        selectSynItem(slot);
     }
 
     function updateSynthesisSlots() {
@@ -2308,6 +2354,11 @@
         const board = document.getElementById('my-isolated-board');
         let timeLeft = 60;
         
+        // 既存のインターバルがあればクリア
+        if (board.dataset.activeDuelTimerId) {
+            clearInterval(parseInt(board.dataset.activeDuelTimerId));
+        }
+
         board.innerHTML = `
             <div style="text-align:center; padding:20px; border: 2px dashed var(--gold); border-radius: 12px; background: rgba(26, 44, 56, 0.9);">
                 <h3 style="color:var(--gold); margin-bottom:10px;">⌛ 対戦相手の承認待ち...</h3>
@@ -2315,32 +2366,43 @@
                     相手: <strong>${opponent}</strong><br>
                     ゲーム: ${gameName} | 賭け金: ￥${bet.toLocaleString()}
                 </p>
-                <div style="font-size:24px; font-weight:bold; color:var(--primary); margin-bottom:10px;" id="duel-wait-timer">01:00</div>
+                <div style="font-size:32px; font-weight:bold; color:var(--primary); margin-bottom:10px; font-family:monospace;" id="duel-wait-timer">01:00</div>
                 <p style="font-size:11px; color:var(--accent); font-weight:bold; margin-bottom:20px;">
                     ⚠️ この画面を閉じたり、他のページへ移動しないでください！<br>
                     閉じると承認されても対戦が開始されません。
                 </p>
-                <button onclick="cancelDuelInvite('${duelId}')" style="background:var(--accent); color:#fff; padding:10px; width:auto; font-size:13px;">招待をキャンセルして返金</button>
+                <button onclick="cancelDuelInvite('${duelId}')" style="background:var(--accent); color:#fff; padding:12px; width:auto; font-size:14px; font-weight:bold; border-radius:6px; cursor:pointer;">招待をキャンセルして返金</button>
             </div>
         `;
 
-        const timerInterval = setInterval(() => {
+        const timerInterval = setInterval(async () => {
             timeLeft--;
+            const m = Math.floor(Math.max(0, timeLeft) / 60);
+            const s = Math.max(0, timeLeft) % 60;
+            const timerEl = document.getElementById('duel-wait-timer');
+            if (timerEl) {
+                timerEl.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            }
+
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
-                return;
+                delete board.dataset.activeDuelTimerId;
+                // タイムアウトをDBに通知
+                const snap = await db.collection('duels').doc(duelId).get();
+                if (snap.exists && snap.data().status === 'invited') {
+                    await db.collection('duels').doc(duelId).update({ status: 'timeout' });
+                }
             }
-            const m = Math.floor(timeLeft / 60);
-            const s = timeLeft % 60;
-            document.getElementById('duel-wait-timer').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
         }, 1000);
         
-        // snapshot listener で状態が変わったらインターバルを止めるために board に IDを保存
         board.dataset.activeDuelTimerId = timerInterval;
     }
 
     async function cancelDuelInvite(duelId) {
         if (!confirm("招待をキャンセルして全額返金を受けますか？")) return;
+        const btn = event.target;
+        btn.disabled = true;
+        btn.innerText = "キャンセル中...";
         await db.collection('duels').doc(duelId).update({ status: 'cancelled' });
     }
 
@@ -2380,16 +2442,17 @@
         const toast = document.getElementById('p2p-invite-toast');
         if (toast) toast.classList.remove('show');
 
+        // ソロプレイ中のゲームをクリア
+        activeMinesGame = null; activeHiLowGame = null; activeBjGame = null;
+
+        await changeBalance(-bet, "対戦招待承認ベット", true);
+
         const doc = await db.collection('duels').doc(duelId).get();
         if (!doc.exists) return;
         const d = doc.data();
         const gameType = d.gameType || 'dice';
 
-        await changeBalance(-bet, "対戦招待承認ベット", true);
-
-        const updateData = {
-            status: 'playing'
-        };
+        const updateData = { status: 'playing' };
 
         if (gameType === 'dice') {
             updateData.host_roll = Math.floor(Math.random() * 6) + 1;
@@ -2416,7 +2479,7 @@
             updateData.turn = 'host';
         }
 
-        // 強制的にゲームタブに切り替え
+        // ゲスト側の画面を強制切り替え
         switchTab('game');
         selectedGame = gameType;
         document.querySelectorAll('.game-menu-v2 .game-btn-full').forEach(el => el.classList.remove('active'));
@@ -2477,8 +2540,8 @@
                     alert(`${msg}\nベット額 ￥${d.bet.toLocaleString()} が返金されました。`);
                     await changeBalance(d.bet, "対戦招待不成立による返金");
                     board.innerHTML = "";
+                    selectGameType(selectedGame); // UIリセット
                 }
-                // ドキュメント削除（ゲスト側かホスト側いずれかがこの snapshot を受けて実行）
                 await db.collection('duels').doc(duelId).delete().catch(()=>{});
                 return;
             }
@@ -2493,6 +2556,9 @@
                     clearTimeout(duelInviteTimeout);
                     duelInviteTimeout = null;
                 }
+
+                // ソロプレイ状態を確実に消去
+                activeMinesGame = null; activeHiLowGame = null; activeBjGame = null;
 
                 const opponent = d.host === currentUser ? d.guest : d.host;
                 const gameType = d.gameType || 'dice';
