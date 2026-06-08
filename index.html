@@ -537,8 +537,8 @@
                 
                 <div id="hilow-controls" class="hidden" style="margin-top:10px; display:flex; flex-direction:column; gap:6px;">
                     <div style="display:flex; gap:10px;">
-                        <button style="background-color:var(--primary);" onclick="gameSubAction('high')">🔼 HIGH</button>
-                        <button style="background-color:var(--accent); color:white;" onclick="gameSubAction('low')">🔽 LOW</button>
+                        <button id="btn-hilow-high" style="background-color:var(--primary);" onclick="gameSubAction('high')">🔼 HIGH</button>
+                        <button id="btn-hilow-low" style="background-color:var(--accent); color:white;" onclick="gameSubAction('low')">🔽 LOW</button>
                     </div>
                     <button style="background-color:var(--gold); color:#000;" onclick="gameSubAction('cashout')">💰 キャッシュアウト</button>
                 </div>
@@ -1568,7 +1568,8 @@
         }
 
         // 10%の確率で装備ドロップ
-        if(Math.random() < 0.10) {
+        const isBossFloor = (pFloor % 50 === 0);
+        if(Math.random() < 0.10 || isBossFloor) {
             const eqRoll = Math.floor(Math.random() * 3);
             const rAttr = attrTypes[Math.floor(Math.random() * attrTypes.length)] || "fire";
             const itemId = Math.random().toString(36).substring(2, 9);
@@ -5829,6 +5830,7 @@
         if(selectedGame === 'hilow') {
             if(!activeHiLowGame) return;
             if(action === 'cashout') {
+                if(activeHiLowGame.selections === 0) return alert("最低1回はHIGH/LOWを選択してください");
                 isCasinoActionProcessing = true;
                 const winAmt = activeHiLowGame.bet * activeHiLowGame.accumulatedMultiplier;
                 await changeBalance(winAmt, "ハイローキャッシュアウト");
@@ -5838,6 +5840,11 @@
                 isCasinoActionProcessing = false;
                 return;
             }
+            
+            const currentNum = activeHiLowGame.currentCard;
+            const odds = getHiLowOdds(currentNum, action);
+            if(odds === 0) return alert("その方向には賭けられません");
+
             isCasinoActionProcessing = true;
             const displayBoard = document.getElementById('my-isolated-board');
             displayBoard.innerHTML = `
@@ -5847,17 +5854,16 @@
             await new Promise(res => setTimeout(res, 600));
 
             const nextCardNum = 1 + Math.floor(Math.random() * 13);
-            const currentNum = activeHiLowGame.currentCard;
             let isWin = false;
             
             if (nextCardNum === currentNum) {
-                // 1とK以外の同じ目はどちらを選んでも勝ち
-                if (currentNum !== 1 && currentNum !== 13) isWin = true;
-                else isWin = false;
+                if (currentNum === 1) isWin = (action === 'low');
+                else if (currentNum === 13) isWin = (action === 'high');
+                else isWin = true;
             } else if (nextCardNum > currentNum) {
-                if (action === 'high') isWin = true;
+                if (action === 'high' && currentNum !== 13) isWin = true;
             } else { // nextCardNum < currentNum
-                if (action === 'low') isWin = true;
+                if (action === 'low' && currentNum !== 1) isWin = true;
             }
 
             const suits = ['♠', '♥', '♦', '♣'];
@@ -5866,12 +5872,25 @@
             const rank = nextCardNum === 1 ? 'A' : (nextCardNum === 11 ? 'J' : (nextCardNum === 12 ? 'Q' : (nextCardNum === 13 ? 'K' : nextCardNum.toString())));
             const cardHtml = `<div class="card-mini ${isRed ? 'red' : ''}"><div>${randomSuit}${rank}</div><div style="text-align:right; margin-top:auto;">${rank}</div></div>`;
             if(isWin) {
-                activeHiLowGame.accumulatedMultiplier *= 1.35;
+                activeHiLowGame.accumulatedMultiplier *= odds;
                 activeHiLowGame.currentCard = nextCardNum;
+                activeHiLowGame.selections++;
+                updateHiLowControls(nextCardNum);
+
+                const mHigh = getHiLowOdds(nextCardNum, 'high');
+                const mLow = getHiLowOdds(nextCardNum, 'low');
+                
+                const labelHigh = nextCardNum === 13 ? "SAME" : "HIGH";
+                const labelLow = nextCardNum === 1 ? "SAME" : "LOW";
+
                 displayBoard.innerHTML = `
                     <h4 style="color:var(--primary);">📈 HIGH/LOW 継続中</h4>
                     <div style="margin:10px 0; display:flex; justify-content:center;">${cardHtml}</div>
                     <p style="font-size:12px; color:var(--gold); text-align:center;">現在倍率: ${activeHiLowGame.accumulatedMultiplier.toFixed(2)}x</p>
+                    <div style="display:flex; justify-content:center; gap:20px; font-size:12px; margin-top:5px;">
+                        <span style="color:var(--primary);">${labelHigh}: ${mHigh > 0 ? mHigh.toFixed(2) + 'x' : 'N/A'}</span>
+                        <span style="color:var(--accent);">${labelLow}: ${mLow > 0 ? mLow.toFixed(2) + 'x' : 'N/A'}</span>
+                    </div>
                 `;
             } else {
                 displayBoard.innerHTML = `
@@ -6282,20 +6301,73 @@
     }
 
     // --- 📈 ハイロー ---
+    function updateHiLowControls(cardNum) {
+        const btnHigh = document.getElementById('btn-hilow-high');
+        const btnLow = document.getElementById('btn-hilow-low');
+        if (!btnHigh || !btnLow) return;
+        if (cardNum === 13) {
+            btnHigh.innerText = "🃏 SAME";
+            btnLow.innerText = "🔽 LOW";
+        } else if (cardNum === 1) {
+            btnHigh.innerText = "🔼 HIGH";
+            btnLow.innerText = "🃏 SAME";
+        } else {
+            btnHigh.innerText = "🔼 HIGH";
+            btnLow.innerText = "🔽 LOW";
+        }
+    }
+
+    function getHiLowOdds(currentCard, action) {
+        let winOutcomes = 0;
+        if (action === 'high') {
+            if (currentCard === 13) { // SAME on King
+                winOutcomes = 1; // only next === 13
+            } else {
+                for (let next = 1; next <= 13; next++) {
+                    if (next > currentCard) winOutcomes++;
+                    else if (next === currentCard && currentCard !== 1) winOutcomes++;
+                }
+            }
+        } else if (action === 'low') {
+            if (currentCard === 1) { // SAME on Ace
+                winOutcomes = 1; // only next === 1
+            } else {
+                for (let next = 1; next <= 13; next++) {
+                    if (next < currentCard) winOutcomes++;
+                    else if (next === currentCard && currentCard !== 13) winOutcomes++;
+                }
+            }
+        }
+        if (winOutcomes === 0) return 0;
+        return (0.99 * 13) / winOutcomes;
+    }
+
     function initHiLowGame(bet) {
         document.getElementById('hilow-controls').classList.remove('hidden');
         const startCard = 1 + Math.floor(Math.random() * 13);
-        activeHiLowGame = { bet: bet, currentCard: startCard, accumulatedMultiplier: 1.0 };
+        activeHiLowGame = { bet: bet, currentCard: startCard, accumulatedMultiplier: 1.0, selections: 0 };
+        updateHiLowControls(startCard);
         const board = document.getElementById('my-isolated-board');
         const suits = ['♠', '♥', '♦', '♣'];
         const randomSuit = suits[Math.floor(Math.random() * suits.length)];
         const isRed = ['♥', '♦'].includes(randomSuit);
         const rank = startCard === 1 ? 'A' : (startCard === 11 ? 'J' : (startCard === 12 ? 'Q' : (startCard === 13 ? 'K' : startCard.toString())));
         const cardHtml = `<div class="card-mini ${isRed ? 'red' : ''}"><div>${randomSuit}${rank}</div><div style="text-align:right; margin-top:auto;">${rank}</div></div>`;
+        
+        const mHigh = getHiLowOdds(startCard, 'high');
+        const mLow = getHiLowOdds(startCard, 'low');
+        
+        const labelHigh = startCard === 13 ? "SAME" : "HIGH";
+        const labelLow = startCard === 1 ? "SAME" : "LOW";
+        
         board.innerHTML = `
             <h4 style="color:var(--primary);">📈 HIGH/LOW 開始</h4>
             <div style="margin:10px 0; display:flex; justify-content:center;">${cardHtml}</div>
             <p style="font-size:12px; color:var(--text-muted); text-align:center;">次の一手がこのカード【${rank}】以上か以下かを予想してください。</p>
+            <div style="display:flex; justify-content:center; gap:20px; font-size:12px; margin-top:5px;">
+                <span style="color:var(--primary);">${labelHigh}: ${mHigh > 0 ? mHigh.toFixed(2) + 'x' : 'N/A'}</span>
+                <span style="color:var(--accent);">${labelLow}: ${mLow > 0 ? mLow.toFixed(2) + 'x' : 'N/A'}</span>
+            </div>
         `;
     }
 
