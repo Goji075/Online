@@ -257,6 +257,7 @@
     
     <div style="border-top:1px dashed #2f4553; padding-top:10px;">
         <h4 style="font-size:13px; margin-bottom:6px; color:var(--gold);">💡 RPGの敵キャラ・装備案を送る</h4>
+        <p style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">※採用されると ￥200 がプレゼントされます！</p>
         <input type="text" id="idea-title" placeholder="案の名前（例：溶岩ゴーレム、伝説の聖剣）">
         <select id="idea-type" onchange="toggleIdeaFormUi()">
             <option value="enemy">敵キャラクターの案</option>
@@ -744,6 +745,7 @@
     let currentVipWager = 0;
     let currentVault = 0;
     let isAdminAuthenticated = false;
+    let isCasinoActionProcessing = false;
 
     // --- RPG用グローバルデータ ---
     let pHP = 400, pMaxHP = 400, pMP = 50, pMaxMP = 50;
@@ -1618,7 +1620,9 @@
             await db.collection('users_v2').doc(currentUser).update({ jailUntil: null });
             document.getElementById('rpg-jail-timer').classList.add('hidden');
             document.getElementById('rpg-main-wrapper').classList.remove('hidden');
-            pMaxHP = 400 + pHpBonus;
+            
+            const stats = calculatePlayerStats();
+            pMaxHP = stats.maxHp;
             pHP = pMaxHP;
             pMP = 50;
             initNewRpgFight();
@@ -1853,9 +1857,16 @@
                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
                             <div><strong>👤 ${doc.id}</strong></div>
                             <div>
-                                ￥<input type="number" class="admin-money-input" id="cash-${doc.id}" value="${Math.floor(data.balance)}">
-                                <button onclick="updatePlayerCashAdmin('${doc.id}')" style="width:auto; padding:4px 8px; font-size:11px; background:var(--gold); margin-left:4px;">修正</button>
+                                ￥<input type="number" class="admin-money-input" id="cash-${doc.id}" value="${Math.floor(data.balance)}" title="カジノ残高">
+                                <button onclick="updatePlayerCashAdmin('${doc.id}')" style="width:auto; padding:4px 8px; font-size:11px; background:var(--gold); margin-left:4px;">残高修正</button>
                                 <button onclick="purgeUserAccountAdmin('${doc.id}')" style="width:auto; padding:4px 8px; font-size:11px; background:var(--accent); color:#fff; margin-left:4px;">追放</button>
+                            </div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+                            <div style="font-size:12px; color:var(--text-muted);">保管庫:</div>
+                            <div>
+                                ￥<input type="number" class="admin-money-input" id="vault-${doc.id}" value="${Math.floor(data.vault || 0)}" title="保管庫残高">
+                                <button onclick="updatePlayerVaultAdmin('${doc.id}')" style="width:auto; padding:4px 8px; font-size:11px; background:var(--vip-silver); color:#000; margin-left:4px;">金庫修正</button>
                             </div>
                         </div>
                         <div style="display:flex; gap:10px; align-items:center; font-size:12px; color:var(--text-muted);">
@@ -1871,6 +1882,12 @@
                 list.appendChild(div);
             });
         });
+    }
+
+    async function updatePlayerVaultAdmin(uid) {
+        const val = parseFloat(document.getElementById(`vault-${uid}`).value);
+        await db.collection('users_v2').doc(uid).update({ vault: val });
+        alert(`${uid} の保管庫残高を ${val}円 に更新しました。`);
     }
 
     async function updateUserClassAdmin(uid) {
@@ -4097,13 +4114,18 @@
                 type: type, title: title, desc: desc, approvedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             
-            // 2. 提案した本人の🔔へお祝い自動通知
+            // 2. 採用報酬 200円を付与
+            await db.collection('users_v2').doc(sender).update({
+                balance: firebase.firestore.FieldValue.increment(200)
+            });
+
+            // 3. 提案した本人の🔔へお祝い自動通知
             await db.collection('notifications').add({
                 username: sender,
-                message: `🎉 おめでとうございます！あなたが考えた${type === 'enemy' ? '敵キャラ' : '装備'}案「${title}」が運営に採用され、すべてのプレイヤーのゲーム内に自動実装されました！`,
+                message: `🎉 おめでとうございます！あなたが考えた${type === 'enemy' ? '敵キャラ' : '装備'}案「${title}」が運営に採用されました！採用報酬として ￥200 が付与されました！`,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
-            alert("👍 採用処理を完了しました！ゲームデータベースへ自動で組み込まれ、お祝い通知が送信されました。");
+            alert("👍 採用処理を完了しました！報酬を付与し、お祝い通知を送信しました。");
         } else {
             alert("👎 提案を非表示（却下）にしました。");
         }
@@ -5701,9 +5723,12 @@
     }
 
     async function gameSubAction(action) {
+        if(isCasinoActionProcessing) return;
+        
         if(selectedGame === 'mines' && action === 'cashout') {
             if(!activeMinesGame || activeMinesGame.state !== 'playing') return;
             if(activeMinesGame.revealedCount === 0) return alert("最低1枚はタイルを開けてください");
+            isCasinoActionProcessing = true;
             const payoutMul = getMinesMultiplier(activeMinesGame.revealedCount);
             const winAmt = activeMinesGame.bet * payoutMul;
             activeMinesGame.state = 'win';
@@ -5711,6 +5736,7 @@
             await changeBalance(winAmt, "マインズ利益確定");
             alert(`💰 キャッシュアウト成功！ ￥${Math.floor(winAmt).toLocaleString()} を獲得！`);
             selectGameType('mines');
+            isCasinoActionProcessing = false;
         }
         if(selectedGame === 'bj') {
             if(!activeBjGame || activeBjGame.state !== 'playing') return;
@@ -5719,13 +5745,16 @@
         if(selectedGame === 'hilow') {
             if(!activeHiLowGame) return;
             if(action === 'cashout') {
+                isCasinoActionProcessing = true;
                 const winAmt = activeHiLowGame.bet * activeHiLowGame.accumulatedMultiplier;
                 await changeBalance(winAmt, "ハイローキャッシュアウト");
                 alert(`💰 利確成功！ ￥${Math.floor(winAmt).toLocaleString()} を回収しました。`);
                 activeHiLowGame = null;
                 selectGameType('hilow');
+                isCasinoActionProcessing = false;
                 return;
             }
+            isCasinoActionProcessing = true;
             const displayBoard = document.getElementById('my-isolated-board');
             displayBoard.innerHTML = `
                 <h4 style="color:var(--primary);">📈 HIGH/LOW 判定中...</h4>
@@ -5736,8 +5765,9 @@
             const nextCardNum = 1 + Math.floor(Math.random() * 13);
             const currentNum = activeHiLowGame.currentCard;
             let isWin = false;
-            if(action === 'high' && nextCardNum >= currentNum) isWin = true;
-            if(action === 'low' && nextCardNum <= currentNum) isWin = true;
+            if(action === 'high' && nextCardNum > currentNum) isWin = true;
+            if(action === 'low' && nextCardNum < currentNum) isWin = true;
+            
             const suits = ['♠', '♥', '♦', '♣'];
             const randomSuit = suits[Math.floor(Math.random() * suits.length)];
             const isRed = ['♥', '♦'].includes(randomSuit);
@@ -5760,6 +5790,7 @@
                 document.getElementById('hilow-controls').classList.add('hidden');
                 activeHiLowGame = null;
             }
+            isCasinoActionProcessing = false;
         }
     }
 
@@ -6325,6 +6356,7 @@
         const modal = document.getElementById('modal-' + id);
         if (modal) modal.classList.add('open');
         
+        if (id === 'vault') document.getElementById('vault-balance').innerText = Math.floor(currentVault).toLocaleString();
         if (id === 'leaderboard') fetchLeaderboard();
         if (id === 'txhistory') fetchTxHistory();
         if (id === 'notif') checkNotifications();
