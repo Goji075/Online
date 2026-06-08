@@ -168,8 +168,8 @@
         .elem-wood { background: #2ecc71; color: #fff; }
         .elem-light { background: #f1c40f; color: #000; }
         .elem-dark { background: #9b59b6; color: #fff; }
-        .bell-btn { font-size: 20px; cursor: pointer; color: var(--text-muted); position: relative; padding: 0 5px; }
-        .bell-dot { position: absolute; top: -2px; right: 2px; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+        .bell-btn { font-size: 20px; cursor: pointer; color: var(--text-muted); position: relative; padding: 0 5px; display: inline-flex; align-items: center; justify-content: center; }
+        .bell-dot { position: absolute; top: -4px; right: -2px; width: 11px; height: 11px; background: var(--accent); border-radius: 50%; border: 2px solid var(--bg-card); box-shadow: 0 0 5px rgba(254,34,71,0.5); z-index: 10; }
         .notif-row { background: var(--bg-input); padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid var(--primary); font-size: 12px; }
         .idea-box { background: var(--bg-main); border: 1px solid #2f4553; padding: 10px; border-radius: 6px; margin-top: 8px; }
     </style>
@@ -1136,37 +1136,60 @@
     }
 
     // --- 🔔 お知らせ & 採否判定データベース同期 ---
+    let notificationsUnsubscribe = null;
     function openNotifModal() {
         if (activeDuelId) {
             alert("対戦中はお知らせを開けません。");
             return;
         }
-        openSubModal('notif');
+        // 即座にバッジを消して既読時間を更新
         document.getElementById('bell-badge').classList.add('hidden');
-        // 全て既読にする処理（簡易的に最終確認時間を保存するなど）
         localStorage.setItem('last_notif_check', Date.now());
+        openSubModal('notif');
     }
 
     function checkNotifications() {
-        const lastCheck = parseInt(localStorage.getItem('last_notif_check') || "0");
-        db.collection('notifications').where('username', '==', currentUser).orderBy('timestamp', 'desc').limit(10).onSnapshot(snap => {
+        if (!currentUser) return;
+        if (notificationsUnsubscribe) notificationsUnsubscribe();
+
+        // orderByを外してインデックス作成エラーを回避（ローカルでソート）
+        notificationsUnsubscribe = db.collection('notifications').where('username', '==', currentUser).limit(30).onSnapshot(snap => {
             const area = document.getElementById('notif-list-area');
             if(!area) return;
+            
+            const lastCheck = parseInt(localStorage.getItem('last_notif_check') || "0");
+            
             if(snap.empty) {
                 area.innerHTML = `<p style="font-size:12px; color:var(--text-muted); text-align:center;">通知はまだありません</p>`;
+                document.getElementById('bell-badge').classList.add('hidden');
                 return;
             }
-            let html = "";
-            let hasNew = false;
+
+            let notifs = [];
             snap.forEach(doc => {
                 const d = doc.data();
-                const ts = d.timestamp ? d.timestamp.toDate() : new Date();
-                if (ts.getTime() > lastCheck) hasNew = true;
-                html += `<div class="notif-row"><div>${d.message}</div><span style="font-size:10px; color:var(--text-muted);">${ts.toLocaleString()}</span></div>`;
+                notifs.push({
+                    id: doc.id,
+                    ...d,
+                    tsDate: d.timestamp ? d.timestamp.toDate() : new Date()
+                });
             });
+
+            // ローカルで降順ソート
+            notifs.sort((a, b) => b.tsDate - a.tsDate);
+
+            let html = "";
+            let hasNew = false;
+            notifs.forEach(d => {
+                if (d.tsDate.getTime() > lastCheck) hasNew = true;
+                html += `<div class="notif-row"><div>${d.message}</div><span style="font-size:10px; color:var(--text-muted);">${d.tsDate.toLocaleString()}</span></div>`;
+            });
+
             area.innerHTML = html;
             if (hasNew) {
                 document.getElementById('bell-badge').classList.remove('hidden');
+            } else {
+                document.getElementById('bell-badge').classList.add('hidden');
             }
         });
     }
@@ -1918,23 +1941,41 @@
         
         try {
             const snap = await db.collection('users_v2').get();
-            const batch = db.batch();
-            
+            const totalUsers = snap.size;
+            if (totalUsers === 0) return alert("送信対象のユーザーがいません");
+
+            // FirestoreのBatchは最大500件までのため、分割して実行
+            const BATCH_LIMIT = 450;
+            let currentBatch = db.batch();
+            let count = 0;
+            let batchPromises = [];
+
             snap.forEach((userDoc) => {
                 const notifRef = db.collection('notifications').doc();
-                batch.set(notifRef, {
+                currentBatch.set(notifRef, {
                     username: userDoc.id,
                     message: `📢 【運営お知らせ】: ${text}`,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                count++;
+
+                if (count >= BATCH_LIMIT) {
+                    batchPromises.push(currentBatch.commit());
+                    currentBatch = db.batch();
+                    count = 0;
+                }
             });
+
+            if (count > 0) {
+                batchPromises.push(currentBatch.commit());
+            }
             
-            await batch.commit();
-            alert("📢 全プレイヤーの通知ベル🔔に一斉お知らせを配信しました！");
+            await Promise.all(batchPromises);
+            alert(`📢 全プレイヤー (${totalUsers}名) の通知ベル🔔に一斉お知らせを配信しました！`);
             document.getElementById('admin-notif-text').value = "";
         } catch (e) {
             console.error(e);
-            alert("通知の配信に失敗しました。");
+            alert("通知の配信に失敗しました: " + e.message);
         }
     }
 
@@ -5765,9 +5806,17 @@
             const nextCardNum = 1 + Math.floor(Math.random() * 13);
             const currentNum = activeHiLowGame.currentCard;
             let isWin = false;
-            if(action === 'high' && nextCardNum > currentNum) isWin = true;
-            if(action === 'low' && nextCardNum < currentNum) isWin = true;
             
+            if (nextCardNum === currentNum) {
+                // 1とK以外の同じ目はどちらを選んでも勝ち
+                if (currentNum !== 1 && currentNum !== 13) isWin = true;
+                else isWin = false;
+            } else if (nextCardNum > currentNum) {
+                if (action === 'high') isWin = true;
+            } else { // nextCardNum < currentNum
+                if (action === 'low') isWin = true;
+            }
+
             const suits = ['♠', '♥', '♦', '♣'];
             const randomSuit = suits[Math.floor(Math.random() * suits.length)];
             const isRed = ['♥', '♦'].includes(randomSuit);
@@ -6359,7 +6408,6 @@
         if (id === 'vault') document.getElementById('vault-balance').innerText = Math.floor(currentVault).toLocaleString();
         if (id === 'leaderboard') fetchLeaderboard();
         if (id === 'txhistory') fetchTxHistory();
-        if (id === 'notif') checkNotifications();
         if (id === 'zukan') fetchEnemyZukan();
     }
 
