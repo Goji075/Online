@@ -883,7 +883,7 @@
             area.innerHTML = `
                 <button onclick="openSubModal('inventory')" style="background-color:var(--gold); color:#000; text-align:left;">🎒 インベントリ & 装備合成</button>
                 <button onclick="openSubModal('rpgrule')" style="background-color:#2980b9; color:#fff; text-align:left;">📋 RPGルール・属性相性を見る</button>
-                <button onclick="openSubModal('zukan')" style="background-color:#e67e22; color:#fff; text-align:left;">📖 敵キャラ図鑑 (Zukan)</button>
+                <button onclick="openSubModal('zukan')" style="background-color:#e67e22; color:#fff; text-align:left;">敵キャラ図鑑</button>
                 <button onclick="openSubModal('leaderboard', 'rpg')" style="background-color:#2ecc71; color:#000; text-align:left;">🏆 階層突破ランキング</button>
                 <button onclick="scrollToChat()" style="background-color:#34495e; color:#fff; text-align:left;">💬 グローバルチャット</button>
                 <button onclick="openSubModal('profile')" style="background-color:#1abc9c; color:#fff; text-align:left;">👤 プロフィール設定</button>
@@ -6666,7 +6666,7 @@
             modal.className = 'sub-modal';
             modal.id = 'modal-zukan';
             modal.innerHTML = `
-                <div class="modal-header"><h3>📖 敵キャラ図鑑 (Bestiary)</h3><span style="cursor:pointer;" onclick="closeSubModal('zukan')">✕</span></div>
+                <div class="modal-header"><h3>敵キャラ図鑑</h3><span style="cursor:pointer;" onclick="closeSubModal('zukan')">✕</span></div>
                 <div id="zukan-search-container" style="margin-bottom:15px;">
                     <input type="text" id="zukan-search-input" placeholder="魔物名で検索..." style="margin-bottom:0; padding:10px; font-size:14px;" oninput="filterZukan()">
                 </div>
@@ -6693,24 +6693,10 @@
         const uniqueNames = [...new Set(allEnemyNames)].filter(n => n.toLowerCase().includes(query));
 
         container.innerHTML = `
-            <div style="background:linear-gradient(135deg, rgba(243,156,18,0.1) 0%, rgba(15,33,46,0.1) 100%); padding:15px; border-radius:10px; border:1px solid #2f4553; margin-bottom:20px;">
-                <h4 style="color:var(--gold); font-size:15px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
-                    <span>💡</span> モンスターの属性と特性
-                </h4>
-                <p style="font-size:11px; color:var(--text-muted); line-height:1.6;">
-                    カジノの地下深く、RPGエリアに棲息する魔物たちの記録です。<br>
-                    通常の魔物は出現のたびに<strong>属性が変化</strong>し、50階層ごとのボスは固有の属性を纏って現れます。
-                </p>
-            </div>
-
             <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px;">
                 ${uniqueNames.map(n => `
-                    <div style="background:var(--bg-input); padding:12px; border-radius:8px; border:1px solid #2f4553; display:flex; align-items:center; gap:10px; transition:transform 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
-                        <div style="font-size:20px; background:rgba(0,0,0,0.3); width:36px; height:36px; display:flex; justify-content:center; align-items:center; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">👾</div>
-                        <div style="flex:1;">
-                            <div style="font-size:13px; font-weight:bold; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${n}</div>
-                            <div style="font-size:9px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Registered Monster</div>
-                        </div>
+                    <div style="background:var(--bg-input); padding:12px; border-radius:8px; border:1px solid #2f4553; text-align:center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                        <div style="font-size:13px; font-weight:bold; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${n}</div>
                     </div>
                 `).join('')}
             </div>
