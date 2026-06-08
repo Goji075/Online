@@ -260,22 +260,14 @@
         <p style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">※採用されると ￥200 がプレゼントされます！</p>
         <input type="text" id="idea-title" placeholder="案の名前（例：溶岩ゴーレム、伝説の聖剣）">
         <select id="idea-type" onchange="toggleIdeaFormUi()">
-            <option value="enemy">敵キャラクターの案</option>
-            <option value="weapon">武器の案</option>
-            <option value="armor">防具の案</option>
-        </select>
-        <select id="idea-attr" style="width:100%; padding:12px; background-color:var(--bg-input); border:2px solid #2f4553; border-radius:4px; color:#fff; margin-bottom:12px; font-size:16px;">
-            <option value="none">無属性</option>
-            <option value="fire">火属性</option>
-            <option value="water">水属性</option>
-            <option value="wood">木属性</option>
-            <option value="light">光属性</option>
-            <option value="dark">暗属性</option>
+           <option value="enemy">敵キャラクターの案</option>
+           <option value="weapon">武器の案</option>
+           <option value="armor">防具の案</option>
         </select>
         <textarea id="idea-desc" class="hidden" placeholder="ステータス効果や見た目の説明" style="width:100%; height:60px; background:var(--bg-input); border:1px solid #2f4553; border-radius:4px; color:#fff; padding:8px; font-size:13px; margin-bottom:10px;"></textarea>
         <button onclick="submitRpgIdea()" style="background:var(--gold); color:#000; padding:10px; font-size:13px;">開発者へアイデアを送信</button>
-    </div>
-</div>
+        </div>
+        </div>
 
 <div class="sub-modal" id="modal-create-duel">
     <div class="modal-header"><h3>⚔️ 対戦ルームを作成</h3><span style="cursor:pointer;" onclick="closeSubModal('create-duel')">✕</span></div>
@@ -698,7 +690,18 @@
 
                 <div style="margin-top:15px; border-top:1px dashed #2f4553; padding-top:10px;">
                     <h4>💡 プレイヤーからの提案採否（完全自動追加）</h4>
+                    <div style="margin-bottom:10px;">
+                        <input type="text" id="admin-idea-search" placeholder="提案名・投稿者で検索..." style="margin-bottom:0; padding:8px; font-size:13px;" oninput="filterAdminIdeas()">
+                    </div>
                     <div id="admin-ideas-list" style="max-height:200px; overflow-y:auto; background:#111; padding:6px; font-size:12px;"></div>
+                </div>
+
+                <div style="margin-top:15px; border-top:1px dashed #2f4553; padding-top:10px;">
+                    <h4>🛠️ 登録済みRPG要素の管理 (削除・検索)</h4>
+                    <div style="margin-bottom:10px;">
+                        <input type="text" id="admin-approved-search" placeholder="登録済みの名前で検索..." style="margin-bottom:0; padding:8px; font-size:13px;" oninput="filterAdminApproved()">
+                    </div>
+                    <div id="admin-approved-list" style="max-height:200px; overflow-y:auto; background:#111; padding:6px; font-size:12px;"></div>
                 </div>
 
                 <div style="margin-top:15px; border-top:1px dashed #2f4553; padding-top:10px;">
@@ -1215,11 +1218,9 @@
     function toggleIdeaFormUi() {
         const type = document.getElementById('idea-type').value;
         if (type === 'enemy') {
-            document.getElementById('idea-attr').classList.remove('hidden');
             document.getElementById('idea-desc').classList.add('hidden');
         } else {
             // 武器・防具・装飾すべて説明欄を隠す
-            document.getElementById('idea-attr').classList.add('hidden');
             document.getElementById('idea-desc').classList.add('hidden');
         }
     }
@@ -1227,17 +1228,18 @@
     async function submitRpgIdea() {
         const title = document.getElementById('idea-title').value.trim();
         const type = document.getElementById('idea-type').value;
-        let desc = "";
-        if (type === 'enemy') {
-            desc = document.getElementById('idea-attr').value;
-        } else {
-            // 説明欄は不要になったため空文字
-            desc = "";
-        }
         if(!title) return alert("名前を入力してください");
+
+        // 重複チェック (Duplicate Check)
+        const checkApproved = await db.collection('approved_rpg_elements').where('title', '==', title).get();
+        const checkPending = await db.collection('rpg_ideas').where('title', '==', title).get();
+        
+        if (!checkApproved.empty || !checkPending.empty) {
+            return alert("⚠️ その名前は既に存在するか、既に提案されています。別の名前を考えてみてください！");
+        }
         
         await db.collection('rpg_ideas').add({
-            username: currentUser, title: title, type: type, desc: desc, status: "pending", timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            username: currentUser, title: title, type: type, desc: "", status: "pending", timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         alert("💡 提案を送信しました！管理者が採用するとゲームに自動実装されます。");
         document.getElementById('idea-title').value = "";
@@ -4165,31 +4167,93 @@
     };
 
     // --- 👑 提案の完全自動採否・自動実装システム ---
+    let adminIdeasCache = [];
+    let adminApprovedCache = [];
+
     function listenAdminIdeas() {
-        db.collection('rpg_ideas').where('status', '==', 'pending').onSnapshot(snap => {
-            const container = document.getElementById('admin-ideas-list');
-            if(!container) return;
-            if(snap.empty) {
-                container.innerHTML = `<p style="color:var(--text-muted); text-align:center;">未処理のキャラ・装備案はありません</p>`;
-                return;
-            }
-            let html = "";
-            snap.forEach(doc => {
-                const d = doc.data();
-                html += `
-                    <div class="idea-box" id="idea-node-${doc.id}">
-                        <strong>投稿者:</strong> ${d.username} | <strong>種別:</strong> ${d.type}<br>
-                        <strong>名前の案:</strong> <span style="color:var(--gold); font-weight:bold;">${d.title}</span><br>
-                        <strong>効果説明:</strong> ${d.desc}<br>
-                        <div style="display:flex; gap:6px; margin-top:5px;">
-                            <button onclick="adjudicateIdea('${doc.id}', 'approve', '${d.username}', '${d.type}', '${d.title}', '${d.desc}')" style="background:var(--primary); color:#000; padding:4px; font-size:11px;">👍 採用（ゲーム内へ即時自動追加）</button>
-                            <button onclick="adjudicateIdea('${doc.id}', 'reject', '${d.username}')" style="background:var(--accent); color:#fff; padding:4px; font-size:11px;">👎 却下</button>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        });
+       // 未処理の提案監視
+       db.collection('rpg_ideas').where('status', '==', 'pending').onSnapshot(snap => {
+           adminIdeasCache = [];
+           snap.forEach(doc => adminIdeasCache.push({ id: doc.id, ...doc.data() }));
+           filterAdminIdeas();
+       });
+
+       // 登録済み要素の管理（削除用）監視
+       db.collection('approved_rpg_elements').onSnapshot(snap => {
+           adminApprovedCache = [];
+           snap.forEach(doc => adminApprovedCache.push({ id: doc.id, ...doc.data() }));
+           filterAdminApproved();
+       });
+    }
+
+    window.filterAdminIdeas = function() {
+       const query = document.getElementById('admin-idea-search').value.toLowerCase();
+       const container = document.getElementById('admin-ideas-list');
+       if(!container) return;
+
+       const filtered = adminIdeasCache.filter(d => 
+           d.title.toLowerCase().includes(query) || 
+           d.username.toLowerCase().includes(query)
+       );
+
+       if(filtered.length === 0) {
+           container.innerHTML = `<p style="color:var(--text-muted); text-align:center;">条件に一致する提案はありません</p>`;
+           return;
+       }
+
+       let html = "";
+       filtered.forEach(d => {
+           html += `
+               <div class="idea-box" id="idea-node-${d.id}">
+                   <strong>投稿者:</strong> ${d.username} | <strong>種別:</strong> ${d.type}<br>
+                   <strong>名前の案:</strong> <span style="color:var(--gold); font-weight:bold;">${d.title}</span><br>
+                   <strong>効果説明:</strong> ${d.desc}<br>
+                   <div style="display:flex; gap:6px; margin-top:5px;">
+                       <button onclick="adjudicateIdea('${d.id}', 'approve', '${d.username}', '${d.type}', '${d.title}', '${d.desc}')" style="background:var(--primary); color:#000; padding:4px; font-size:11px;">👍 採用</button>
+                       <button onclick="adjudicateIdea('${d.id}', 'reject', '${d.username}')" style="background:var(--accent); color:#fff; padding:4px; font-size:11px;">👎 却下</button>
+                   </div>
+               </div>
+           `;
+       });
+       container.innerHTML = html;
+    };
+
+    window.filterAdminApproved = function() {
+       const query = document.getElementById('admin-approved-search').value.toLowerCase();
+       const container = document.getElementById('admin-approved-list');
+       if(!container) return;
+
+       const filtered = adminApprovedCache.filter(d => d.title.toLowerCase().includes(query));
+
+       if(filtered.length === 0) {
+           container.innerHTML = `<p style="color:var(--text-muted); text-align:center;">条件に一致する登録要素はありません</p>`;
+           return;
+       }
+
+       let html = "";
+       filtered.forEach(d => {
+           const typeLabel = d.type === 'enemy' ? '魔物' : (d.type === 'weapon' ? '武器' : '防具');
+           html += `
+               <div class="idea-box" style="border-left: 3px solid var(--gold);">
+                   <strong>${typeLabel}:</strong> <span style="color:var(--gold); font-weight:bold;">${d.title}</span><br>
+                   <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
+                       <span style="font-size:10px; color:var(--text-muted);">ID: ${d.id}</span>
+                       <button onclick="deleteApprovedElement('${d.id}', '${d.title}')" style="background:var(--accent); color:#fff; padding:2px 8px; font-size:11px; width:auto;">🗑️ 削除</button>
+                   </div>
+               </div>
+           `;
+       });
+       container.innerHTML = html;
+    };
+
+    async function deleteApprovedElement(id, name) {
+       if(!confirm(`⚠️ 「${name}」をデータベースから完全に削除しますか？\nゲーム内に出現しなくなります。`)) return;
+       try {
+           await db.collection('approved_rpg_elements').doc(id).delete();
+           alert("削除しました。");
+       } catch(e) {
+           alert("削除中にエラーが発生しました: " + e.message);
+       }
     }
 
     async function adjudicateIdea(docId, decision, sender, type="", title="", desc="") {
@@ -6602,35 +6666,57 @@
             modal.className = 'sub-modal';
             modal.id = 'modal-zukan';
             modal.innerHTML = `
-                <div class="modal-header"><h3>📖 敵キャラ図鑑 (Zukan)</h3><span style="cursor:pointer;" onclick="closeSubModal('zukan')">✕</span></div>
-                <div id="zukan-content" style="display:flex; flex-direction:column; gap:10px;"></div>
+                <div class="modal-header"><h3>📖 敵キャラ図鑑 (Bestiary)</h3><span style="cursor:pointer;" onclick="closeSubModal('zukan')">✕</span></div>
+                <div id="zukan-search-container" style="margin-bottom:15px;">
+                    <input type="text" id="zukan-search-input" placeholder="魔物名で検索..." style="margin-bottom:0; padding:10px; font-size:14px;" oninput="filterZukan()">
+                </div>
+                <div id="zukan-content"></div>
             `;
             document.body.appendChild(modal);
         }
         modal.classList.add('open');
 
-        const container = document.getElementById('zukan-content');
-        container.innerHTML = `<p style="text-align:center; font-size:12px; color:var(--text-muted);">図鑑を読み込み中...</p>`;
+        renderZukanItems("");
+    }
 
+    window.filterZukan = function() {
+        const query = document.getElementById('zukan-search-input').value.toLowerCase();
+        renderZukanItems(query);
+    };
+
+    function renderZukanItems(query) {
+        const container = document.getElementById('zukan-content');
         let allEnemyNames = [...enemyNamesBase];
         approvedEnemies.forEach(enemy => {
             allEnemyNames.push(enemy.title);
         });
-        const uniqueNames = [...new Set(allEnemyNames)];
+        const uniqueNames = [...new Set(allEnemyNames)].filter(n => n.toLowerCase().includes(query));
 
         container.innerHTML = `
-            <div style="background:rgba(255,255,255,0.05); padding:12px; border-radius:8px; border:1px solid #2f4553; margin-bottom:15px;">
-                <h4 style="color:var(--gold); font-size:14px; margin-bottom:6px;">💡 モンスターの属性について</h4>
-                <p style="font-size:11px; color:var(--text-muted); line-height:1.5;">
-                    ・通常の敵キャラクターは、出現するたびに<strong>ランダムな属性</strong>（火・水・木・光・暗）が付与されます。<br>
-                    ・50階層ごとのボスのみ、決まった属性を持って立ちはだかります。
+            <div style="background:linear-gradient(135deg, rgba(243,156,18,0.1) 0%, rgba(15,33,46,0.1) 100%); padding:15px; border-radius:10px; border:1px solid #2f4553; margin-bottom:20px;">
+                <h4 style="color:var(--gold); font-size:15px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+                    <span>💡</span> モンスターの属性と特性
+                </h4>
+                <p style="font-size:11px; color:var(--text-muted); line-height:1.6;">
+                    カジノの地下深く、RPGエリアに棲息する魔物たちの記録です。<br>
+                    通常の魔物は出現のたびに<strong>属性が変化</strong>し、50階層ごとのボスは固有の属性を纏って現れます。
                 </p>
             </div>
-            <div style="background:var(--bg-input); padding:10px; border-radius:8px; border-left:4px solid var(--primary);">
-                <h4 style="margin-bottom:10px; font-size:14px; color:#fff;">👾 登録済みモンスター一覧</h4>
-                <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px;">
-                    ${uniqueNames.map(n => `<div style="font-size:12px; color:#fff;">・${n}</div>`).join('')}
-                </div>
+
+            <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px;">
+                ${uniqueNames.map(n => `
+                    <div style="background:var(--bg-input); padding:12px; border-radius:8px; border:1px solid #2f4553; display:flex; align-items:center; gap:10px; transition:transform 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                        <div style="font-size:20px; background:rgba(0,0,0,0.3); width:36px; height:36px; display:flex; justify-content:center; align-items:center; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">👾</div>
+                        <div style="flex:1;">
+                            <div style="font-size:13px; font-weight:bold; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${n}</div>
+                            <div style="font-size:9px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Registered Monster</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--text-muted); border-top:1px solid #2f4553; padding-top:10px;">
+                ${query ? `検索結果: ${uniqueNames.length} 体` : `現在 ${uniqueNames.length} 体の魔物が確認されています`}
             </div>
         `;
     }
