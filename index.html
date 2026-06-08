@@ -1312,8 +1312,12 @@
         if(approvedEnemies.length > 0 && Math.random() < 0.4) {
             const chosen = approvedEnemies[Math.floor(Math.random() * approvedEnemies.length)];
             eName = chosen.title;
-            // データベースの属性が有効かチェックし、無効ならランダム割り当て (Ensure valid attribute from DB or randomize)
-            eAttr = (chosen.attr && chosen.attr !== 'none' && attrTypes.includes(chosen.attr)) ? chosen.attr : attrTypes[Math.floor(Math.random() * attrTypes.length)];
+            // ボス以外は属性をランダムに割り当てる (Randomize attribute for non-bosses)
+            if (isBossFloor) {
+                eAttr = (chosen.attr && chosen.attr !== 'none' && attrTypes.includes(chosen.attr)) ? chosen.attr : attrTypes[Math.floor(Math.random() * attrTypes.length)];
+            } else {
+                eAttr = attrTypes[Math.floor(Math.random() * attrTypes.length)];
+            }
         } else {
             eName = enemyNamesBase[Math.floor(Math.random() * enemyNamesBase.length)];
             eAttr = attrTypes[Math.floor(Math.random() * attrTypes.length)];
@@ -6532,43 +6536,31 @@
             document.body.appendChild(modal);
         }
         modal.classList.add('open');
-        
+
         const container = document.getElementById('zukan-content');
         container.innerHTML = `<p style="text-align:center; font-size:12px; color:var(--text-muted);">図鑑を読み込み中...</p>`;
-        
-        let zukanData = {};
-        attrTypes.forEach(attr => zukanData[attr] = []);
-        zukanData['none'] = [];
 
-        // 固定敵を属性に割り振り（便宜上ランダムだが本来は固定）
-        enemyNamesBase.forEach((name, idx) => {
-            const attr = attrTypes[idx % attrTypes.length];
-            zukanData[attr].push(name);
-        });
-
-        // 承認済み敵
+        let allEnemyNames = [...enemyNamesBase];
         approvedEnemies.forEach(enemy => {
-            const attr = enemy.attr || 'none';
-            if (zukanData[attr]) zukanData[attr].push(enemy.title);
-            else zukanData['none'].push(enemy.title);
+            allEnemyNames.push(enemy.title);
         });
+        const uniqueNames = [...new Set(allEnemyNames)];
 
-        let html = "";
-        for (const attr of [...attrTypes, 'none']) {
-            const names = zukanData[attr];
-            if (names && names.length > 0) {
-                const uniqueNames = [...new Set(names)];
-                html += `
-                    <div style="background:var(--bg-input); padding:10px; border-radius:8px; border-left:4px solid var(--primary); margin-bottom:10px;">
-                        <h4 class="badge-element elem-${attr}" style="margin-bottom:8px; display:inline-block; font-size:14px; padding:4px 8px; color:#fff;">${attrNamesKanji[attr]} 属性</h4>
-                        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px;">
-                            ${uniqueNames.map(n => `<div style="font-size:12px; color:#fff;">・${n}</div>`).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-        }
-        container.innerHTML = html;
+        container.innerHTML = `
+            <div style="background:rgba(255,255,255,0.05); padding:12px; border-radius:8px; border:1px solid #2f4553; margin-bottom:15px;">
+                <h4 style="color:var(--gold); font-size:14px; margin-bottom:6px;">💡 モンスターの属性について</h4>
+                <p style="font-size:11px; color:var(--text-muted); line-height:1.5;">
+                    ・通常の敵キャラクターは、出現するたびに<strong>ランダムな属性</strong>（火・水・木・光・暗）が付与されます。<br>
+                    ・50階層ごとのボスのみ、決まった属性を持って立ちはだかります。
+                </p>
+            </div>
+            <div style="background:var(--bg-input); padding:10px; border-radius:8px; border-left:4px solid var(--primary);">
+                <h4 style="margin-bottom:10px; font-size:14px; color:#fff;">👾 登録済みモンスター一覧</h4>
+                <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px;">
+                    ${uniqueNames.map(n => `<div style="font-size:12px; color:#fff;">・${n}</div>`).join('')}
+                </div>
+            </div>
+        `;
     }
 
     function closeSubModal(id) {
