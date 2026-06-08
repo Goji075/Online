@@ -952,6 +952,24 @@
             pDefBonus = data.eqADef || 0;
             pAccName = data.eqCName || "Dランク装飾";
             pHpBonus = data.eqCHp || 0;
+
+            // 装備状態の同期 (Sync equipped status)
+            const eqW = pInventory.find(i => i.type === 'weapon' && i.equipped);
+            if (eqW) {
+                pWeaponName = eqW.name + (eqW.plus ? ` (+${eqW.plus})` : "");
+                pWeaponAttr = eqW.attr || 'none';
+                pAtkBonus = eqW.stat || 0;
+            }
+            const eqA = pInventory.find(i => i.type === 'armor' && i.equipped);
+            if (eqA) {
+                pArmorName = eqA.name + (eqA.plus ? ` (+${eqA.plus})` : "");
+                pDefBonus = eqA.stat || 0;
+            }
+            const eqC = pInventory.find(i => i.type === 'accessory' && i.equipped);
+            if (eqC) {
+                pAccName = eqC.name + (eqC.plus ? ` (+${eqC.plus})` : "");
+                pHpBonus = eqC.stat || 0;
+            }
         } else {
             if (doc.exists) {
                 return alert("そのユーザーIDは既に登録されています");
@@ -1070,7 +1088,7 @@
             document.getElementById('eq-weapon').innerHTML = `${equippedWeapon.name}${attrLabel} <span class="rarity-${rarity}" style="font-weight:bold;">(${rarityMap[rarity]}ランク | 攻撃力: +${percentMap[rarity]})</span>`;
         } else {
             const attrLabel = (pWeaponAttr && pWeaponAttr !== 'none') ? ` [${pWeaponAttr.toUpperCase()}]` : "";
-            document.getElementById('eq-weapon').innerHTML = `素手${attrLabel} <span class="rarity-common" style="font-weight:bold;">(Dランク | 攻撃力: +0%)</span>`;
+            document.getElementById('eq-weapon').innerHTML = `${pWeaponName}${attrLabel} <span class="rarity-common" style="font-weight:bold;">(Dランク | 攻撃力: +0%)</span>`;
         }
 
         // 防具
@@ -1079,7 +1097,7 @@
             const rarity = equippedArmor.rarity || 'common';
             document.getElementById('eq-armor').innerHTML = `${equippedArmor.name} <span class="rarity-${rarity}" style="font-weight:bold;">(${rarityMap[rarity]}ランク | 防御力: +${percentMap[rarity]})</span>`;
         } else {
-            document.getElementById('eq-armor').innerHTML = `普段着 <span class="rarity-common" style="font-weight:bold;">(Dランク | 防御力: +0%)</span>`;
+            document.getElementById('eq-armor').innerHTML = `${pArmorName} <span class="rarity-common" style="font-weight:bold;">(Dランク | 防御力: +0%)</span>`;
         }
 
         // 装飾
@@ -1088,7 +1106,7 @@
             const rarity = equippedAcc.rarity || 'common';
             document.getElementById('eq-acc').innerHTML = `${equippedAcc.name} <span class="rarity-${rarity}" style="font-weight:bold;">(${rarityMap[rarity]}ランク | 最大HP: +${percentMap[rarity]})</span>`;
         } else {
-            document.getElementById('eq-acc').innerHTML = `なし <span class="rarity-common" style="font-weight:bold;">(Dランク | 最大HP: +0%)</span>`;
+            document.getElementById('eq-acc').innerHTML = `${pAccName} <span class="rarity-common" style="font-weight:bold;">(Dランク | 最大HP: +0%)</span>`;
         }
         
         updateVipProgressionUi();
@@ -1294,7 +1312,8 @@
         if(approvedEnemies.length > 0 && Math.random() < 0.4) {
             const chosen = approvedEnemies[Math.floor(Math.random() * approvedEnemies.length)];
             eName = chosen.title;
-            eAttr = chosen.attr !== 'none' ? chosen.attr : attrTypes[Math.floor(Math.random() * attrTypes.length)];
+            // データベースの属性が有効かチェックし、無効ならランダム割り当て (Ensure valid attribute from DB or randomize)
+            eAttr = (chosen.attr && chosen.attr !== 'none' && attrTypes.includes(chosen.attr)) ? chosen.attr : attrTypes[Math.floor(Math.random() * attrTypes.length)];
         } else {
             eName = enemyNamesBase[Math.floor(Math.random() * enemyNamesBase.length)];
             eAttr = attrTypes[Math.floor(Math.random() * attrTypes.length)];
@@ -1547,7 +1566,7 @@
         // 10%の確率で装備ドロップ
         if(Math.random() < 0.10) {
             const eqRoll = Math.floor(Math.random() * 3);
-            const rAttr = attrTypes[Math.floor(Math.random() * attrTypes.length)];
+            const rAttr = attrTypes[Math.floor(Math.random() * attrTypes.length)] || "fire";
             const itemId = Math.random().toString(36).substring(2, 9);
             
             // 敵から落ちる武器はDCBランク（common, uncommon, rare）のみ
@@ -1717,7 +1736,7 @@
         pPotions++;
         logRpg("🛒 ショップで「冒険者の回復薬」を1個購入しました。");
         updateDisplayUi();
-        saveRpgProgress();
+        await saveRpgProgress();
     }
 
     async function buyEquipment(rarity, cost) {
@@ -1741,8 +1760,8 @@
         };
 
         if(type === 'weapon') {
-            // ショップ武器は光と闇以外 (火・水・木・無)
-            const basicAttrs = ["fire", "water", "wood", "none"];
+            // ショップ武器は光と闇以外 (火・水・木)
+            const basicAttrs = ["fire", "water", "wood"];
             const rAttr = basicAttrs[Math.floor(Math.random() * basicAttrs.length)];
             newItem.attr = rAttr;
             alert(`🛒 ${newItem.name} [${attrNamesKanji[rAttr]}] を購入しました！`);
@@ -1752,7 +1771,7 @@
 
         pInventory.push(newItem);
         updateDisplayUi();
-        saveRpgProgress();
+        await saveRpgProgress();
     }
 
     async function changeUserId() {
@@ -2046,7 +2065,8 @@
                     ${item.equipped ? 
                     `<span style="color:var(--primary); font-size:11px; font-weight:bold; display:block;">装備中</span>
                      <button onclick="unequipItemFromInv('${item.id}')" style="padding:4px 6px; font-size:10px; background:var(--accent); color:#fff; cursor:pointer;">外す</button>` : 
-                    `<button onclick="equipItemFromInv('${item.id}')" style="padding:6px; font-size:11px; cursor:pointer;">装備する</button>`}
+                    `<button onclick="equipItemFromInv('${item.id}')" style="padding:6px; font-size:11px; cursor:pointer;">装備する</button>
+                     <button onclick="discardItemFromInv('${item.id}')" style="padding:4px 6px; font-size:10px; background:var(--accent); color:#fff; cursor:pointer;">捨てる</button>`}
                     <button onclick="renameEquipment('${item.id}')" style="padding:4px 6px; font-size:10px; background:var(--bg-input); color:var(--text-muted); border:1px solid #2f4553; cursor:pointer;">名前変更</button>
                 </div>
             `;
@@ -2131,6 +2151,20 @@
         renderInventory();
         await saveRpgProgress();
         alert(`📤 ${item.name} を外しました。`);
+    }
+
+    async function discardItemFromInv(id) {
+        const item = pInventory.find(i => i.id === id);
+        if (!item) return;
+        if (item.equipped) return alert("装備中のアイテムは捨てられません。");
+        
+        if (confirm(`「${item.name}」を本当に捨てますか？\nこの操作は取り消せません。`)) {
+            pInventory = pInventory.filter(i => i.id !== id);
+            renderInventory();
+            updateDisplayUi();
+            await saveRpgProgress();
+            alert("アイテムを捨てました。");
+        }
     }
 
     let synthesisBaseId = null;
@@ -2334,6 +2368,7 @@
     }
 
     async function executeSynthesis() {
+        if (isRpgActionProcessing) return;
         if (!synthesisBaseId || !synthesisMaterialId) return alert("ベースと素材の両方を選択してください");
         const base = pInventory.find(i => i.id === synthesisBaseId);
         const material = pInventory.find(i => i.id === synthesisMaterialId);
@@ -2349,6 +2384,8 @@
 
         const rate = getSynthesisSuccessRate(base);
         if (!confirm(`￥${cost} を支払って合成を実行しますか？（成功確率: ${rate * 100}%）`)) return;
+
+        isRpgActionProcessing = true;
 
         // 費用支払い
         await changeBalance(-cost, "装備合成費用");
@@ -2373,6 +2410,8 @@
         renderSynthesisUi();
         updateDisplayUi();
         await saveRpgProgress();
+        
+        isRpgActionProcessing = false;
     }
 
     // --- ⚔️ 対戦 (Duel Market) システム ---
