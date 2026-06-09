@@ -760,6 +760,12 @@
     let eHP = 50, eMaxHP = 50, eAtk = 100, eName = "スライム", eAttr = "none", eRare = "common", eLevel = 1, isRpgActionProcessing = false;
     let healCooldown = 0, chargeDuration = 0;
     let approvedEnemies = [], approvedWeapons = [], approvedArmors = [];
+    
+    // VIP用変数
+    let pRakebackPool = 0;
+    let pLastDailyClaim = "";
+    let pLastWeeklyClaim = 0;
+    let pLastMonthlyClaim = 0;
 
     // LINEボット準拠のゲーム設定 (倍率)
     const SETTINGS = {
@@ -932,6 +938,10 @@
             }
             currentVipWager = data.wagered || 0;
             currentVault = data.vault || 0;
+            pRakebackPool = data.rakebackPool || 0;
+            pLastDailyClaim = data.lastDailyClaim || "";
+            pLastWeeklyClaim = data.lastWeeklyClaim || 0;
+            pLastMonthlyClaim = data.lastMonthlyClaim || 0;
             pLevel = data.rpgLevel || 1;
             pFloor = data.rpgFloor || 1;
             pMaxFloor = data.maxFloor || data.rpgFloor || 1;
@@ -992,7 +1002,11 @@
                 eqWName: "Dランク武器", eqWAttr: "none", eqWAtk: 0,
                 eqAName: "Dランク防具", eqADef: 0,
                 eqCName: "Dランク装飾", eqCHp: 0,
-                lastLoginBonusDate: ""
+                lastLoginBonusDate: "",
+                rakebackPool: 0,
+                lastDailyClaim: "",
+                lastWeeklyClaim: 0,
+                lastMonthlyClaim: 0
             });
             currentUser = u;
             currentBalance = 1000;
@@ -1134,7 +1148,12 @@
         await db.collection('users_v2').doc(currentUser).update({ balance: currentBalance });
         if(amt < 0 && isBet) {
             currentVipWager += Math.abs(amt);
-            await db.collection('users_v2').doc(currentUser).update({ wagered: currentVipWager });
+            const betAmt = Math.abs(amt);
+            pRakebackPool += betAmt * 0.01; // ベットの1%をプール
+            await db.collection('users_v2').doc(currentUser).update({ 
+                wagered: currentVipWager,
+                rakebackPool: pRakebackPool
+            });
             updateVipProgressionUi();
         }
         if(reason) {
@@ -6630,6 +6649,158 @@
         document.getElementById('vip-progress-percent').innerText = pct.toFixed(2) + "%";
     }
 
+    // --- 👑 VIPリワードロジックの実装 ---
+    function getVipRankName() {
+        if(currentVipWager >= 25000) return "ダイヤモンド";
+        if(currentVipWager >= 15000) return "プラチナ";
+        if(currentVipWager >= 5000) return "ゴールド";
+        return "ブロンズ 1";
+    }
+
+    function getVipBonusConfig() {
+        const rank = getVipRankName();
+        if (rank === "ダイヤモンド") {
+            return { daily: 1000, weekly: 5000, monthly: 20000 };
+        } else if (rank === "プラチナ") {
+            return { daily: 500, weekly: 3000, monthly: 10000 };
+        } else if (rank === "ゴールド") {
+            return { daily: 300, weekly: 1500, monthly: 5000 };
+        } else {
+            return { daily: 100, weekly: 500, monthly: 2000 };
+        }
+    }
+
+    function updateVipRewardsUi() {
+        const config = getVipBonusConfig();
+        const now = Date.now();
+
+        // 1. インスタントレーキバック
+        const poolRakebackEl = document.getElementById('pool-rakeback');
+        if(poolRakebackEl) poolRakebackEl.innerText = Math.floor(pRakebackPool).toLocaleString();
+
+        // 2. デイリーボーナス
+        const dailyEl = document.getElementById('pool-daily');
+        const dailyBtn = document.getElementById('btn-claim-daily');
+        const dailyBadge = document.getElementById('daily-timer-badge');
+        if(dailyEl) dailyEl.innerText = config.daily.toLocaleString();
+
+        let lastDaily = 0;
+        if (pLastDailyClaim) {
+            lastDaily = new Date(pLastDailyClaim).getTime();
+        }
+        const dailyDiff = now - lastDaily;
+        const dailyWait = 24 * 60 * 60 * 1000;
+
+        if (dailyDiff < dailyWait) {
+            if(dailyBtn) dailyBtn.disabled = true;
+            if(dailyBadge) {
+                dailyBadge.classList.remove('hidden');
+                const remaining = dailyWait - dailyDiff;
+                const hours = Math.floor(remaining / (3600 * 1000));
+                const mins = Math.floor((remaining % (3600 * 1000)) / (60 * 1000));
+                const secs = Math.floor((remaining % (60 * 1000)) / 1000);
+                dailyBadge.innerText = `${hours.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+            }
+        } else {
+            if(dailyBtn) dailyBtn.disabled = false;
+            if(dailyBadge) dailyBadge.classList.add('hidden');
+        }
+
+        // 3. ウィークリーボーナス
+        const weeklyEl = document.getElementById('pool-weekly');
+        const weeklyBtn = document.getElementById('btn-claim-weekly');
+        const weeklyBadge = document.getElementById('weekly-timer-badge');
+        if(weeklyEl) weeklyEl.innerText = config.weekly.toLocaleString();
+
+        const weeklyDiff = now - pLastWeeklyClaim;
+        const weeklyWait = 7 * 24 * 60 * 60 * 1000;
+
+        if (weeklyDiff < weeklyWait) {
+            if(weeklyBtn) weeklyBtn.disabled = true;
+            if(weeklyBadge) {
+                weeklyBadge.classList.remove('hidden');
+                const remaining = weeklyWait - weeklyDiff;
+                const days = Math.floor(remaining / (24 * 3600 * 1000));
+                const hours = Math.floor((remaining % (24 * 3600 * 1000)) / (3600 * 1000));
+                weeklyBadge.innerText = `${days}日 ${hours.toString().padStart(2,'0')}時間`;
+            }
+        } else {
+            if(weeklyBtn) weeklyBtn.disabled = false;
+            if(weeklyBadge) weeklyBadge.classList.add('hidden');
+        }
+
+        // 4. マンスリーボーナス
+        const monthlyEl = document.getElementById('pool-monthly');
+        const monthlyBtn = document.getElementById('btn-claim-monthly');
+        const monthlyBadge = document.getElementById('monthly-timer-badge');
+        if(monthlyEl) monthlyEl.innerText = config.monthly.toLocaleString();
+
+        const monthlyDiff = now - pLastMonthlyClaim;
+        const monthlyWait = 30 * 24 * 60 * 60 * 1000;
+
+        if (monthlyDiff < monthlyWait) {
+            if(monthlyBtn) monthlyBtn.disabled = true;
+            if(monthlyBadge) {
+                monthlyBadge.classList.remove('hidden');
+                const remaining = monthlyWait - monthlyDiff;
+                const days = Math.floor(remaining / (24 * 3600 * 1000));
+                const hours = Math.floor((remaining % (24 * 3600 * 1000)) / (3600 * 1000));
+                monthlyBadge.innerText = `${days}日 ${hours.toString().padStart(2,'0')}時間`;
+            }
+        } else {
+            if(monthlyBtn) monthlyBtn.disabled = false;
+            if(monthlyBadge) monthlyBadge.classList.add('hidden');
+        }
+    }
+
+    async function claimVipBonus(type) {
+        if (!currentUser) return;
+        const config = getVipBonusConfig();
+        const now = Date.now();
+        const userRef = db.collection('users_v2').doc(currentUser);
+
+        if (type === 'rakeback') {
+            if (pRakebackPool <= 0) return alert("受け取れるレーキバックがありません");
+            const amt = Math.floor(pRakebackPool);
+            pRakebackPool = 0;
+            await userRef.update({ rakebackPool: 0 });
+            await changeBalance(amt, "インスタントレーキバック");
+            alert(`🎁 インスタントレーキバック ￥${amt.toLocaleString()} を受け取りました！`);
+            updateVipRewardsUi();
+        } else if (type === 'daily') {
+            let lastDaily = 0;
+            if (pLastDailyClaim) {
+                lastDaily = new Date(pLastDailyClaim).getTime();
+            }
+            if (now - lastDaily < 24 * 60 * 60 * 1000) {
+                return alert("デイリーボーナスはまだ受け取れません");
+            }
+            pLastDailyClaim = new Date().toISOString();
+            await userRef.update({ lastDailyClaim: pLastDailyClaim });
+            await changeBalance(config.daily, "VIPデイリーボーナス");
+            alert(`🎁 デイリーボーナス ￥${config.daily.toLocaleString()} を受け取りました！`);
+            updateVipRewardsUi();
+        } else if (type === 'weekly') {
+            if (now - pLastWeeklyClaim < 7 * 24 * 60 * 60 * 1000) {
+                return alert("ウィークリーボーナスはまだ受け取れません");
+            }
+            pLastWeeklyClaim = now;
+            await userRef.update({ lastWeeklyClaim: pLastWeeklyClaim });
+            await changeBalance(config.weekly, "VIPウィークリーボーナス");
+            alert(`🎁 ウィークリーボーナス ￥${config.weekly.toLocaleString()} を受け取りました！`);
+            updateVipRewardsUi();
+        } else if (type === 'monthly') {
+            if (now - pLastMonthlyClaim < 30 * 24 * 60 * 60 * 1000) {
+                return alert("マンスリーボーナスはまだ受け取れません");
+            }
+            pLastMonthlyClaim = now;
+            await userRef.update({ lastMonthlyClaim: pLastMonthlyClaim });
+            await changeBalance(config.monthly, "VIPマンスリーボーナス");
+            alert(`🎁 マンスリーボーナス ￥${config.monthly.toLocaleString()} を受け取りました！`);
+            updateVipRewardsUi();
+        }
+    }
+
     async function handleVault(mode) {
         const val = parseFloat(document.getElementById('vault-amount').value) || 0;
         if(val <= 0) return;
@@ -6646,6 +6817,7 @@
         await db.collection('users_v2').doc(currentUser).update({ vault: currentVault });
     }
 
+    let vipTimerInterval = null;
     function openSubModal(id) {
         document.querySelectorAll('.sub-modal').forEach(m => m.classList.remove('open'));
         const modal = document.getElementById('modal-' + id);
@@ -6655,6 +6827,11 @@
         if (id === 'leaderboard') fetchLeaderboard();
         if (id === 'txhistory') fetchTxHistory();
         if (id === 'zukan') fetchEnemyZukan();
+        if (id === 'vip') {
+            updateVipRewardsUi();
+            if (vipTimerInterval) clearInterval(vipTimerInterval);
+            vipTimerInterval = setInterval(updateVipRewardsUi, 1000);
+        }
     }
 
     async function fetchLeaderboard() {
@@ -6777,6 +6954,12 @@
     function closeSubModal(id) {
         const modal = document.getElementById('modal-' + id);
         if (modal) modal.classList.remove('open');
+        if (id === 'vip') {
+            if (vipTimerInterval) {
+                clearInterval(vipTimerInterval);
+                vipTimerInterval = null;
+            }
+        }
     }
     function toggleSidebar(open) {
         if (open && activeDuelId) {
