@@ -1050,8 +1050,8 @@
         syncRoomRealtime();
         listenGlobalChat();
         listenGlobalLiveBets();
-        listenApprovedDatabase();
-        checkNotifications();
+        listenApprovedDatabase(); // 既に定義を書き換え、loadApprovedDatabaseOnce() となっているため、互換性のためにそのままでも可ですが、一応呼び出します
+        loadNotificationsOnce();
         
         const restored = await restoreBattleState();
         if (!restored) {
@@ -1176,7 +1176,6 @@
     }
 
     // --- 🔔 お知らせ & 採否判定データベース同期 ---
-    let notificationsUnsubscribe = null;
     function openNotifModal() {
         if (activeDuelId) {
             alert("対戦中はお知らせを開けません。");
@@ -1185,15 +1184,14 @@
         // 即座にバッジを消して既読時間を更新
         document.getElementById('bell-badge').classList.add('hidden');
         localStorage.setItem('last_notif_check', Date.now());
+        loadNotificationsOnce();
         openSubModal('notif');
     }
 
-    function checkNotifications() {
+    async function loadNotificationsOnce() {
         if (!currentUser) return;
-        if (notificationsUnsubscribe) notificationsUnsubscribe();
-
-        // orderByを外してインデックス作成エラーを回避（ローカルでソート）
-        notificationsUnsubscribe = db.collection('notifications').where('username', '==', currentUser).limit(30).onSnapshot(snap => {
+        try {
+            const snap = await db.collection('notifications').where('username', '==', currentUser).limit(30).get();
             const area = document.getElementById('notif-list-area');
             if(!area) return;
             
@@ -1231,7 +1229,9 @@
             } else {
                 document.getElementById('bell-badge').classList.add('hidden');
             }
-        });
+        } catch(e) {
+            console.error("Notifications fetch error:", e);
+        }
     }
 
     function toggleIdeaFormUi() {
@@ -1264,8 +1264,9 @@
         document.getElementById('idea-title').value = "";
     }
 
-    function listenApprovedDatabase() {
-        db.collection('approved_rpg_elements').onSnapshot(snap => {
+    async function loadApprovedDatabaseOnce() {
+        try {
+            const snap = await db.collection('approved_rpg_elements').get();
             approvedEnemies = []; approvedWeapons = []; approvedArmors = [];
             snap.forEach(doc => {
                 const data = doc.data();
@@ -1273,7 +1274,13 @@
                 if(data.type === 'weapon') approvedWeapons.push({name: data.title, desc: data.desc});
                 if(data.type === 'armor') approvedArmors.push({name: data.title, desc: data.desc});
             });
-        });
+        } catch(e) {
+            console.error("Approved database fetch error:", e);
+        }
+    }
+    // 旧関数との互換性のための定義
+    function listenApprovedDatabase() {
+        loadApprovedDatabaseOnce();
     }
 
     // --- ⚔️ RPGコアロジック ---
@@ -6167,6 +6174,33 @@
         drawDice3D(canvas, num, angle);
     }
 
+    let liveBetsInterval = null;
+    async function updateGlobalLiveBetsOnce() {
+        if (!currentUser) return;
+        try {
+            const snap = await db.collection('live_bets').orderBy('timestamp', 'desc').limit(8).get();
+            const bar = document.getElementById('live-bet-ticker-bar');
+            if(!bar) return;
+            bar.innerHTML = "";
+            snap.forEach(doc => {
+                const d = doc.data();
+                bar.innerHTML += `
+                    <div class="live-bet-node">
+                        🔥 <span>${d.username}</span> が <span>${d.gameName}</span> に <span style="color:var(--primary);">￥${Math.floor(d.amount)}</span> ベット！
+                    </div>
+                `;
+            });
+        } catch(e) {
+            console.error("Live bets fetch error:", e);
+        }
+    }
+
+    function listenGlobalLiveBets() {
+        updateGlobalLiveBetsOnce();
+        if(liveBetsInterval) clearInterval(liveBetsInterval);
+        liveBetsInterval = setInterval(updateGlobalLiveBetsOnce, 30000); // 30秒ごとに取得
+    }
+
     function runDiceGame(bet) {
         const mode = document.getElementById('dice-bet-mode').value;
         const board = document.getElementById('my-isolated-board');
@@ -6535,10 +6569,11 @@
         // 部屋廃止のため機能無効
     }
 
-    function syncRoomRealtime() {
-        if (onlineUsersUnsubscribe) onlineUsersUnsubscribe();
-        
-        onlineUsersUnsubscribe = db.collection('users_v2').onSnapshot(snap => {
+    let onlineUsersInterval = null;
+    async function updateOnlineUsersListOnce() {
+        if (!currentUser) return;
+        try {
+            const snap = await db.collection('users_v2').get();
             const list = document.getElementById('table-players');
             if (!list) return;
             list.innerHTML = "";
@@ -6582,7 +6617,15 @@
             if (!hasOnline) {
                 list.innerHTML = `<p style="font-size:11px; color:var(--text-muted); text-align:center;">現在オンラインの他プレイヤーはいません</p>`;
             }
-        });
+        } catch(e) {
+            console.error("Online users fetch error:", e);
+        }
+    }
+
+    function syncRoomRealtime() {
+        updateOnlineUsersListOnce();
+        if (onlineUsersInterval) clearInterval(onlineUsersInterval);
+        onlineUsersInterval = setInterval(updateOnlineUsersListOnce, 30000); // 30秒ごとに取得
 
         // 招待と対戦状態の監視
         listenToDuelInvites();
