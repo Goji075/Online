@@ -1288,24 +1288,26 @@
         chargeDuration = 0;
         
         let rarityMultiplier = 1.0;
+        let enemyAtkMultiplier = 1.0;
         const isBossFloor = (pFloor % 50 === 0);
 
         if (isBossFloor) {
             eRare = "boss";
-            rarityMultiplier = 5.0 * 1.5; // 超激レアの1.5倍
+            rarityMultiplier = 5.0 * 1.5; // HPは7.5倍
+            enemyAtkMultiplier = 3.0;     // 攻撃力は3.0倍に抑える
         } else {
             const roll = Math.random();
-            if(roll < 0.02) { eRare = "ultrarare"; rarityMultiplier = 5.0; }
-            else if(roll < 0.07) { eRare = "epic"; rarityMultiplier = 3.0; }
-            else if(roll < 0.17) { eRare = "rare"; rarityMultiplier = 2.0; }
-            else if(roll < 0.37) { eRare = "uncommon"; rarityMultiplier = 1.5; }
-            else { eRare = "common"; rarityMultiplier = 1.0; }
+            if(roll < 0.02) { eRare = "ultrarare"; rarityMultiplier = 5.0; enemyAtkMultiplier = 5.0; }
+            else if(roll < 0.07) { eRare = "epic"; rarityMultiplier = 3.0; enemyAtkMultiplier = 3.0; }
+            else if(roll < 0.17) { eRare = "rare"; rarityMultiplier = 2.0; enemyAtkMultiplier = 2.0; }
+            else if(roll < 0.37) { eRare = "uncommon"; rarityMultiplier = 1.5; enemyAtkMultiplier = 1.5; }
+            else { eRare = "common"; rarityMultiplier = 1.0; enemyAtkMultiplier = 1.0; }
         }
 
         eLevel = Math.max(1, Math.round(pLevel + (Math.random() * 6 - 3)));
 
         const baseHP = SETTINGS.EnemyHP_Base * eLevel * rarityMultiplier;
-        const baseAtk = SETTINGS.EnemyATK_Base * eLevel * rarityMultiplier * 0.8;
+        const baseAtk = SETTINGS.EnemyATK_Base * eLevel * enemyAtkMultiplier * 0.8;
         
         eMaxHP = Math.round(baseHP);
         eHP = eMaxHP;
@@ -1576,15 +1578,19 @@
             const rAttr = attrTypes[Math.floor(Math.random() * attrTypes.length)] || "fire";
             const itemId = Math.random().toString(36).substring(2, 9);
             
-            // 敵から落ちる武器はDCBランク（common, uncommon, rare）のみ
+            // 敵から落ちる武器はDCBランク（common, uncommon, rare）のみ（ボスはAランク確定）
             let droppedRarity;
-            const dropRoll = Math.random();
-            if (dropRoll < 0.60) {
-                droppedRarity = "common"; // Dランク
-            } else if (dropRoll < 0.90) {
-                droppedRarity = "uncommon"; // Cランク
+            if (isBossFloor) {
+                droppedRarity = "epic"; // Aランク確定
             } else {
-                droppedRarity = "rare"; // Bランク
+                const dropRoll = Math.random();
+                if (dropRoll < 0.60) {
+                    droppedRarity = "common"; // Dランク
+                } else if (dropRoll < 0.90) {
+                    droppedRarity = "uncommon"; // Cランク
+                } else {
+                    droppedRarity = "rare"; // Bランク
+                }
             }
 
             let newItem = { id: itemId, plus: 0, rarity: droppedRarity, equipped: false };
@@ -1763,8 +1769,17 @@
             name: `${rarityMap[rarity]}ランク${typeNames[type]}`, 
             type: type, 
             rarity: rarity, 
+            plus: 0,
             equipped: false 
         };
+
+        if (type === 'weapon') {
+            newItem.stat = Math.floor(pLevel * 1.2) + (1 + Math.floor(Math.random() * 5));
+        } else if (type === 'armor') {
+            newItem.stat = Math.floor(pLevel * 1.5) + (1 + Math.floor(Math.random() * 5));
+        } else {
+            newItem.stat = Math.floor(pLevel * 4) + (5 + Math.floor(Math.random() * 16));
+        }
 
         if(type === 'weapon') {
             // ショップ武器は光と闇以外 (火・水・木)
@@ -1835,8 +1850,24 @@
         if(!currentUser) return;
         if(confirm(`⚠️ 本当にあなたのアカウント [ ${currentUser} ] を完全に削除しますか？\nこの操作は取り消せません。`)) {
             try {
-                await db.collection('users_v2').doc(currentUser).delete();
-                alert("アカウントを削除しました。");
+                const uid = currentUser;
+                const notifSnap = await db.collection('notifications').where('username', '==', uid).get();
+                const notifBatch = db.batch();
+                notifSnap.forEach(doc => notifBatch.delete(doc.ref));
+                await notifBatch.commit().catch(e => console.error(e));
+                
+                const txSnap = await db.collection('tx_logs').where('username', '==', uid).get();
+                const txBatch = db.batch();
+                txSnap.forEach(doc => txBatch.delete(doc.ref));
+                await txBatch.commit().catch(e => console.error(e));
+                
+                const ideaSnap = await db.collection('rpg_ideas').where('username', '==', uid).get();
+                const ideaBatch = db.batch();
+                ideaSnap.forEach(doc => ideaBatch.delete(doc.ref));
+                await ideaBatch.commit().catch(e => console.error(e));
+
+                await db.collection('users_v2').doc(uid).delete();
+                alert("アカウントおよび関連するすべての記録を完全に削除しました。");
                 location.reload();
             } catch(e) {
                 alert("アカウント削除中にエラーが発生しました: " + e.message);
@@ -1956,8 +1987,27 @@
 
     async function purgeUserAccountAdmin(uid) {
         if(confirm(`⚠️ 本当にユーザー [ ${uid} ] のアカウントデータを完全に消去しますか？`)) {
-            await db.collection('users_v2').doc(uid).delete();
-            alert("アカウントを抹消しました。");
+            try {
+                const notifSnap = await db.collection('notifications').where('username', '==', uid).get();
+                const notifBatch = db.batch();
+                notifSnap.forEach(doc => notifBatch.delete(doc.ref));
+                await notifBatch.commit().catch(e => console.error(e));
+                
+                const txSnap = await db.collection('tx_logs').where('username', '==', uid).get();
+                const txBatch = db.batch();
+                txSnap.forEach(doc => txBatch.delete(doc.ref));
+                await txBatch.commit().catch(e => console.error(e));
+                
+                const ideaSnap = await db.collection('rpg_ideas').where('username', '==', uid).get();
+                const ideaBatch = db.batch();
+                ideaSnap.forEach(doc => ideaBatch.delete(doc.ref));
+                await ideaBatch.commit().catch(e => console.error(e));
+
+                await db.collection('users_v2').doc(uid).delete();
+                alert("アカウントおよび関連するすべての記録を抹消しました。");
+            } catch(e) {
+                alert("アカウント抹消中にエラーが発生しました: " + e.message);
+            }
         }
     }
 
@@ -3040,12 +3090,22 @@
         
         if (isDraw) {
             resultText = "引き分け！返金されます";
-            await changeBalance(data.bet, "対戦引き分け返金");
+            if (!data.claimed_refunds) {
+                await db.collection('duels').doc(duelId).update({ claimed_refunds: true });
+                await changeBalance(data.bet, "対戦引き分け返金");
+            }
         } else {
             if (amIWinner) {
                 resultText = `🎉 あなたの勝利！！`;
-                await changeBalance(winAmt, "対戦勝利賞金");
-                alert(`💰 対戦に勝利しました！ ￥${winAmt.toLocaleString()} を獲得！`);
+                const amIHost = data.host === currentUser;
+                const fieldName = amIHost ? 'claimed_host' : 'claimed_guest';
+                if (!data[fieldName]) {
+                    const updateObj = {};
+                    updateObj[fieldName] = true;
+                    await db.collection('duels').doc(duelId).update(updateObj);
+                    await changeBalance(winAmt, "対戦勝利賞金");
+                    alert(`💰 対戦に勝利しました！ ￥${winAmt.toLocaleString()} を獲得！`);
+                }
             } else {
                 resultText = `💀 あなたの敗北...`;
             }
@@ -4025,8 +4085,15 @@
         }
 
         if (isIWinner) {
-            await changeBalance(winAmt, "複数人対戦勝利賞金");
-            alert(`💰 複数人対戦に勝利しました！ ￥${Math.floor(winAmt).toLocaleString()} を獲得！`);
+            const claimed = d.claimed_rewards || [];
+            if (!claimed.includes(currentUser)) {
+                const newClaimed = [...claimed, currentUser];
+                await db.collection('multiplayer_duels').doc(duelId).update({
+                    claimed_rewards: newClaimed
+                });
+                await changeBalance(winAmt, "複数人対戦勝利賞金");
+                alert(`💰 複数人対戦に勝利しました！ ￥${Math.floor(winAmt).toLocaleString()} を獲得！`);
+            }
         }
 
         let scoreboardHtml = "";
